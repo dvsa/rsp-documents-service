@@ -1,0 +1,19 @@
+{
+	"type": "object",
+	  "required": [
+		"ID",
+		"Status"
+	  ],
+	  "properties": {
+		"ID": {
+		  "type": "string"
+		},
+		"Status": {
+		  "type": "string"
+		}
+	  },
+	"example": {
+		"ID": "820500000877",
+		"Status": "PAID"
+	}
+  }

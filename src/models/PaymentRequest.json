@@ -1,0 +1,14 @@
+{
+	"type": "object",
+	  "required": [
+		"Status"
+	  ],
+	  "properties": {
+		"Status": {
+		  "type": "string"
+		}
+	  },
+	"example": {
+		"Status": "UNPAID"
+	}
+  }

@@ -1,0 +1,26 @@
+{
+	"type": "array",
+	"items": {
+		"type": "object",
+		"properties": {
+			"name": {
+				"type": "string"
+			},
+			"region": {
+				"type": "string"
+			},
+			"siteCode": {
+				"type": "integer"
+			}
+		},
+		"example": {
+			"Items": [
+				{
+					"name": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
+					"region": "London and South East",
+					"siteCode": 1
+				}
+			]
+		}
+	}
+}

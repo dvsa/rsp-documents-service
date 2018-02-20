@@ -1,0 +1,142 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "Token",
+      "Enabled",
+      "ID",
+      "PenaltyType",
+      "Offset",
+      "Value"
+    ],
+    "properties": {
+      "ID": {
+        "type": "string"
+      },
+      "PenaltyType": {
+        "type": "string"
+      },
+      "Token": {
+        "type": "string"
+      },
+      "Enabled": {
+        "type": "boolean"
+      },
+      "Offset": {
+        "type": "integer"
+      },
+      "Value": {
+        "type": "object",
+        "properties": {
+          "formNo": {
+            "type": "string"
+          },
+          "referenceNo": {
+            "type": "integer"
+          },
+          "driverDetails": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "licenceNumber": {
+                "type": "string"
+              }
+            }
+          },
+          "vehicleDetails": {
+            "type": "object",
+            "properties": {
+              "regNo": {
+                "type": "string"
+              },
+              "make": {
+                "type": "string"
+              },
+              "nationality": {
+                "type": "string"
+              }
+            }
+          },
+          "trailerDetails": {
+            "type": "object",
+            "properties": {
+              "number1": {
+                "type": "string"
+              },
+              "number2": {
+                "type": "string"
+              }
+            }
+          },
+          "nonEndorsableOffence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "penaltyAmount": {
+            "type": "integer"
+          },
+          "paymentDueDate": {
+            "type": "integer"
+          },
+          "officerName": {
+            "type": "string"
+          },
+          "dateTime": {
+            "type": "integer"
+          },
+          "placeWhereIssued": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "example": {
+      "Items": [
+        {
+          "Token": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
+          "Enabled": true,
+          "ID": "820500000877",
+          "PenaltyType": "IM",
+          "Offset": 1511781557836,
+          "Value": {
+            "formNo": "FPN 11/08",
+            "referenceNo": "820500000877",
+            "driverDetails": {
+              "name": "James Moriarty",
+              "address": "1000 Baker Street, NW1 5LA, LONDON",
+              "licenceNumber": "MORIA801127JA09900"
+            },
+            "vehicleDetails": {
+              "regNo": "XXXXXXX",
+              "make": "Rolls Royce",
+              "nationality": "UK"
+            },
+            "trailerDetails": {
+              "number1": "1",
+              "number2": "2"
+            },
+            "nonEndorsableOffence": [
+              "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
+            ],
+            "penaltyAmount": "50.00",
+            "paymentDueDate": 479945600,
+            "officerName": "Sherlock Holmes",
+            "dateTime": 1476180720,
+            "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN"
+          }
+        }
+      ],
+      "ScannedCount": 0,
+      "Count": 0
+    }    
+  }
+
+}
