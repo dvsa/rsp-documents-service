@@ -20,9 +20,9 @@ const trailerSchema = {
 
 const valueSchema = {
 	penaltyType: Joi.string().regex(/^(IM|CDN|FPN)$/).required(),
-	paymentStatus: Joi.string().regex(/^(UNPAID|PAID)$/).required(),
-	paymentAuthCode: Joi.string().when('paymentStatus', { is: 'PAID', then: Joi.required() }),
-	paymentDate: Joi.number().integer().when('paymentStatus', { is: 'PAID', then: Joi.required() }),
+	paymentStatus: Joi.string().regex(/^(UNPAID|PAID)$/), // TODO potentially remove required when getting info from payment service
+	paymentAuthCode: Joi.string(), // TODO when('paymentStatus', { is: 'PAID', then: Joi.required() })
+	paymentDate: Joi.number().integer(), // TODO removed .when as above
 	paymentToken: Joi.string().required(),
 	formNo: Joi.string(),
 	referenceNo: Joi.string().required().min(8).max(18),

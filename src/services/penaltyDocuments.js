@@ -2,6 +2,7 @@
 /* eslint-env es6 */
 import AWS from 'aws-sdk';
 import Joi from 'joi';
+import request from 'request';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import createResponse from '../utils/createResponse';
@@ -17,12 +18,13 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
 export default class PenaltyDocument {
 
-	constructor(db, tableName, bucketName, snsTopicARN, siteResource) {
+	constructor(db, tableName, bucketName, snsTopicARN, siteResource, paymentURL) {
 		this.db = db;
 		this.tableName = tableName;
 		this.bucketName = bucketName;
 		this.snsTopicARN = snsTopicARN;
 		this.siteResource = siteResource;
+		this.paymentURL = paymentURL;
 	}
 
 	getDocument(id, callback) {
@@ -51,6 +53,11 @@ export default class PenaltyDocument {
 		const timestamp = getUnixTime();
 		const { Value, Enabled, ID } = body;
 
+		// remove payment info, payment service is single point truth
+		delete Value.paymentStatus;
+		delete Value.paymentAuthCode;
+		delete Value.paymentDate;
+		// may not need to remove this delete Value.paymentToken;
 		const item = {
 			ID,
 			Value,
@@ -58,6 +65,14 @@ export default class PenaltyDocument {
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
 		};
+
+		const paymentInfo = this.getPaymentInformation(ID);
+
+		item.Value.paymentStatus = paymentInfo.paymentStatus;
+		if (item.Value.paymentStatus === 'PAID') {
+			item.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+			item.Value.paymentDate = paymentInfo.paymentDate;
+		}
 
 		const params = {
 			TableName: this.tableName,
@@ -83,12 +98,48 @@ export default class PenaltyDocument {
 		}
 	}
 
+	getPaymentInformation(id) {
+		const url = `${this.paymentURL}/payments/${id}`;
+
+		console.log(`url ${url}`);
+		const options = { url, headers: { Authorization: 'allow', json: true } };
+		const returnVal = request(options, (err, res, body) => {
+			if (err) {
+				console.log(`errored ${err}`);
+				console.log(JSON.stringify(err, null, 2));
+				return { paymentStatus: 'UNPAID' };
+			}
+			console.log(`body: ${body}`);
+			const parsedBody = JSON.parse(body);
+
+			const retObj = {
+				paymentStatus: parsedBody.payment.Status,
+				paymentDate: parsedBody.payment.Payment.PaymentDate,
+				paymentAuthCode: parsedBody.payment.Payment.Authcode, // TODO rename Payment to details
+			};
+
+			const retStringify = JSON.stringify(retObj, null, 2);
+			console.log(`retObj: ${retStringify}`);
+
+			return retObj;
+		});
+		const retStringify = JSON.stringify(returnVal, null, 2);
+		console.log(`weird ${retStringify}`);
+		return returnVal;
+	}
+
 	// Update
 	updateDocument(id, body, callback) {
 
 		// TODO: Verifiy Data
 		const timestamp = getUnixTime();
 		const { Enabled, Value, Hash } = body;
+
+		// remove payment info, payment service is single point truth
+		delete Value.paymentStatus;
+		delete Value.paymentAuthCode;
+		delete Value.paymentDate;
+		// may not need to remove this delete Value.paymentToken;
 
 		const newHash = hashToken(id, Value, Enabled);
 		const params = {
@@ -122,6 +173,14 @@ export default class PenaltyDocument {
 			Value,
 		};
 
+		const paymentInfo = this.getPaymentInformation(id);
+
+		updatedItem.Value.paymentStatus = paymentInfo.paymentStatus;
+		if (updatedItem.Value.paymentStatus === 'PAID') {
+			updatedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+			updatedItem.Value.paymentDate = paymentInfo.paymentDate;
+		}
+
 		const checkTest = this.validatePenalty(body, penaltyValidation, true);
 		if (!checkTest.valid) {
 			callback(null, checkTest.response);
@@ -143,7 +202,11 @@ export default class PenaltyDocument {
 		const clientHash = body.Hash;
 		const Enabled = false;
 		const { Value } = body;
-
+		// remove payment info, payment service is single point truth
+		delete Value.paymentStatus;
+		delete Value.paymentAuthCode;
+		delete Value.paymentDate;
+		// may not need to remove this delete Value.paymentToken;
 		const newHash = hashToken(id, Value, Enabled);
 
 		const params = {
@@ -168,6 +231,7 @@ export default class PenaltyDocument {
 			},
 		};
 
+
 		const deletedItem = {
 			Enabled,
 			ID: id,
@@ -175,6 +239,14 @@ export default class PenaltyDocument {
 			Hash: newHash,
 			Value,
 		};
+
+		const paymentInfo = this.getPaymentInformation(id);
+
+		deletedItem.Value.paymentStatus = paymentInfo.paymentStatus;
+		if (deletedItem.Value.paymentStatus === 'PAID') {
+			deletedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+			deletedItem.Value.paymentDate = paymentInfo.paymentDate;
+		}
 
 		const checkTest = this.validatePenalty(body, penaltyValidation, true);
 		if (!checkTest.valid) {
@@ -189,7 +261,6 @@ export default class PenaltyDocument {
 				callback(null, response);
 			});
 		}
-
 	}
 
 	getDocuments(offset, callback) {
@@ -198,7 +269,7 @@ export default class PenaltyDocument {
 			TableName: this.tableName,
 		};
 
-		if (offset !== 'undefined')	{
+		if (offset !== 'undefined') {
 			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
 			params.FilterExpression = '#Offset >= :Offset';
 			params.ExpressionAttributeValues = { ':Offset': Number(offset) };
@@ -207,6 +278,27 @@ export default class PenaltyDocument {
 		const dbScan = this.db.scan(params).promise();
 
 		dbScan.then((data) => {
+			// TODO need to loop through data and populate with payment info
+			const items = data.Items;
+			items.forEach((item) => {
+				delete item.Value.paymentStatus;
+				delete item.Value.paymentAuthCode;
+				delete item.Value.paymentDate;
+
+				console.log(`item.id ${item.ID}`);
+				const paymentInfo = this.getPaymentInformation(item.ID);
+				const debuginfo = JSON.stringify(paymentInfo, null, 2);
+
+				console.log(`${item.ID}debug info ${debuginfo}`);
+
+				if (typeof paymentInfo.paymentStatus !== 'undefined') {
+					item.Value.paymentStatus = paymentInfo.paymentStatus;
+					if (item.Value.paymentStatus === 'PAID') {
+						item.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+						item.Value.paymentDate = paymentInfo.paymentDate;
+					}
+				}
+			});
 			callback(null, createResponse({ statusCode: 200, body: data }));
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
@@ -222,6 +314,12 @@ export default class PenaltyDocument {
 		const clientHash = item.Hash ? item.Hash : '<NewHash>';
 		const { Value, Enabled } = item;
 
+		// remove payment info, payment service is single point truth
+		delete Value.paymentStatus;
+		delete Value.paymentAuthCode;
+		delete Value.paymentDate;
+		// may not need to remove this delete Value.paymentToken;
+
 		const newHash = hashToken(key, Value, Enabled);
 
 		const updatedItem = {
@@ -231,7 +329,13 @@ export default class PenaltyDocument {
 			Hash: newHash,
 			Value,
 		};
+		const paymentInfo = this.getPaymentInformation(key);
 
+		updatedItem.Value.paymentStatus = paymentInfo.paymentStatus;
+		if (updatedItem.Value.paymentStatus === 'PAID') {
+			updatedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+			updatedItem.Value.paymentDate = paymentInfo.paymentDate;
+		}
 		const params = {
 			TableName: this.tableName,
 			Key: {
