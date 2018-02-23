@@ -100,7 +100,6 @@ export default class PenaltyDocument {
 
 	getPaymentInformation(id) {
 		const url = `${this.paymentURL}/payments/${id}`;
-
 		console.log(`url ${url}`);
 		const options = { url, headers: { Authorization: 'allow', json: true } };
 		const returnVal = request(options, (err, res, body) => {
