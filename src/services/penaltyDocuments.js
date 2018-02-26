@@ -2,7 +2,7 @@
 /* eslint-env es6 */
 import AWS from 'aws-sdk';
 import Joi from 'joi';
-import request from 'request';
+import request from 'request-promise';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import createResponse from '../utils/createResponse';
@@ -66,14 +66,18 @@ export default class PenaltyDocument {
 			Offset: timestamp,
 		};
 
-		const paymentInfo = this.getPaymentInformation(ID);
+		const paymentInfo = this.getPaymentInformation(ID, item, this.processPaymentResponse);
 
-		item.Value.paymentStatus = paymentInfo.paymentStatus;
-		if (item.Value.paymentStatus === 'PAID') {
-			item.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-			item.Value.paymentDate = paymentInfo.paymentDate;
+		console.log('stringifying response');
+		console.log(JSON.stringify(paymentInfo, null, 2));
+
+		if (typeof paymentInfo.paymentStatus !== 'undefined') {
+			item.Value.paymentStatus = paymentInfo.paymentStatus;
+			if (item.Value.paymentStatus === 'PAID') {
+				item.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+				item.Value.paymentDate = paymentInfo.paymentDate;
+			}
 		}
-
 		const params = {
 			TableName: this.tableName,
 			Item: item,
@@ -98,33 +102,43 @@ export default class PenaltyDocument {
 		}
 	}
 
-	getPaymentInformation(id) {
-		const url = `${this.paymentURL}/payments/${id}`;
+	processPaymentResponse(err, response) {
+		if (err) {
+			console.log(`errored ${err}`);
+			console.log(JSON.stringify(err, null, 2));
+			return { paymentStatus: 'UNPAID' };
+		}
+		console.log(`success body!: ${response}`);
+
+		if (response === '{}') {
+			return { paymentStatus: 'UNPAID' };
+		}
+
+		const parsedBody = JSON.parse(response.body);
+
+		const retObj = {
+			paymentStatus: parsedBody.payment.Status,
+			paymentDate: parsedBody.payment.Payment.PaymentDate,
+			paymentAuthCode: parsedBody.payment.Payment.Authcode, // TODO rename Payment to details
+		};
+
+		const retStringify = JSON.stringify(retObj, null, 2);
+		console.log(`retObj: ${retStringify}`);
+
+		return retObj;
+	}
+
+	getPaymentInformation(idList) {
+		const url = `${this.paymentURL}/payments`;
 		console.log(`url ${url}`);
-		const options = { url, headers: { Authorization: 'allow', json: true } };
-		const returnVal = request(options, (err, res, body) => {
-			if (err) {
-				console.log(`errored ${err}`);
-				console.log(JSON.stringify(err, null, 2));
-				return { paymentStatus: 'UNPAID' };
-			}
-			console.log(`body: ${body}`);
-			const parsedBody = JSON.parse(body);
+		const options = {
+			method: 'POST',
+			url,
+			body: { ids: idList },
+			headers: { Authorization: 'allow', json: true },
+		};
 
-			const retObj = {
-				paymentStatus: parsedBody.payment.Status,
-				paymentDate: parsedBody.payment.Payment.PaymentDate,
-				paymentAuthCode: parsedBody.payment.Payment.Authcode, // TODO rename Payment to details
-			};
-
-			const retStringify = JSON.stringify(retObj, null, 2);
-			console.log(`retObj: ${retStringify}`);
-
-			return retObj;
-		});
-		const retStringify = JSON.stringify(returnVal, null, 2);
-		console.log(`weird ${retStringify}`);
-		return returnVal;
+		return request(options);
 	}
 
 	// Update
@@ -172,14 +186,18 @@ export default class PenaltyDocument {
 			Value,
 		};
 
-		const paymentInfo = this.getPaymentInformation(id);
+		const paymentInfo = this.getPaymentInformation(id, this.processPaymentResponse);
 
-		updatedItem.Value.paymentStatus = paymentInfo.paymentStatus;
-		if (updatedItem.Value.paymentStatus === 'PAID') {
-			updatedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-			updatedItem.Value.paymentDate = paymentInfo.paymentDate;
+		console.log('stringifying response');
+		console.log(JSON.stringify(paymentInfo, null, 2));
+
+		if (typeof paymentInfo.paymentStatus !== 'undefined') {
+			updatedItem.Value.paymentStatus = paymentInfo.paymentStatus;
+			if (updatedItem.Value.paymentStatus === 'PAID') {
+				updatedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+				updatedItem.Value.paymentDate = paymentInfo.paymentDate;
+			}
 		}
-
 		const checkTest = this.validatePenalty(body, penaltyValidation, true);
 		if (!checkTest.valid) {
 			callback(null, checkTest.response);
@@ -239,12 +257,16 @@ export default class PenaltyDocument {
 			Value,
 		};
 
-		const paymentInfo = this.getPaymentInformation(id);
+		const paymentInfo = this.getPaymentInformation(id, this.processPaymentResponse);
+		console.log('stringifying response');
+		console.log(JSON.stringify(paymentInfo, null, 2));
 
-		deletedItem.Value.paymentStatus = paymentInfo.paymentStatus;
-		if (deletedItem.Value.paymentStatus === 'PAID') {
-			deletedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-			deletedItem.Value.paymentDate = paymentInfo.paymentDate;
+		if (typeof deletedItem.paymentStatus !== 'undefined') {
+			deletedItem.Value.paymentStatus = paymentInfo.paymentStatus;
+			if (deletedItem.Value.paymentStatus === 'PAID') {
+				deletedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
+				deletedItem.Value.paymentDate = paymentInfo.paymentDate;
+			}
 		}
 
 		const checkTest = this.validatePenalty(body, penaltyValidation, true);
@@ -275,29 +297,31 @@ export default class PenaltyDocument {
 		}
 
 		const dbScan = this.db.scan(params).promise();
+		const idList = [];
 
 		dbScan.then((data) => {
 			// TODO need to loop through data and populate with payment info
 			const items = data.Items;
+
 			items.forEach((item) => {
+				idList.push(item.ID);
 				delete item.Value.paymentStatus;
 				delete item.Value.paymentAuthCode;
 				delete item.Value.paymentDate;
-
-				console.log(`item.id ${item.ID}`);
-				const paymentInfo = this.getPaymentInformation(item.ID);
-				const debuginfo = JSON.stringify(paymentInfo, null, 2);
-
-				console.log(`${item.ID}debug info ${debuginfo}`);
-
-				if (typeof paymentInfo.paymentStatus !== 'undefined') {
-					item.Value.paymentStatus = paymentInfo.paymentStatus;
-					if (item.Value.paymentStatus === 'PAID') {
-						item.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-						item.Value.paymentDate = paymentInfo.paymentDate;
-					}
-				}
 			});
+
+			this.getPaymentInformation(idList)
+				.then((response) => {
+					console.log('successful request');
+					console.log(JSON.stringify(response, null, 2));
+					// callback(response, response);
+				})
+				.catch((err) => {
+					console.log(`error sending ${err}`);
+					// item.paymentInfo = setPaymentInfo(null,
+					// callback({ paymentStatus: 'UNPAID' }, item);
+				});
+
 			callback(null, createResponse({ statusCode: 200, body: data }));
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
@@ -328,13 +352,7 @@ export default class PenaltyDocument {
 			Hash: newHash,
 			Value,
 		};
-		const paymentInfo = this.getPaymentInformation(key);
 
-		updatedItem.Value.paymentStatus = paymentInfo.paymentStatus;
-		if (updatedItem.Value.paymentStatus === 'PAID') {
-			updatedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-			updatedItem.Value.paymentDate = paymentInfo.paymentDate;
-		}
 		const params = {
 			TableName: this.tableName,
 			Key: {
