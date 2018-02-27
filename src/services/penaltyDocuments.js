@@ -229,7 +229,7 @@ export default class PenaltyDocument {
 				const parsedPayload = JSON.parse(data.Payload);
 				const parsedBody = JSON.parse(parsedPayload);
 				const docType = docTypeMapping[parsedBody.DocumentType];
-				this.getDocument(`${parsedBody.Refreence}_${docType}`, callback);
+				this.getDocument(`${parsedBody.Reference}_${docType}`, callback);
 			}
 		});
 	}
