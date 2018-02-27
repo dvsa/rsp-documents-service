@@ -11,5 +11,5 @@ const penaltyDocuments = new PenaltyDocument(
 );
 
 export default (event, context, callback) => {
-	penaltyDocuments.getDocument(event.pathParameters.id, callback);
+	penaltyDocuments.getDocumentByToken(event.pathParameters.token, callback);
 };
