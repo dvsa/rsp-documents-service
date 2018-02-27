@@ -21,7 +21,8 @@ describe('list', () => {
 				httpMethod: 'GET',
 				pathParameters: null,
 			};
-			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake(0, (callback) => {
+			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake((offset, callback) => {
+				console.log('im fake');
 				const response = createResponse({
 					body: penaltyDocuments,
 				});
@@ -32,11 +33,14 @@ describe('list', () => {
 		it('should return a 200 success', (done) => {
 
 			list(event, null, (err, res) => {
+				console.log(JSON.stringify(err, null, 2));
+				console.log(JSON.stringify(res, null, 2));
+
 				expect(err).toBe(null);
 				expect(res.statusCode).toBe(200);
-				// TODO expect(res.body).toEqual(JSON.stringify(penaltyDocuments));
+				// expect(JSON.parse(res.body)).toEqual(penaltyDocument);
 				done();
-			}).timeout(4000);
+			});
 
 		});
 
