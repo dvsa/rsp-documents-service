@@ -3,10 +3,10 @@ import list from './functions/list';
 import get from './functions/get';
 import create from './functions/create';
 import remove from './functions/delete';
-import update from './functions/update';
 import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import stream from './functions/stream';
+import updateWithPayment from './functions/updateWithPayment';
 
 const handler = {
 	auth,
@@ -14,10 +14,10 @@ const handler = {
 	get,
 	create,
 	remove,
-	update,
 	updateMulti,
 	sites,
 	stream,
+	updateWithPayment,
 };
 
 export default handler;

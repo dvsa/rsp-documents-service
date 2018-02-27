@@ -9,6 +9,8 @@ import createResponse from '../utils/createResponse';
 import createSimpleResponse from '../utils/createSimpleResponse';
 import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
+import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
+import mergeSingleDocumentWithPayment from '../utils/mergeSingleDocumentWithPayment';
 import penaltyValidation from '../validationModels/penaltyValidation';
 
 const parse = AWS.DynamoDB.Converter.unmarshall;
@@ -42,17 +44,70 @@ export default class PenaltyDocument {
 				callback(null, createResponse(404, 'ITEM NOT FOUND'));
 				return;
 			}
-			callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			const idList = [];
+			idList.push(id);
+			this.getPaymentInformation(idList)
+				.then((response) => {
+					console.log(JSON.stringify(response, null, 2));
+					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+						data.Item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+					} else {
+						data.Item.Value.paymentStatus = 'UNPAID';
+					}
+					callback(null, createResponse({ statusCode: 200, body: data.Item }));
+				}).catch((err) => {
+					callback(null, createErrorResponse({ statusCode: 400, body: err }));
+				});
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		});
 	}
 
+	// put
+	updateDocumentWithPayment(id, payment, callback) {
+		const getParams = {
+			TableName: this.tableName,
+			Key: {
+				ID: id,
+			},
+		};
+		const dbGet = this.db.get(getParams).promise();
+
+		dbGet.then((data) => {
+			if (!data.Item) {
+				callback(null, createResponse(404, 'ITEM NOT FOUND'));
+				return;
+			}
+			const mergedItem = mergeSingleDocumentWithPayment(data.Item, payment);
+			const putParams = {
+				TableName: this.tableName,
+				Item: mergedItem,
+				ConditionExpression: 'attribute_not_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+
+			const dbPut = this.db.put(putParams).promise();
+			dbPut.then(() => {
+				callback(null, createResponse({ statusCode: 200, body: mergedItem }));
+			}).catch((err) => {
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+		});
+	}
+
+
 	createDocument(body, callback) {
 
 		const timestamp = getUnixTime();
 		const { Value, Enabled, ID } = body;
-
+		const idList = [];
 		// remove payment info, payment service is single point truth
 		delete Value.paymentStatus;
 		delete Value.paymentAuthCode;
@@ -66,151 +121,61 @@ export default class PenaltyDocument {
 			Offset: timestamp,
 		};
 
-		const paymentInfo = this.getPaymentInformation(ID, item, this.processPaymentResponse);
+		idList.push(ID);
+		this.getPaymentInformation(idList)
+			.then((response) => {
+				const params = {
+					TableName: this.tableName,
+					Item: item,
+					ConditionExpression: 'attribute_not_exists(#ID)',
+					ExpressionAttributeNames: {
+						'#ID': 'ID',
+					},
+				};
 
-		console.log('stringifying response');
-		console.log(JSON.stringify(paymentInfo, null, 2));
+				const checkTest = this.validatePenalty(body, penaltyValidation, false);
+				if (!checkTest.valid) {
+					callback(null, checkTest.response);
+				} else {
+					const dbPut = this.db.put(params).promise();
+					dbPut.then(() => {
+						// stamp payment info if we have it
+						if (response.payments !== null && typeof response.payments !== 'undefined') {
+							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+							item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
+						} else {
+							item.Value.paymentStatus = 'UNPAID';
+						}
 
-		if (typeof paymentInfo.paymentStatus !== 'undefined') {
-			item.Value.paymentStatus = paymentInfo.paymentStatus;
-			if (item.Value.paymentStatus === 'PAID') {
-				item.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-				item.Value.paymentDate = paymentInfo.paymentDate;
-			}
-		}
-		const params = {
-			TableName: this.tableName,
-			Item: item,
-			ConditionExpression: 'attribute_not_exists(#ID)',
-			ExpressionAttributeNames: {
-				'#ID': 'ID',
-			},
-		};
-
-		const checkTest = this.validatePenalty(body, penaltyValidation, false);
-		if (!checkTest.valid) {
-			callback(null, checkTest.response);
-		} else {
-			const dbPut = this.db.put(params).promise();
-
-			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: item }));
+						callback(null, createResponse({ statusCode: 200, body: item }));
+					}).catch((err) => {
+						const returnResponse = createErrorResponse({ statusCode: 400, err });
+						callback(null, returnResponse);
+					});
+				}
 			}).catch((err) => {
-				const response = createErrorResponse({ statusCode: 400, err });
-				callback(null, response);
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
 			});
-		}
-	}
-
-	processPaymentResponse(err, response) {
-		if (err) {
-			console.log(`errored ${err}`);
-			console.log(JSON.stringify(err, null, 2));
-			return { paymentStatus: 'UNPAID' };
-		}
-		console.log(`success body!: ${response}`);
-
-		if (response === '{}') {
-			return { paymentStatus: 'UNPAID' };
-		}
-
-		const parsedBody = JSON.parse(response.body);
-
-		const retObj = {
-			paymentStatus: parsedBody.payment.Status,
-			paymentDate: parsedBody.payment.Payment.PaymentDate,
-			paymentAuthCode: parsedBody.payment.Payment.Authcode, // TODO rename Payment to details
-		};
-
-		const retStringify = JSON.stringify(retObj, null, 2);
-		console.log(`retObj: ${retStringify}`);
-
-		return retObj;
 	}
 
 	getPaymentInformation(idList) {
-		const url = `${this.paymentURL}/payments`;
-		console.log(`url ${url}`);
+		// TODO remove this if before deploying... only for running local
+		if (typeof this.paymentURL === 'undefined') {
+			this.paymentURL = 'https://0yqui7ctd2.execute-api.eu-west-1.amazonaws.com/dev';
+		}
+		const url = `${this.paymentURL}/payments/batches`;
 		const options = {
 			method: 'POST',
 			url,
 			body: { ids: idList },
-			headers: { Authorization: 'allow', json: true },
+			headers: { Authorization: 'allow' },
+			json: true,
 		};
 
 		return request(options);
-	}
-
-	// Update
-	updateDocument(id, body, callback) {
-
-		// TODO: Verifiy Data
-		const timestamp = getUnixTime();
-		const { Enabled, Value, Hash } = body;
-
-		// remove payment info, payment service is single point truth
-		delete Value.paymentStatus;
-		delete Value.paymentAuthCode;
-		delete Value.paymentDate;
-		// may not need to remove this delete Value.paymentToken;
-
-		const newHash = hashToken(id, Value, Enabled);
-		const params = {
-			TableName: this.tableName,
-			Key: {
-				ID: id,
-			},
-			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled',
-			ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash',
-			ExpressionAttributeNames: {
-				'#ID': 'ID',
-				'#Hash': 'Hash',
-				'#Enabled': 'Enabled',
-				'#Value': 'Value',
-				'#Offset': 'Offset',
-			},
-			ExpressionAttributeValues: {
-				':clientHash': Hash,
-				':Enabled': Enabled,
-				':Value': Value,
-				':Hash': newHash,
-				':Offset': timestamp,
-			},
-		};
-
-		const updatedItem = {
-			Enabled,
-			ID: id,
-			Offset: timestamp,
-			Hash: newHash,
-			Value,
-		};
-
-		const paymentInfo = this.getPaymentInformation(id, this.processPaymentResponse);
-
-		console.log('stringifying response');
-		console.log(JSON.stringify(paymentInfo, null, 2));
-
-		if (typeof paymentInfo.paymentStatus !== 'undefined') {
-			updatedItem.Value.paymentStatus = paymentInfo.paymentStatus;
-			if (updatedItem.Value.paymentStatus === 'PAID') {
-				updatedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-				updatedItem.Value.paymentDate = paymentInfo.paymentDate;
-			}
-		}
-		const checkTest = this.validatePenalty(body, penaltyValidation, true);
-		if (!checkTest.valid) {
-			callback(null, checkTest.response);
-		} else {
-			const dbUpdate = this.db.update(params).promise();
-
-			dbUpdate.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: updatedItem }));
-			}).catch((err) => {
-				const response = createErrorResponse({ statusCode: 400, err });
-				callback(null, response);
-			});
-		}
 	}
 
 	// Delete
@@ -219,10 +184,6 @@ export default class PenaltyDocument {
 		const clientHash = body.Hash;
 		const Enabled = false;
 		const { Value } = body;
-		// remove payment info, payment service is single point truth
-		delete Value.paymentStatus;
-		delete Value.paymentAuthCode;
-		delete Value.paymentDate;
 		// may not need to remove this delete Value.paymentToken;
 		const newHash = hashToken(id, Value, Enabled);
 
@@ -256,18 +217,6 @@ export default class PenaltyDocument {
 			Hash: newHash,
 			Value,
 		};
-
-		const paymentInfo = this.getPaymentInformation(id, this.processPaymentResponse);
-		console.log('stringifying response');
-		console.log(JSON.stringify(paymentInfo, null, 2));
-
-		if (typeof deletedItem.paymentStatus !== 'undefined') {
-			deletedItem.Value.paymentStatus = paymentInfo.paymentStatus;
-			if (deletedItem.Value.paymentStatus === 'PAID') {
-				deletedItem.Value.paymentAuthCode = paymentInfo.paymentAuthCode;
-				deletedItem.Value.paymentDate = paymentInfo.paymentDate;
-			}
-		}
 
 		const checkTest = this.validatePenalty(body, penaltyValidation, true);
 		if (!checkTest.valid) {
@@ -312,17 +261,13 @@ export default class PenaltyDocument {
 
 			this.getPaymentInformation(idList)
 				.then((response) => {
-					console.log('successful request');
-					console.log(JSON.stringify(response, null, 2));
-					// callback(response, response);
+					let mergedList = [];
+					mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+					callback(null, createResponse({ statusCode: 200, body: mergedList }));
 				})
 				.catch((err) => {
-					console.log(`error sending ${err}`);
-					// item.paymentInfo = setPaymentInfo(null,
-					// callback({ paymentStatus: 'UNPAID' }, item);
+					callback(null, createErrorResponse({ statusCode: 400, err }));
 				});
-
-			callback(null, createResponse({ statusCode: 200, body: data }));
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
@@ -337,11 +282,19 @@ export default class PenaltyDocument {
 		const clientHash = item.Hash ? item.Hash : '<NewHash>';
 		const { Value, Enabled } = item;
 
-		// remove payment info, payment service is single point truth
-		delete Value.paymentStatus;
-		delete Value.paymentAuthCode;
-		delete Value.paymentDate;
-		// may not need to remove this delete Value.paymentToken;
+		// save values before removing them on insert
+		// then add back after insert. temporary measure
+		// to avoid refactoring until proving integration with payment service works
+		const savedPaymentStatus = item.Value.paymentStatus || 'UNPAID';
+		let savedPaymentAuthCode;
+		let savedPaymentDate;
+		if (item.Value.paymentStatus === 'PAID') {
+			savedPaymentAuthCode = item.Value.paymentAuthCode;
+			savedPaymentDate = item.Value.paymentDate;
+		}
+		delete item.Value.paymentStatus;
+		delete item.Value.paymentAuthCode;
+		delete item.Value.paymentDate;
 
 		const newHash = hashToken(key, Value, Enabled);
 
@@ -379,21 +332,23 @@ export default class PenaltyDocument {
 		return new Promise((resolve) => {
 			const res = this.validatePenalty(item, penaltyValidation, false);
 			if (res.valid) {
-				console.log(`success ${res.valid}`);
 				const dbUpdate = this.db.update(params).promise();
 				dbUpdate.then(() => {
+					updatedItem.Value.paymentStatus = savedPaymentStatus;
+					if (savedPaymentStatus === 'PAID') {
+						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
+						updatedItem.Value.paymentDate = savedPaymentDate;
+					}
 					resolve(createSimpleResponse({ statusCode: 200, body: updatedItem }));
 				}).catch((err) => {
-					// const error = {
-					// 	ID: key,
-					// 	error: res.response,
-					// };
-					console.log(`errored - in catch ${err}`);
-					console.log(JSON.stringify(res, null, 2));
+					updatedItem.Value.paymentStatus = savedPaymentStatus;
+					if (savedPaymentStatus === 'PAID') {
+						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
+						updatedItem.Value.paymentDate = savedPaymentDate;
+					}
 					resolve(createSimpleResponse({ statusCode: 400, body: updatedItem, error: err }));
 				});
 			} else {
-				console.log(`fail ${res.valid}`);
 				resolve(createSimpleResponse({
 					statusCode: 400,
 					body: updatedItem,
@@ -413,14 +368,30 @@ export default class PenaltyDocument {
 
 	updateDocuments(items, context, callback) {
 		//  let items = JSON.parse(event.body).Items;
-		this.asyncLoopOrdered(this, this.updateItem, items).then((outputValue) => {
-			const result = {
-				Items: outputValue,
-			};
-			callback(null, createResponse({ statusCode: 200, body: result }));
-		}).catch((err) => {
-			callback(null, createResponse({ statusCode: 400, body: err }));
+		const idList = [];
+		items.forEach((item) => {
+			idList.push(item.ID);
+			delete item.Value.paymentStatus;
+			delete item.Value.paymentAuthCode;
+			delete item.Value.paymentDate;
 		});
+
+		this.getPaymentInformation(idList)
+			.then((response) => {
+				let mergedList = [];
+				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+				this.asyncLoopOrdered(this, this.updateItem, mergedList).then((outputValue) => {
+					const result = {
+						Items: outputValue,
+					};
+					callback(null, createResponse({ statusCode: 200, body: result }));
+				}).catch((err) => {
+					callback(null, createResponse({ statusCode: 400, body: err }));
+				});
+			})
+			.catch((err) => {
+				callback(null, createErrorResponse({ statusCode: 400, err }));
+			});
 	}
 
 	apnsMessageParams(offset, count, ids) {
@@ -466,8 +437,6 @@ export default class PenaltyDocument {
 		let count = 0;
 		const updatedIds = [];
 
-		console.log(event);
-
 		event.Records.forEach((record) => {
 			const item = parse(record.dynamodb.NewImage);
 			if (item.Offset > maxOffset) {
@@ -477,7 +446,6 @@ export default class PenaltyDocument {
 			updatedIds.push(item.ID);
 		});
 		const params = this.apnsMessageParams(maxOffset, count, updatedIds);
-		console.log(params);
 		sns.publish(params, (err, data) => {
 			if (err) {
 				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
@@ -489,8 +457,6 @@ export default class PenaltyDocument {
 	}
 
 	getSites(event, context, callback) {
-		console.log(event);
-
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
 		s3.getObject(params, (err, data) => {
 			if (err) {
@@ -505,7 +471,6 @@ export default class PenaltyDocument {
 
 	validatePenalty(data, penaltyValidationModel) {
 		const validationResult = Joi.validate(data, penaltyValidationModel.request);
-		console.log(JSON.stringify(validationResult, null, 2));
 		if (validationResult.error) {
 			const err = 'Invalid Input';
 			const error = createResponse({
@@ -571,7 +536,6 @@ export default class PenaltyDocument {
 			let middleSegment;
 
 			if (matches.length > 3) {
-				console.log(`matches found ${matches[1]}  ${matches[2]} ${matches[3]}`);
 				initialSegment = Number(matches[1]);
 				middleSegment = Number(matches[2]);
 				lastSegment = Number(matches[3]);
@@ -589,7 +553,6 @@ export default class PenaltyDocument {
 			// match first and last segments
 			const idMatches = data.ID.match(/^([0-9]{6})([0-1])([0-9]{6})_IM$/);
 			if (idMatches.length > 3) {
-				console.log(`matches found ${idMatches[1]}  ${idMatches[2]} ${idMatches[3]}`);
 				const idInitialSegment = Number(idMatches[1]);
 				const idMiddleSegment = Number(idMatches[2]);
 				const idLastSegment = Number(idMatches[3]);

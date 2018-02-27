@@ -12,5 +12,6 @@ const penaltyDocuments = new PenaltyDocument(
 export default (event, context, callback) => {
 
 	const data = JSON.parse(event.body);
-	penaltyDocuments.updateDocument(event.pathParameters.id, data, callback);
+	// id body document
+	penaltyDocuments.updateDocumentWithPayment(data, callback);
 };
