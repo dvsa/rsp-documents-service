@@ -12,5 +12,5 @@ const penaltyDocuments = new PenaltyDocument(
 );
 
 export default (event, context, callback) => {
-	penaltyDocuments.streamDocuments(event, context, callback);
+	penaltyDocuments.getDocumentByToken(event.pathParameters.token, callback);
 };
