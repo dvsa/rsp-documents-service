@@ -10,8 +10,6 @@ import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
 import penaltyValidation from '../validationModels/penaltyValidation';
 
-const tokenServiceArn = process.env.TOKEN_SERVICE_ARN;
-
 const parse = AWS.DynamoDB.Converter.unmarshall;
 const sns = new AWS.SNS();
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
@@ -20,12 +18,13 @@ const docTypeMapping = ['FPN', 'IM', 'CDN'];
 
 export default class PenaltyDocument {
 
-	constructor(db, tableName, bucketName, snsTopicARN, siteResource) {
+	constructor(db, tableName, bucketName, snsTopicARN, siteResource, tokenServiceARN) {
 		this.db = db;
 		this.tableName = tableName;
 		this.bucketName = bucketName;
 		this.snsTopicARN = snsTopicARN;
 		this.siteResource = siteResource;
+		this.tokenServiceARN = tokenServiceARN;
 	}
 
 	getDocument(id, callback) {
@@ -218,7 +217,7 @@ export default class PenaltyDocument {
 
 	getDocumentByToken(token, callback) {
 		lambda.invoke({
-			FunctionName: tokenServiceArn,
+			FunctionName: this.tokenServiceARN,
 			Payload: `{"body": { "Token": "${token}" } }`,
 		}, (error, data) => {
 			if (error) {
