@@ -10,10 +10,13 @@ import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
 import penaltyValidation from '../validationModels/penaltyValidation';
 
+const tokenServiceArn = process.env.TOKEN_SERVICE_ARN;
+
 const parse = AWS.DynamoDB.Converter.unmarshall;
 const sns = new AWS.SNS();
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-
+const lambda = new AWS.Lambda({ region: 'eu-west-1' });
+const docTypeMapping = ['FPN', 'IM', 'CDN'];
 
 export default class PenaltyDocument {
 
@@ -210,6 +213,24 @@ export default class PenaltyDocument {
 			callback(null, createResponse({ statusCode: 200, body: data }));
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
+		});
+	}
+
+	getDocumentByToken(token, callback) {
+		lambda.invoke({
+			FunctionName: tokenServiceArn,
+			Payload: `{"body": { "Token": "${token}" } }`,
+		}, (error, data) => {
+			if (error) {
+				console.log('Token service returned an error');
+				console.log(JSON.stringify(error, null, 2));
+				callback(error, null);
+			} else if (data.Payload) {
+				const parsedPayload = JSON.parse(data.Payload);
+				const parsedBody = JSON.parse(parsedPayload);
+				const docType = docTypeMapping[parsedBody.DocumentType];
+				this.getDocument(`${parsedBody.Refreence}_${docType}`, callback);
+			}
 		});
 	}
 
