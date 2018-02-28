@@ -13,13 +13,13 @@ const handler = {
 	auth,
 	list,
 	get,
+	getDocumentByToken,
 	create,
 	remove,
 	updateMulti,
 	sites,
 	stream,
 	updateWithPayment,
-	getDocumentByToken,
 };
 
 export default handler;
