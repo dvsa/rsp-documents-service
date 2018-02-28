@@ -7,6 +7,7 @@ import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import stream from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
+import getDocumentByToken from './functions/getDocumentByToken';
 
 const handler = {
 	auth,
@@ -18,6 +19,7 @@ const handler = {
 	sites,
 	stream,
 	updateWithPayment,
+	getDocumentByToken,
 };
 
 export default handler;

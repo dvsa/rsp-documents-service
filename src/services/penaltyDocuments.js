@@ -10,7 +10,6 @@ import createSimpleResponse from '../utils/createSimpleResponse';
 import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
 import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
-import mergeSingleDocumentWithPayment from '../utils/mergeSingleDocumentWithPayment';
 import penaltyValidation from '../validationModels/penaltyValidation';
 
 const parse = AWS.DynamoDB.Converter.unmarshall;
@@ -21,7 +20,7 @@ const docTypeMapping = ['FPN', 'IM', 'CDN'];
 
 export default class PenaltyDocument {
 
-	constructor(db, tableName, bucketName, snsTopicARN, siteResource, tokenServiceARN, paymentURL) {
+	constructor(db, tableName, bucketName, snsTopicARN, siteResource, paymentURL, tokenServiceARN) {
 		this.db = db;
 		this.tableName = tableName;
 		this.bucketName = bucketName;
@@ -68,7 +67,7 @@ export default class PenaltyDocument {
 	}
 
 	// put
-	updateDocumentWithPayment(id, payment, callback) {
+	updateDocumentWithPayment(id, paymentStatus, callback) {
 		const getParams = {
 			TableName: this.tableName,
 			Key: {
@@ -82,11 +81,15 @@ export default class PenaltyDocument {
 				callback(null, createResponse(404, 'ITEM NOT FOUND'));
 				return;
 			}
-			const mergedItem = mergeSingleDocumentWithPayment(data.Item, payment);
+
+			data.Item.Value.paymentStatus = paymentStatus;
+			data.Item.Hash = hashToken(id, data.Item.Value, data.Item.Enabled);
+			data.Item.Offset = getUnixTime();
+
 			const putParams = {
 				TableName: this.tableName,
-				Item: mergedItem,
-				ConditionExpression: 'attribute_not_exists(#ID)',
+				Item: data.Item,
+				ConditionExpression: 'attribute_exists(#ID)',
 				ExpressionAttributeNames: {
 					'#ID': 'ID',
 				},
@@ -94,7 +97,7 @@ export default class PenaltyDocument {
 
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: mergedItem }));
+				callback(null, createResponse({ statusCode: 200, body: data.Item }));
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
 				callback(null, returnResponse);
@@ -283,7 +286,7 @@ export default class PenaltyDocument {
 			if (error) {
 				console.log('Token service returned an error');
 				console.log(JSON.stringify(error, null, 2));
-				callback(error, null);
+				callback(null, createErrorResponse({ statusCode: 400, error }));
 			} else if (data.Payload) {
 				const parsedPayload = JSON.parse(data.Payload);
 				const parsedBody = JSON.parse(parsedPayload);
