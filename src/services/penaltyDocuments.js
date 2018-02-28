@@ -227,9 +227,8 @@ export default class PenaltyDocument {
 			} else if (data.Payload) {
 				console.log(JSON.stringify(data, null, 2));
 				const parsedPayload = JSON.parse(data.Payload);
-				const parsedBody = JSON.parse(parsedPayload);
-				const docType = docTypeMapping[parsedBody.DocumentType];
-				this.getDocument(`${parsedBody.Reference}_${docType}`, callback);
+				const docType = docTypeMapping[parsedPayload.body.DocumentType];
+				this.getDocument(`${parsedPayload.body.Reference}_${docType}`, callback);
 			}
 		});
 	}
