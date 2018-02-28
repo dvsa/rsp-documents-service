@@ -225,6 +225,7 @@ export default class PenaltyDocument {
 				console.log(JSON.stringify(error, null, 2));
 				callback(error, null);
 			} else if (data.Payload) {
+				console.log(JSON.stringify(data, null, 2));
 				const parsedPayload = JSON.parse(data.Payload);
 				const parsedBody = JSON.parse(parsedPayload);
 				const docType = docTypeMapping[parsedBody.DocumentType];
