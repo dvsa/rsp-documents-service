@@ -12,5 +12,8 @@ const penaltyDocuments = new PenaltyDocument(
 );
 
 export default (event, context, callback) => {
-	penaltyDocuments.getDocumentByToken(event.pathParameters.token, callback);
+
+	const data = JSON.parse(event.body);
+	// id body document
+	penaltyDocuments.updateDocumentWithPayment(data.id, data.paymentStatus, callback);
 };
