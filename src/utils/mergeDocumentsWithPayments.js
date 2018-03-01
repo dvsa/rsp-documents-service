@@ -11,7 +11,7 @@ export default ({ items = [], payments = [] }) => {
 			newArray[foundIndex].Value.paymentDate = payment.PaymentDetail.PaymentDate;
 		}
 	});
-	// postprocess array to mark unpaid itemms
+	// postprocess array to mark unpaid items
 	newArray.forEach((item) => {
 		const foundIndex = payments.findIndex((payment) => {
 			return item.ID === payment.ID;
