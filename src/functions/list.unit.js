@@ -21,7 +21,7 @@ describe('list', () => {
 				httpMethod: 'GET',
 				pathParameters: null,
 			};
-			sinon.stub(PenaltyDocument.prototype, 'list').callsFake((callback) => {
+			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake((callback) => {
 				const response = createResponse({
 					body: penaltyDocuments,
 				});
