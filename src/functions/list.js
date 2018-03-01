@@ -13,9 +13,17 @@ const penaltyDocuments = new PenaltyDocument(
 
 export default (event, context, callback) => {
 	let offset = 'undefined';
-	if (event.queryStringParameters != null && event.queryStringParameters !== undefined) {
+	let exclusiveStartKey = 'undefined';
+
+	if (event.queryStringParameters != null && event.queryStringParameters.Offset !== undefined) {
 		offset = event.queryStringParameters.Offset;
 	}
-	penaltyDocuments.getDocuments(offset, callback);
+
+	if (event.queryStringParameters != null &&
+		event.queryStringParameters.ExclusiveStartKey !== undefined) {
+		exclusiveStartKey = event.queryStringParameters.ExclusiveStartKey;
+	}
+
+	penaltyDocuments.getDocuments(offset, exclusiveStartKey, callback);
 
 };

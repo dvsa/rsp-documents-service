@@ -18,6 +18,8 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 const docTypeMapping = ['FPN', 'IM', 'CDN'];
 
+const maxBatchSize = 75;
+
 export default class PenaltyDocument {
 
 	constructor(db, tableName, bucketName, snsTopicARN, siteResource, paymentURL, tokenServiceARN) {
@@ -238,16 +240,21 @@ export default class PenaltyDocument {
 		}
 	}
 
-	getDocuments(offset, callback) {
+	getDocuments(offset, exclusiveStartKey, callback) {
 
 		const params = {
 			TableName: this.tableName,
+			Limit: maxBatchSize,
 		};
 
 		if (offset !== 'undefined') {
 			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
 			params.FilterExpression = '#Offset >= :Offset';
 			params.ExpressionAttributeValues = { ':Offset': Number(offset) };
+		}
+
+		if (exclusiveStartKey !== 'undefined') {
+			params.ExclusiveStartKey = { ID: exclusiveStartKey };
 		}
 
 		const dbScan = this.db.scan(params).promise();
@@ -257,6 +264,7 @@ export default class PenaltyDocument {
 			// TODO need to loop through data and populate with payment info
 			const items = data.Items;
 
+			console.log(JSON.stringify(data, null, 2));
 			items.forEach((item) => {
 				idList.push(item.ID);
 				delete item.Value.paymentStatus;
@@ -268,7 +276,25 @@ export default class PenaltyDocument {
 				.then((response) => {
 					let mergedList = [];
 					mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-					callback(null, createResponse({ statusCode: 200, body: mergedList }));
+
+					if (typeof data.LastEvaluatedKey !== 'undefined') {
+						console.log(`LastEvaluatedKey ${data.LastEvaluatedKey}`);
+						console.log(JSON.stringify(mergedList, null, 2));
+					}
+
+					callback(null, createResponse({
+						statusCode: 200,
+						body: mergedList,
+					}));
+
+					// TODO to make batch fetch work the app will need to change to read
+					// items from Items array within body instead of from body direct
+					// and read the LastEvaluated key and issue next call with
+					// ExclusiveStartKey passed in the URL
+					// callback(null, createResponse({
+					// 	statusCode: 200,
+					// 	body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
+					// }));
 				})
 				.catch((err) => {
 					callback(null, createErrorResponse({ statusCode: 400, err }));
