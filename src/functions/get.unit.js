@@ -25,7 +25,7 @@ describe('get', () => {
 				},
 			};
 			penaltyDocument = penaltyDocuments.filter(item => item.ID === '820500000878');
-			sinon.stub(PenaltyDocument.prototype, 'get').callsFake((id, callback) => {
+			sinon.stub(PenaltyDocument.prototype, 'getDocument').callsFake((id, callback) => {
 				const response = createResponse({
 					body: penaltyDocument,
 				});
