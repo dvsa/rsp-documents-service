@@ -21,10 +21,10 @@ describe('get', () => {
 			event = {
 				httpMethod: 'GET',
 				pathParameters: {
-					id: '1',
+					id: '123456669966_FPN',
 				},
 			};
-			penaltyDocument = penaltyDocuments.filter(item => item.ID === '820500000878');
+			penaltyDocument = penaltyDocuments.filter(item => item.ID === '123456669966_FPN');
 			sinon.stub(PenaltyDocument.prototype, 'getDocument').callsFake((id, callback) => {
 				const response = createResponse({
 					body: penaltyDocument,
