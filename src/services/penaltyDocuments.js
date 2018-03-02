@@ -282,19 +282,14 @@ export default class PenaltyDocument {
 						console.log(JSON.stringify(mergedList, null, 2));
 					}
 
-					callback(null, createResponse({
-						statusCode: 200,
-						body: mergedList,
-					}));
-
-					// TODO to make batch fetch work the app will need to change to read
-					// items from Items array within body instead of from body direct
-					// and read the LastEvaluated key and issue next call with
-					// ExclusiveStartKey passed in the URL
 					// callback(null, createResponse({
 					// 	statusCode: 200,
-					// 	body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
+					// 	body: { Items: mergedList },
 					// }));
+					callback(null, createResponse({
+						statusCode: 200,
+						body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
+					}));
 				})
 				.catch((err) => {
 					callback(null, createErrorResponse({ statusCode: 400, err }));
