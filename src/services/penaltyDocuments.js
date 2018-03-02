@@ -336,6 +336,11 @@ export default class PenaltyDocument {
 			savedPaymentAuthCode = item.Value.paymentAuthCode;
 			savedPaymentDate = item.Value.paymentDate;
 		}
+		console.log(` item ${item}`);
+		console.log(` payStatus ${item.Value.paymentStatus}`);
+		console.log(` payAuthCode ${item.Value.paymentAuthCode}`);
+		console.log(` paymentDate ${item.Value.paymentDate}`);
+
 		delete item.Value.paymentStatus;
 		delete item.Value.paymentAuthCode;
 		delete item.Value.paymentDate;
@@ -374,6 +379,7 @@ export default class PenaltyDocument {
 		};
 
 		return new Promise((resolve) => {
+			console.log('validating penalty');
 			const res = this.validatePenalty(item, penaltyValidation, false);
 			if (res.valid) {
 				const dbUpdate = this.db.update(params).promise();
@@ -393,6 +399,7 @@ export default class PenaltyDocument {
 					resolve(createSimpleResponse({ statusCode: 400, body: updatedItem, error: err }));
 				});
 			} else {
+				console.log('validation failed');
 				resolve(createSimpleResponse({
 					statusCode: 400,
 					body: updatedItem,
@@ -418,6 +425,7 @@ export default class PenaltyDocument {
 			delete item.Value.paymentStatus;
 			delete item.Value.paymentAuthCode;
 			delete item.Value.paymentDate;
+			console.log(` pushed ${item.ID}`);
 		});
 
 		this.getPaymentInformation(idList)
@@ -430,10 +438,12 @@ export default class PenaltyDocument {
 					};
 					callback(null, createResponse({ statusCode: 200, body: result }));
 				}).catch((err) => {
+					console.log('payment information not retrieved error');
 					callback(null, createResponse({ statusCode: 400, body: err }));
 				});
 			})
 			.catch((err) => {
+				console.log('no payment information retrieved');
 				callback(null, createErrorResponse({ statusCode: 400, err }));
 			});
 	}
