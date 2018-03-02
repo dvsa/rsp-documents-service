@@ -7,14 +7,23 @@ const penaltyDocuments = new PenaltyDocument(
 	process.env.BUCKETNAME,
 	process.env.SNSTOPICARN,
 	process.env.SITERESOURCE,
+	process.env.PAYMENTURL,
 	process.env.TOKEN_SERVICE_ARN,
 );
 
 export default (event, context, callback) => {
 	let offset = 'undefined';
-	if (event.queryStringParameters != null && event.queryStringParameters !== undefined) {
+	let exclusiveStartKey = 'undefined';
+
+	if (event.queryStringParameters != null && event.queryStringParameters.Offset !== undefined) {
 		offset = event.queryStringParameters.Offset;
 	}
-	penaltyDocuments.getDocuments(offset, callback);
+
+	if (event.queryStringParameters != null &&
+		event.queryStringParameters.ExclusiveStartKey !== undefined) {
+		exclusiveStartKey = event.queryStringParameters.ExclusiveStartKey;
+	}
+
+	penaltyDocuments.getDocuments(offset, exclusiveStartKey, callback);
 
 };

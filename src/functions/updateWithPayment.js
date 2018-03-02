@@ -7,11 +7,13 @@ const penaltyDocuments = new PenaltyDocument(
 	process.env.BUCKETNAME,
 	process.env.SNSTOPICARN,
 	process.env.SITERESOURCE,
+	process.env.PAYMENTURL,
 	process.env.TOKEN_SERVICE_ARN,
 );
 
 export default (event, context, callback) => {
 
 	const data = JSON.parse(event.body);
-	penaltyDocuments.updateDocument(event.pathParameters.id, data, callback);
+	// id body document
+	penaltyDocuments.updateDocumentWithPayment(data.id, data.paymentStatus, callback);
 };
