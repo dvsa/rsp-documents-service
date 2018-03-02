@@ -51,7 +51,6 @@ export default class PenaltyDocument {
 			idList.push(id);
 			this.getPaymentInformation(idList)
 				.then((response) => {
-					console.log(JSON.stringify(response, null, 2));
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
@@ -264,36 +263,33 @@ export default class PenaltyDocument {
 			// TODO need to loop through data and populate with payment info
 			const items = data.Items;
 
-			console.log(JSON.stringify(data, null, 2));
-			items.forEach((item) => {
-				idList.push(item.ID);
-				delete item.Value.paymentStatus;
-				delete item.Value.paymentAuthCode;
-				delete item.Value.paymentDate;
-			});
-
-			this.getPaymentInformation(idList)
-				.then((response) => {
-					let mergedList = [];
-					mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-
-					if (typeof data.LastEvaluatedKey !== 'undefined') {
-						console.log(`LastEvaluatedKey ${data.LastEvaluatedKey}`);
-						console.log(JSON.stringify(mergedList, null, 2));
-					}
-
-					// callback(null, createResponse({
-					// 	statusCode: 200,
-					// 	body: { Items: mergedList },
-					// }));
-					callback(null, createResponse({
-						statusCode: 200,
-						body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
-					}));
-				})
-				.catch((err) => {
-					callback(null, createErrorResponse({ statusCode: 400, err }));
+			if (data.Count > 0) {
+				items.forEach((item) => {
+					idList.push(item.ID);
+					delete item.Value.paymentStatus;
+					delete item.Value.paymentAuthCode;
+					delete item.Value.paymentDate;
 				});
+
+				this.getPaymentInformation(idList)
+					.then((response) => {
+						let mergedList = [];
+						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+						callback(null, createResponse({
+							statusCode: 200,
+							body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
+						}));
+					})
+					.catch((err) => {
+						callback(null, createErrorResponse({ statusCode: 400, err }));
+					});
+			} else {
+				// no records found in scan so return empty
+				callback(null, createResponse({
+					statusCode: 200,
+					body: { Items: [] },
+				}));
+			}
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
@@ -336,10 +332,6 @@ export default class PenaltyDocument {
 			savedPaymentAuthCode = item.Value.paymentAuthCode;
 			savedPaymentDate = item.Value.paymentDate;
 		}
-		console.log(` item ${item}`);
-		console.log(` payStatus ${item.Value.paymentStatus}`);
-		console.log(` payAuthCode ${item.Value.paymentAuthCode}`);
-		console.log(` paymentDate ${item.Value.paymentDate}`);
 
 		delete item.Value.paymentStatus;
 		delete item.Value.paymentAuthCode;
@@ -379,7 +371,6 @@ export default class PenaltyDocument {
 		};
 
 		return new Promise((resolve) => {
-			console.log('validating penalty');
 			const res = this.validatePenalty(item, penaltyValidation, false);
 			if (res.valid) {
 				const dbUpdate = this.db.update(params).promise();
@@ -399,7 +390,6 @@ export default class PenaltyDocument {
 					resolve(createSimpleResponse({ statusCode: 400, body: updatedItem, error: err }));
 				});
 			} else {
-				console.log('validation failed');
 				resolve(createSimpleResponse({
 					statusCode: 400,
 					body: updatedItem,
@@ -425,7 +415,6 @@ export default class PenaltyDocument {
 			delete item.Value.paymentStatus;
 			delete item.Value.paymentAuthCode;
 			delete item.Value.paymentDate;
-			console.log(` pushed ${item.ID}`);
 		});
 
 		this.getPaymentInformation(idList)
@@ -438,12 +427,10 @@ export default class PenaltyDocument {
 					};
 					callback(null, createResponse({ statusCode: 200, body: result }));
 				}).catch((err) => {
-					console.log('payment information not retrieved error');
 					callback(null, createResponse({ statusCode: 400, body: err }));
 				});
 			})
 			.catch((err) => {
-				console.log('no payment information retrieved');
 				callback(null, createErrorResponse({ statusCode: 400, err }));
 			});
 	}
@@ -514,10 +501,8 @@ export default class PenaltyDocument {
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
 		s3.getObject(params, (err, data) => {
 			if (err) {
-				console.log(err, err.stack); // an error occurred
 				callback(null, createResponse({ statusCode: 400, body: err }));
 			} else {
-				console.log(data); // successful response
 				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
 			}
 		});
