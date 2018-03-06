@@ -50,6 +50,7 @@ export default class PenaltyDocument {
 			}
 			const idList = [];
 			idList.push(id);
+			delete data.Item.Origin;
 			this.getPaymentInformation(idList)
 				.then((response) => {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
@@ -120,18 +121,18 @@ export default class PenaltyDocument {
 		delete Value.paymentAuthCode;
 		delete Value.paymentDate;
 		// may not need to remove this delete Value.paymentToken;
+		if (typeof body.Origin === 'undefined') {
+			body.Origin = 'APP';
+		}
 
 		const item = {
 			ID,
 			Value,
 			Enabled,
+			Origin: body.Origin,
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
 		};
-
-		if (typeof body.Origin === 'undefined') {
-			body.Origin = 'APP';
-		}
 
 		idList.push(ID);
 		this.getPaymentInformation(idList)
@@ -278,6 +279,7 @@ export default class PenaltyDocument {
 					delete item.Value.paymentStatus;
 					delete item.Value.paymentAuthCode;
 					delete item.Value.paymentDate;
+					delete item.Origin; // remove Origin as not needed in response
 				});
 
 				this.getPaymentInformation(idList)
@@ -355,6 +357,7 @@ export default class PenaltyDocument {
 					console.log(JSON.stringify(e, null, 2));
 					callback(null, createErrorResponse({ statusCode: 400, e }));
 				}
+				return;
 			}
 			callback(null, createErrorResponse({
 				statusCode: 400,
