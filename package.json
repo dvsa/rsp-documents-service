@@ -27,14 +27,12 @@
     "start-build": "rm -rf build && npm run copy-localfiles && npm run compile && npm run copy-package && npm run build-node-modules && npm run post-build-cleanup && npm run build-artifact && rm -f build/serverless.yml",
     "build-node-modules": "cd build && npm install --production",
     "build-artifact": "cd build && rm -rf artifacts && pwd && sls package --package artifacts",
-    "post-build-cleanup": "rm -rf build/mock-data && rm -f build/package.json && rm -f build/openApiReplace.js && rm -f build/package-lock.json",
     "prepush": "npm test && npm run lint && npm run check-security",
     "check-security": "git secrets --scan",
     "check-security-log": "git log -p | scanrepo"
   },
-  "devDependencies": {
-    "babel-cli": "~6.18.0",
-    "babel-core": "^6.26.0",
+  "dependencies": {
+    "aws-sdk": "^2.140.0",
     "babel-loader": "^7.1.2",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-preset-env": "^1.6.1",
@@ -44,26 +42,23 @@
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
     "expect": "^21.2.1",
+    "joi": "^13.1.1",
+    "js-sha256": "^0.7.1",
     "mocha": "^4.0.1",
     "nodemon": "^1.12.1",
     "npm-run-all": "^4.1.1",
     "replace": "^0.3.0",
-    "rimraf": "^2.6.2",
-    "serverless": "^1.23.0",
-    "serverless-dynamodb-local": "^0.2.26",
-    "serverless-offline": "^3.16.0",
-    "serverless-openapi-documentation": "^0.3.0",
-    "sinon": "^4.0.2",
-    "supertest": "^3.0.0",
-    "wait-on": "^2.0.2"
-  },
-  "dependencies": {
-    "aws-sdk": "^2.140.0",
-    "joi": "^13.1.1",
-    "js-sha256": "^0.7.1",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
+    "rimraf": "^2.6.2",
+    "serverless": "^1.23.0",
     "serverless-dynamodb-client": "0.0.2",
-    "uuid": "^3.1.0"
+    "serverless-dynamodb-local": "^0.2.26",
+    "serverless-offline": "^3.16.0",
+    "serverless-openapi-documentation": "0.3.0",
+    "sinon": "^4.0.2",
+    "supertest": "^3.0.0",
+    "uuid": "^3.1.0",
+    "wait-on": "^2.0.2"
   }
 }
