@@ -1,0 +1,162 @@
+{
+  "type": "object",
+  "items": {
+    "type": "object",
+    "required": [
+      "ID",
+      "Value"
+    ],
+    "properties": {
+      "ID": {
+        "type": "string"
+      },
+      "Hash": {
+        "type": "string"
+      },
+      "Enabled": {
+        "type": "boolean"
+      },
+      "Offset": {
+        "type": "integer"
+      },
+      "Value": {
+        "type": "object",
+        "required": [
+          "PenaltyType",
+          "PaymentStatus",
+          "PaymentToken",
+          "ReferenceNo",
+          "PenaltyAmount"
+        ],
+        "properties": {
+          "PenaltyType": {
+            "type": "string"
+          },
+          "PaymentStatus": {
+            "type": "string"
+          },
+          "PaymentAuthCode": {
+            "type": "string"
+          },
+          "PaymentToken": {
+            "type": "string"
+          },
+          "FormNo": {
+            "type": "string"
+          },
+          "ReferenceNo": {
+            "type": "integer"
+          },
+          "DriverDetails": {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "type": "string"
+              },
+              "Address": {
+                "type": "string"
+              },
+              "LicenceNumber": {
+                "type": "string"
+              }
+            }
+          },
+          "VehicleDetails": {
+            "type": "object",
+            "properties": {
+              "RegNo": {
+                "type": "string"
+              },
+              "Make": {
+                "type": "string"
+              },
+              "Nationality": {
+                "type": "string"
+              }
+            }
+          },
+          "TrailerDetails": {
+            "type": "object",
+            "properties": {
+              "Number1": {
+                "type": "string"
+              },
+              "Number2": {
+                "type": "string"
+              }
+            }
+          },
+          "NonEndorsableOffence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PenaltyAmount": {
+            "type": "integer"
+          },
+          "PaymentDueDate": {
+            "type": "integer"
+          },
+          "PaymentDate": {
+            "type": "integer"
+          },
+          "OfficerName": {
+            "type": "string"
+          },
+          "DateTime": {
+            "type": "integer"
+          },
+          "PlaceWhereIssued": {
+            "type": "string"
+          },
+          "OfficerID": {
+            "type": "string"
+          },
+          "SiteCode": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "example": {
+      "Items":{
+        "ID": "820500000877",
+        "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
+        "Enabled": true,
+        "Offset": 1511781557836,
+        "Value": {
+          "PenaltyType": "IM",
+          "FormNo": "FPN 11/08",
+          "ReferenceNo": "820500000877",
+          "DriverDetails": {
+            "Name": "James Moriarty",
+            "Address": "1000 Baker Street, NW1 5LA, LONDON",
+            "LicenceNumber": "MORIA801127JA09900"
+          },
+          "VehicleDetails": {
+            "RegNo": "XXXXXXX",
+            "Make": "Rolls Royce",
+            "Nationality": "UK"
+          },
+          "TrailerDetails": {
+            "Number1": "1",
+            "Number2": "2"
+          },
+          "NonEndorsableOffence": [
+            "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
+          ],
+          "PenaltyAmount": "50.00",
+          "PaymentDueDate": 479945600,
+          "OfficerName": "Sherlock Holmes",
+          "DateTime": 1476180720,
+          "PlaceWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
+          "OfficerID": "Blah111",
+          "SiteCode": 0
+				}
+			},
+      "ScannedCount": 0,
+      "Count": 0
+    }    
+  }
+}

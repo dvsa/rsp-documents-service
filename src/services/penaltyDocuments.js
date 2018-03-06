@@ -10,6 +10,7 @@ import createSimpleResponse from '../utils/createSimpleResponse';
 import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
 import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
+import formatMinimalDocument from '../utils/formatMinimalDocument';
 import penaltyValidation from '../validationModels/penaltyValidation';
 
 const parse = AWS.DynamoDB.Converter.unmarshall;
@@ -313,11 +314,55 @@ export default class PenaltyDocument {
 				console.log(JSON.stringify(error, null, 2));
 				callback(null, createErrorResponse({ statusCode: 400, error }));
 			} else if (data.Payload) {
-				console.log(JSON.stringify(data, null, 2));
-				const parsedPayload = JSON.parse(data.Payload);
-				const docType = docTypeMapping[parsedPayload.body.DocumentType];
-				this.getDocument(`${parsedPayload.body.Reference}_${docType}`, callback);
+				try {
+					console.log(JSON.stringify(data, null, 2));
+					const parsedPayload = JSON.parse(data.Payload);
+					const docType = docTypeMapping[parsedPayload.body.DocumentType];
+					const docID = `${parsedPayload.body.Reference}_${docType}`;
+
+					this.getDocument(docID, (err, res) => {
+						if (err) {
+							this.getPaymentInformation([docID])
+								.then((response) => {
+									const paymentInfo = {};
+									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
+										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+										paymentInfo.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+									} else {
+										paymentInfo.paymentStatus = 'UNPAID';
+									}
+
+									const minimalDocument = formatMinimalDocument(
+										parsedPayload.body,
+										docID,
+										token,
+										docType,
+										paymentInfo,
+									);
+
+									callback(null, createResponse({ statusCode: 200, body: minimalDocument }));
+								})
+								.catch((e) => {
+									console.log(JSON.stringify(e, null, 2));
+									callback(null, createErrorResponse({ statusCode: 400, e }));
+								});
+							return;
+						}
+						callback(null, createResponse({ statusCode: 200, body: res.body }));
+					});
+				} catch (e) {
+					console.log(JSON.stringify(e, null, 2));
+					callback(null, createErrorResponse({ statusCode: 400, e }));
+				}
 			}
+			callback(null, createErrorResponse({
+				statusCode: 400,
+				err: {
+					name: 'No data returned from Token Service',
+					message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
+				},
+			}));
 		});
 	}
 
