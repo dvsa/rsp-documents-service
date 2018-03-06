@@ -355,6 +355,7 @@ export default class PenaltyDocument {
 					console.log(JSON.stringify(e, null, 2));
 					callback(null, createErrorResponse({ statusCode: 400, e }));
 				}
+				return;
 			}
 			callback(null, createErrorResponse({
 				statusCode: 400,
