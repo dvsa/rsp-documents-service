@@ -119,6 +119,7 @@ export default class PenaltyDocument {
 		delete Value.paymentAuthCode;
 		delete Value.paymentDate;
 		// may not need to remove this delete Value.paymentToken;
+
 		const item = {
 			ID,
 			Value,
@@ -126,6 +127,10 @@ export default class PenaltyDocument {
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
 		};
+
+		if (typeof body.Origin === 'undefined') {
+			body.Origin = 'APP';
+		}
 
 		idList.push(ID);
 		this.getPaymentInformation(idList)
@@ -243,20 +248,23 @@ export default class PenaltyDocument {
 
 		const params = {
 			TableName: this.tableName,
+			IndexName: 'ByOffset',
 			Limit: maxBatchSize,
 		};
 
-		if (offset !== 'undefined') {
+		if (typeof offset !== 'undefined') {
+			params.KeyConditionExpression = 'Origin = :Origin and #Offset >= :Offset';
+			// params.FilterExpression = '#Offset >= :Offset';
 			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
-			params.FilterExpression = '#Offset >= :Offset';
-			params.ExpressionAttributeValues = { ':Offset': Number(offset) };
+			params.ExpressionAttributeValues = { ':Offset': Number(offset), ':Origin': 'APP' };
+			// could use ScanIndexForward of false to return in most recent order...
 		}
 
 		if (exclusiveStartKey !== 'undefined') {
-			params.ExclusiveStartKey = { ID: exclusiveStartKey };
+			params.ExclusiveStartKey = exclusiveStartKey;
 		}
 
-		const dbScan = this.db.scan(params).promise();
+		const dbScan = this.db.query(params).promise();
 		const idList = [];
 
 		dbScan.then((data) => {
