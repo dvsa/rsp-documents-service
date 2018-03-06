@@ -4,24 +4,24 @@ export default (tokenObject, id, tokenString, penaltyType, paymentInfo) => {
 		return {
 			ID: id,
 			Value: {
-				PenaltyType: penaltyType,
-				PaymentStatus: paymentInfo.paymentStatus,
-				PaymentToken: tokenString,
-				ReferenceNo: tokenObject.Reference,
-				PenaltyAmount: tokenObject.PaymentAmount,
+				penaltyType,
+				paymentStatus: paymentInfo.paymentStatus,
+				paymentToken: tokenString,
+				referenceNo: tokenObject.Reference,
+				penaltyAmount: tokenObject.PaymentAmount,
 			},
 		};
 	}
 	return {
 		ID: id,
 		Value: {
-			PenaltyType: penaltyType,
-			PaymentStatus: paymentInfo.paymentStatus,
-			PaymentAuthCode: paymentInfo.paymentAuthCode,
-			PaymentDate: paymentInfo.paymentDate,
-			PaymentToken: tokenString,
-			ReferenceNo: tokenObject.Reference,
-			PenaltyAmount: tokenObject.PaymentAmount,
+			penaltyType,
+			paymentStatus: paymentInfo.paymentStatus,
+			paymentAuthCode: paymentInfo.paymentAuthCode,
+			paymentDate: paymentInfo.paymentDate,
+			paymentToken: tokenString,
+			referenceNo: tokenObject.Reference,
+			penaltyAmount: tokenObject.PaymentAmount,
 		},
 	};
 };

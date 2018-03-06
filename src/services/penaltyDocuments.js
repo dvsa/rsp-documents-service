@@ -44,15 +44,20 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(params).promise();
 
 		dbGet.then((data) => {
-			if (!data.Item) {
-				callback(null, createResponse(404, 'ITEM NOT FOUND'));
+			console.log(JSON.stringify(data.Item, null, 2));
+			console.log('before object check');
+			if (!data.Item || this.isEmpty(data.Item)) {
+				console.log('404 error here we come');
+				callback(null, createResponse({ statusCode: 404, body: 'ITEM NOT FOUND' }));
 				return;
 			}
+			console.log('after object check');
 			const idList = [];
 			idList.push(id);
 			delete data.Item.Origin;
 			this.getPaymentInformation(idList)
 				.then((response) => {
+					console.log('getting paymentinformation');
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
@@ -67,6 +72,10 @@ export default class PenaltyDocument {
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		});
+	}
+
+	isEmpty(obj) {
+		return JSON.stringify(obj) === JSON.stringify({});
 	}
 
 	// put
@@ -350,7 +359,7 @@ export default class PenaltyDocument {
 									callback(null, createErrorResponse({ statusCode: 400, e }));
 								});
 						} else if (res.statusCode === 200) {
-							callback(null, createResponse({ statusCode: 200, body: res.body }));
+							callback(null, createResponse({ statusCode: 200, body: JSON.parse(res.body) }));
 						} else {
 							callback(null, createErrorResponse({
 								statusCode: 400,
@@ -400,12 +409,15 @@ export default class PenaltyDocument {
 		delete item.Value.paymentStatus;
 		delete item.Value.paymentAuthCode;
 		delete item.Value.paymentDate;
-
+		if (typeof item.Origin === 'undefined') {
+			item.Origin = 'APP';
+		}
 		const newHash = hashToken(key, Value, Enabled);
 
 		const updatedItem = {
 			Enabled,
 			ID: key,
+			Origin: item.Origin,
 			Offset: timestamp,
 			Hash: newHash,
 			Value,
@@ -416,7 +428,7 @@ export default class PenaltyDocument {
 			Key: {
 				ID: key,
 			},
-			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled',
+			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin',
 			ConditionExpression: 'attribute_not_exists(#ID) OR (attribute_exists(#ID) AND #Hash=:clientHash)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
@@ -424,6 +436,7 @@ export default class PenaltyDocument {
 				'#Enabled': 'Enabled',
 				'#Value': 'Value',
 				'#Offset': 'Offset',
+				'#Origin': 'Origin',
 			},
 			ExpressionAttributeValues: {
 				':clientHash': clientHash,
@@ -431,6 +444,7 @@ export default class PenaltyDocument {
 				':Value': Value,
 				':Hash': newHash,
 				':Offset': timestamp,
+				':Origin': item.Origin,
 			},
 		};
 
