@@ -48,5 +48,6 @@ export default {
 		Enabled: Joi.boolean().required(),
 		Offset: Joi.number(),
 		Value: Joi.object(valueSchema),
+		Origin: Joi.string(),
 	}),
 };
