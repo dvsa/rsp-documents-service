@@ -321,7 +321,7 @@ export default class PenaltyDocument {
 					const docID = `${parsedPayload.body.Reference}_${docType}`;
 
 					this.getDocument(docID, (err, res) => {
-						if (err) {
+						if (res.statusCode === 404) {
 							this.getPaymentInformation([docID])
 								.then((response) => {
 									const paymentInfo = {};
@@ -347,9 +347,17 @@ export default class PenaltyDocument {
 									console.log(JSON.stringify(e, null, 2));
 									callback(null, createErrorResponse({ statusCode: 400, e }));
 								});
-							return;
+						} else if (res.statusCode === 200) {
+							callback(null, createResponse({ statusCode: 200, body: res.body }));
+						} else {
+							callback(null, createErrorResponse({
+								statusCode: 400,
+								err: {
+									name: 'Error from GetDocument',
+									message: 'The GetDocument method returned an unhandled error',
+								},
+							}));
 						}
-						callback(null, createResponse({ statusCode: 200, body: res.body }));
 					});
 				} catch (e) {
 					console.log(JSON.stringify(e, null, 2));
