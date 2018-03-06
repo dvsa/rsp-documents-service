@@ -21,7 +21,6 @@ export default (event, context, callback) => {
 
 	if (event.queryStringParameters != null &&
 		typeof event.queryStringParameters.NextID !== 'undefined') {
-		console.log('got in here');
 		exclusiveStartKey = {
 			ID: event.queryStringParameters.NextID,
 			Offset: Number(event.queryStringParameters.NextOffset),

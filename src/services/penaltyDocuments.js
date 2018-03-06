@@ -261,8 +261,6 @@ export default class PenaltyDocument {
 		}
 
 		if (exclusiveStartKey !== 'undefined') {
-			console.log('here');
-			console.log(JSON.stringify(exclusiveStartKey, null, 2));
 			params.ExclusiveStartKey = exclusiveStartKey;
 		}
 
