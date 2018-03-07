@@ -44,20 +44,15 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(params).promise();
 
 		dbGet.then((data) => {
-			console.log(JSON.stringify(data.Item, null, 2));
-			console.log('before object check');
 			if (!data.Item || this.isEmpty(data.Item)) {
-				console.log('404 error here we come');
 				callback(null, createResponse({ statusCode: 404, body: 'ITEM NOT FOUND' }));
 				return;
 			}
-			console.log('after object check');
 			const idList = [];
 			idList.push(id);
 			delete data.Item.Origin;
 			this.getPaymentInformation(idList)
 				.then((response) => {
-					console.log('getting paymentinformation');
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
