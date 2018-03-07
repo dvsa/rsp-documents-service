@@ -44,12 +44,13 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(params).promise();
 
 		dbGet.then((data) => {
-			if (!data.Item) {
-				callback(null, createResponse(404, 'ITEM NOT FOUND'));
+			if (!data.Item || this.isEmpty(data.Item)) {
+				callback(null, createResponse({ statusCode: 404, body: 'ITEM NOT FOUND' }));
 				return;
 			}
 			const idList = [];
 			idList.push(id);
+			delete data.Item.Origin;
 			this.getPaymentInformation(idList)
 				.then((response) => {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
@@ -66,6 +67,10 @@ export default class PenaltyDocument {
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		});
+	}
+
+	isEmpty(obj) {
+		return JSON.stringify(obj) === JSON.stringify({});
 	}
 
 	// put
@@ -120,18 +125,18 @@ export default class PenaltyDocument {
 		delete Value.paymentAuthCode;
 		delete Value.paymentDate;
 		// may not need to remove this delete Value.paymentToken;
+		if (typeof body.Origin === 'undefined') {
+			body.Origin = 'APP';
+		}
 
 		const item = {
 			ID,
 			Value,
 			Enabled,
+			Origin: body.Origin,
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
 		};
-
-		if (typeof body.Origin === 'undefined') {
-			body.Origin = 'APP';
-		}
 
 		idList.push(ID);
 		this.getPaymentInformation(idList)
@@ -278,6 +283,7 @@ export default class PenaltyDocument {
 					delete item.Value.paymentStatus;
 					delete item.Value.paymentAuthCode;
 					delete item.Value.paymentDate;
+					delete item.Origin; // remove Origin as not needed in response
 				});
 
 				this.getPaymentInformation(idList)
@@ -348,7 +354,7 @@ export default class PenaltyDocument {
 									callback(null, createErrorResponse({ statusCode: 400, e }));
 								});
 						} else if (res.statusCode === 200) {
-							callback(null, createResponse({ statusCode: 200, body: res.body }));
+							callback(null, createResponse({ statusCode: 200, body: JSON.parse(res.body) }));
 						} else {
 							callback(null, createErrorResponse({
 								statusCode: 400,
@@ -398,12 +404,15 @@ export default class PenaltyDocument {
 		delete item.Value.paymentStatus;
 		delete item.Value.paymentAuthCode;
 		delete item.Value.paymentDate;
-
+		if (typeof item.Origin === 'undefined') {
+			item.Origin = 'APP';
+		}
 		const newHash = hashToken(key, Value, Enabled);
 
 		const updatedItem = {
 			Enabled,
 			ID: key,
+			Origin: item.Origin,
 			Offset: timestamp,
 			Hash: newHash,
 			Value,
@@ -414,7 +423,7 @@ export default class PenaltyDocument {
 			Key: {
 				ID: key,
 			},
-			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled',
+			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin',
 			ConditionExpression: 'attribute_not_exists(#ID) OR (attribute_exists(#ID) AND #Hash=:clientHash)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
@@ -422,6 +431,7 @@ export default class PenaltyDocument {
 				'#Enabled': 'Enabled',
 				'#Value': 'Value',
 				'#Offset': 'Offset',
+				'#Origin': 'Origin',
 			},
 			ExpressionAttributeValues: {
 				':clientHash': clientHash,
@@ -429,6 +439,7 @@ export default class PenaltyDocument {
 				':Value': Value,
 				':Hash': newHash,
 				':Offset': timestamp,
+				':Origin': item.Origin,
 			},
 		};
 
