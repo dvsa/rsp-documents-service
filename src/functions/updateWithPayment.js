@@ -13,7 +13,10 @@ const penaltyDocuments = new PenaltyDocument(
 
 export default (event, context, callback) => {
 
-	const data = JSON.parse(event.body);
+	console.log(JSON.stringify(event, null, 2));
+	const data = event.body;
+
+	console.log(`id ${data.id} status ${data.paymentStatus}`);
 	// id body document
 	penaltyDocuments.updateDocumentWithPayment(data.id, data.paymentStatus, callback);
 };

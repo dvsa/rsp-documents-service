@@ -7,7 +7,7 @@ export default (tokenObject, id, tokenString, penaltyType, paymentInfo) => {
 				penaltyType,
 				paymentStatus: paymentInfo.paymentStatus,
 				paymentToken: tokenString,
-				referenceNo: tokenObject.Reference,
+				referenceNo: tokenObject.FormattedReference,
 				penaltyAmount: tokenObject.PaymentAmount,
 			},
 		};
@@ -20,7 +20,7 @@ export default (tokenObject, id, tokenString, penaltyType, paymentInfo) => {
 			paymentAuthCode: paymentInfo.paymentAuthCode,
 			paymentDate: paymentInfo.paymentDate,
 			paymentToken: tokenString,
-			referenceNo: tokenObject.Reference,
+			referenceNo: tokenObject.FormattedReference,
 			penaltyAmount: tokenObject.PaymentAmount,
 		},
 	};
