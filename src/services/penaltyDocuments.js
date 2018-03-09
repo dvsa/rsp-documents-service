@@ -45,7 +45,9 @@ export default class PenaltyDocument {
 
 		dbGet.then((data) => {
 			console.log(JSON.stringify(data, null, 2));
+			console.log(JSON.stringify(data.Item, null, 2));
 			if (!data.Item || this.isEmpty(data)) {
+				console.log('did i get in here');
 				callback(null, createResponse({ statusCode: 404, body: 'ITEM NOT FOUND' }));
 				return;
 			}
