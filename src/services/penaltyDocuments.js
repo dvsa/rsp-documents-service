@@ -44,11 +44,8 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(params).promise();
 
 		dbGet.then((data) => {
-			console.log(JSON.stringify(data, null, 2));
-			console.log(JSON.stringify(data.Item, null, 2));
 			if (!data.Item || this.isEmpty(data)) {
-				console.log('did i get in here');
-				callback(null, createResponse({ statusCode: 404, body: 'ITEM NOT FOUND' }));
+				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
 				return;
 			}
 			const idList = [];
@@ -107,6 +104,7 @@ export default class PenaltyDocument {
 
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
+				console.log('calling sendPaymentNotification');
 				this.sendPaymentNotification(paymentInfo, data.Item);
 				callback(null, createResponse({ statusCode: 200, body: data.Item }));
 			}).catch((err) => {
@@ -122,7 +120,7 @@ export default class PenaltyDocument {
 		const params = this.paymentMessageParams(paymentInfo, documentInfo);
 		sns.publish(params, (err, data) => {
 			if (err) {
-				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+				console.log('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
 			} else {
 				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
 			}
@@ -336,10 +334,19 @@ export default class PenaltyDocument {
 			} else if (data.Payload) {
 				try {
 					const parsedPayload = JSON.parse(data.Payload);
+					if (parsedPayload.statusCode === 400) {
+						console.log('Token service returned an error');
+						const parsedBody = JSON.parse(parsedPayload.body);
+						callback(null, createErrorResponse({ statusCode: 400, err: { name: 'Token Error', message: parsedBody.message } }));
+						return;
+					}
+
 					const parsedBody = JSON.parse(parsedPayload.body);
 					const docType = docTypeMapping[parsedBody.DocumentType];
 					const docID = `${parsedBody.Reference}_${docType}`;
 					this.getDocument(docID, (err, res) => {
+						console.log('res');
+						console.log(JSON.stringify(res));
 						if (res.statusCode === 404) {
 							this.getPaymentInformation([docID])
 								.then((response) => {
@@ -523,7 +530,6 @@ export default class PenaltyDocument {
 
 	paymentMessageParams(paymentInfo, documentInfo) {
 		const text = 'Payment has been made!';
-
 		const aps = {
 			// alert: {
 			// 	title: 'DVSA Officer FPNs',
@@ -539,19 +545,23 @@ export default class PenaltyDocument {
 				aps,
 				site: documentInfo.Value.siteCode,
 				offset: documentInfo.Offset,
-				regno: documentInfo.vehicleDetails.regNo,
+				refNo: documentInfo.Value.referenceNo,
+				regNo: documentInfo.Value.vehicleDetails.regNo,
 				type: paymentInfo.penaltyType,
 				status: paymentInfo.paymentStatus,
-				amount: paymentInfo.paymentAmount,
+				amount: Number(paymentInfo.paymentAmount),
 			}),
-
 			APNS_SANDBOX: JSON.stringify({
 				aps,
 				offset: documentInfo.Offset,
 				site: documentInfo.Value.siteCode,
+				refNo: documentInfo.Value.referenceNo,
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
 			}),
 		};
-
 		const params = {
 			Subject: text,
 			Message: JSON.stringify(message),
