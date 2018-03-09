@@ -531,10 +531,6 @@ export default class PenaltyDocument {
 	paymentMessageParams(paymentInfo, documentInfo) {
 		const text = 'Payment has been made!';
 		const aps = {
-			// alert: {
-			// 	title: 'DVSA Officer FPNs',
-			// 	body: text,
-			// },
 			'content-available': 1,
 			badge: 0,
 		};
