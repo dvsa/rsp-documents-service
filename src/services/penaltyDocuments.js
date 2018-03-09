@@ -44,7 +44,8 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(params).promise();
 
 		dbGet.then((data) => {
-			if (!data.Item || this.isEmpty(data.Item)) {
+			console.log(JSON.stringify(data, null, 2));
+			if (!data.Item || this.isEmpty(data)) {
 				callback(null, createResponse({ statusCode: 404, body: 'ITEM NOT FOUND' }));
 				return;
 			}
@@ -74,11 +75,11 @@ export default class PenaltyDocument {
 	}
 
 	// put
-	updateDocumentWithPayment(id, paymentStatus, callback) {
+	updateDocumentWithPayment(paymentInfo, callback) {
 		const getParams = {
 			TableName: this.tableName,
 			Key: {
-				ID: id,
+				ID: paymentInfo.id,
 			},
 		};
 		const dbGet = this.db.get(getParams).promise();
@@ -89,8 +90,8 @@ export default class PenaltyDocument {
 				return;
 			}
 
-			data.Item.Value.paymentStatus = paymentStatus;
-			data.Item.Hash = hashToken(id, data.Item.Value, data.Item.Enabled);
+			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
 			data.Item.Offset = getUnixTime();
 
 			const putParams = {
@@ -104,6 +105,7 @@ export default class PenaltyDocument {
 
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
+				this.sendPaymentNotification(paymentInfo, data.Item);
 				callback(null, createResponse({ statusCode: 200, body: data.Item }));
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
@@ -114,6 +116,16 @@ export default class PenaltyDocument {
 		});
 	}
 
+	sendPaymentNotification(paymentInfo, documentInfo) {
+		const params = this.paymentMessageParams(paymentInfo, documentInfo);
+		sns.publish(params, (err, data) => {
+			if (err) {
+				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+			} else {
+				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
+			}
+		});
+	}
 
 	createDocument(body, callback) {
 
@@ -321,11 +333,10 @@ export default class PenaltyDocument {
 				callback(null, createErrorResponse({ statusCode: 400, error }));
 			} else if (data.Payload) {
 				try {
-					console.log(JSON.stringify(data, null, 2));
 					const parsedPayload = JSON.parse(data.Payload);
-					const docType = docTypeMapping[parsedPayload.body.DocumentType];
-					const docID = `${parsedPayload.body.Reference}_${docType}`;
-
+					const parsedBody = JSON.parse(parsedPayload.body);
+					const docType = docTypeMapping[parsedBody.DocumentType];
+					const docID = `${parsedBody.Reference}_${docType}`;
 					this.getDocument(docID, (err, res) => {
 						if (res.statusCode === 404) {
 							this.getPaymentInformation([docID])
@@ -340,7 +351,7 @@ export default class PenaltyDocument {
 									}
 
 									const minimalDocument = formatMinimalDocument(
-										parsedPayload.body,
+										parsedBody,
 										docID,
 										token,
 										docType,
@@ -508,15 +519,56 @@ export default class PenaltyDocument {
 			});
 	}
 
-	apnsMessageParams(offset, count, ids) {
-
-		const text = 'New documents are available!';
+	paymentMessageParams(paymentInfo, documentInfo) {
+		const text = 'Payment has been made!';
 
 		const aps = {
-			alert: {
-				title: 'DVSA Officer FPNs',
-				body: text,
-			},
+			// alert: {
+			// 	title: 'DVSA Officer FPNs',
+			// 	body: text,
+			// },
+			'content-available': 1,
+			badge: 0,
+		};
+
+		const message = {
+			default: text,
+			APNS: JSON.stringify({
+				aps,
+				site: documentInfo.Value.siteCode,
+				offset: documentInfo.Offset,
+				regno: documentInfo.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: paymentInfo.paymentAmount,
+			}),
+
+			APNS_SANDBOX: JSON.stringify({
+				aps,
+				offset: documentInfo.Offset,
+				site: documentInfo.Value.siteCode,
+			}),
+		};
+
+		const params = {
+			Subject: text,
+			Message: JSON.stringify(message),
+			TopicArn: this.snsTopicARN,
+			MessageStructure: 'json',
+		};
+		return params;
+	}
+
+	apnsMessageParams(offset, count) {
+
+		const text = 'New documents are available!';
+		const site = 0;
+
+		const aps = {
+			// alert: {
+			// 	title: 'DVSA Officer FPNs',
+			// 	body: text,
+			// },
 			'content-available': 1,
 			badge: count,
 		};
@@ -526,13 +578,13 @@ export default class PenaltyDocument {
 			APNS: JSON.stringify({
 				aps,
 				offset,
-				ids,
+				site,
 			}),
 
 			APNS_SANDBOX: JSON.stringify({
 				aps,
 				offset,
-				ids,
+				site,
 			}),
 		};
 
@@ -547,19 +599,18 @@ export default class PenaltyDocument {
 
 	streamDocuments(event, context, callback) {
 
-		let maxOffset = 0.0;
+		let minOffset = 9999999999.999;
 		let count = 0;
-		const updatedIds = [];
 
 		event.Records.forEach((record) => {
 			const item = parse(record.dynamodb.NewImage);
-			if (item.Offset > maxOffset) {
-				maxOffset = item.Offset;
+			if (item.Offset < minOffset) {
+				minOffset = item.Offset;
 			}
 			count += 1;
-			updatedIds.push(item.ID);
 		});
-		const params = this.apnsMessageParams(maxOffset, count, updatedIds);
+
+		const params = this.apnsMessageParams(minOffset, count);
 		sns.publish(params, (err, data) => {
 			if (err) {
 				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
