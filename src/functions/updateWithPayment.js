@@ -1,3 +1,4 @@
+/* eslint-env es6 */
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 
@@ -13,10 +14,15 @@ const penaltyDocuments = new PenaltyDocument(
 
 export default (event, context, callback) => {
 
-	console.log(JSON.stringify(event, null, 2));
-	const data = event.body;
+	const paymentInfo = {
+		id: event.body.id,
+		paymentStatus: event.body.paymentStatus,
+		paymentAmount: event.body.paymentAmount,
+		penaltyRefNo: event.body.penaltyRefNo,
+		penaltyType: event.body.penaltyType,
+	};
 
-	console.log(`id ${data.id} status ${data.paymentStatus}`);
+	console.log(JSON.stringify(paymentInfo, null, 2));
 	// id body document
-	penaltyDocuments.updateDocumentWithPayment(data.id, data.paymentStatus, callback);
+	penaltyDocuments.updateDocumentWithPayment(paymentInfo, callback);
 };
