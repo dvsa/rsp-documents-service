@@ -1,7 +1,7 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import AWS from 'aws-sdk';
-import Joi from 'joi';
+import Validation from 'rsp-validation';
 import request from 'request-promise';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
@@ -11,7 +11,6 @@ import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
 import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
-import penaltyValidation from '../validationModels/penaltyValidation';
 
 const parse = AWS.DynamoDB.Converter.unmarshall;
 const sns = new AWS.SNS();
@@ -162,9 +161,16 @@ export default class PenaltyDocument {
 					},
 				};
 
-				const checkTest = this.validatePenalty(body, penaltyValidation, false);
+				const checkTest = Validation.penaltyDocumentValidation(body);
 				if (!checkTest.valid) {
-					callback(null, checkTest.response);
+					const err = checkTest.error.message;
+					const validationError = createResponse({
+						body: {
+							err,
+						},
+						statusCode: 405,
+					});
+					callback(null, validationError);
 				} else {
 					const dbPut = this.db.put(params).promise();
 					dbPut.then(() => {
@@ -247,9 +253,16 @@ export default class PenaltyDocument {
 			Value,
 		};
 
-		const checkTest = this.validatePenalty(body, penaltyValidation, true);
+		const checkTest = Validation.penaltyDocumentValidation(body);
 		if (!checkTest.valid) {
-			callback(null, checkTest.response);
+			const err = checkTest.error.message;
+			const validationError = createResponse({
+				body: {
+					err,
+				},
+				statusCode: 405,
+			});
+			callback(null, validationError);
 		} else {
 			const dbUpdate = this.db.update(params).promise();
 
@@ -464,7 +477,7 @@ export default class PenaltyDocument {
 		};
 
 		return new Promise((resolve) => {
-			const res = this.validatePenalty(item, penaltyValidation, false);
+			const res = Validation.penaltyDocumentValidation(item);
 			if (res.valid) {
 				const dbUpdate = this.db.update(params).promise();
 				dbUpdate.then(() => {
@@ -486,7 +499,7 @@ export default class PenaltyDocument {
 				resolve(createSimpleResponse({
 					statusCode: 400,
 					body: updatedItem,
-					error: res.response.err,
+					error: res.error.message,
 				}));
 			}
 		});
@@ -638,110 +651,5 @@ export default class PenaltyDocument {
 				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
 			}
 		});
-	}
-
-	validatePenalty(data, penaltyValidationModel) {
-		const validationResult = Joi.validate(data, penaltyValidationModel.request);
-		if (validationResult.error) {
-			const err = 'Invalid Input';
-			const error = createResponse({
-				body: {
-					err,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		// additional validations
-		if (data.Value.penaltyType !== 'IM' && data.ID !== `${data.Value.referenceNo}_${data.Value.penaltyType}`) {
-			const errMsg = 'ID does not match referenceNo and penaltyType';
-			const error = createResponse({
-				body: {
-					errMsg,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		if (data.Value.penaltyType !== 'IM' && data.Value.referenceNo.length < 12) {
-			const errMsg = 'ReferenceNo is too short';
-			const error = createResponse({
-				body: {
-					errMsg,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		if (data.Value.penaltyType !== 'IM' && data.Value.referenceNo.length > 13) {
-			const errMsg = 'ReferenceNo is too long';
-			const error = createResponse({
-				body: {
-					errMsg,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		if (data.Value.penaltyType === 'IM') {
-
-			if (!data.Value.referenceNo.match(/^[0-9]{1,6}-[0-1]-[0-9]{1,6}-IM$/)) {
-				const errMsg = 'ReferenceNo should be 999999-9-999999-IM format';
-				const error = createResponse({
-					body: {
-						errMsg,
-					},
-					statusCode: 405,
-				});
-				return { valid: false, response: error };
-			}
-
-			const matches = data.Value.referenceNo.match(/^([0-9]{1,6})-([0-1])-([0-9]{1,6})-IM$/);
-
-			let initialSegment;
-			let lastSegment;
-			let middleSegment;
-
-			if (matches.length > 3) {
-				initialSegment = Number(matches[1]);
-				middleSegment = Number(matches[2]);
-				lastSegment = Number(matches[3]);
-				if (initialSegment === 0 || lastSegment === 0) {
-					const errMsg = 'Officer Id or Issued Count cannot be zero';
-					const error = createResponse({
-						body: {
-							errMsg,
-						},
-						statusCode: 405,
-					});
-					return { valid: false, response: error };
-				}
-			}
-			// match first and last segments
-			const idMatches = data.ID.match(/^([0-9]{6})([0-1])([0-9]{6})_IM$/);
-			if (idMatches.length > 3) {
-				const idInitialSegment = Number(idMatches[1]);
-				const idMiddleSegment = Number(idMatches[2]);
-				const idLastSegment = Number(idMatches[3]);
-
-				if (idInitialSegment !== initialSegment ||
-					idLastSegment !== lastSegment ||
-					idMiddleSegment !== middleSegment) {
-					const errMsg = 'ID does not match referenceNo and penaltyType';
-					const error = createResponse({
-						body: {
-							errMsg,
-						},
-						statusCode: 405,
-					});
-					return { valid: false, response: error };
-				}
-			}
-		}
-		return { valid: true, response: {} };
 	}
 }
