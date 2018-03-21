@@ -11,6 +11,7 @@ import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
 import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
+import subtractDays from '../utils/subtractDays';
 
 const parse = AWS.DynamoDB.Converter.unmarshall;
 const sns = new AWS.SNS();
@@ -22,7 +23,11 @@ const maxBatchSize = 75;
 
 export default class PenaltyDocument {
 
-	constructor(db, tableName, bucketName, snsTopicARN, siteResource, paymentURL, tokenServiceARN) {
+	constructor(
+		db,	tableName, bucketName,
+		snsTopicARN, siteResource, paymentURL,
+		tokenServiceARN, daysToHold,
+	) {
 		this.db = db;
 		this.tableName = tableName;
 		this.bucketName = bucketName;
@@ -30,6 +35,7 @@ export default class PenaltyDocument {
 		this.siteResource = siteResource;
 		this.paymentURL = paymentURL;
 		this.tokenServiceARN = tokenServiceARN;
+		this.daysToHold = daysToHold;
 	}
 
 	getDocument(id, callback) {
@@ -221,58 +227,80 @@ export default class PenaltyDocument {
 		const { Value } = body;
 		// may not need to remove this delete Value.paymentToken;
 		const newHash = hashToken(id, Value, Enabled);
+		let paidStatus = 'UNPAID';
+		const idList = [];
+		idList.push(id);
+		this.getPaymentInformation(idList)
+			.then((response) => {
+				if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+					paidStatus = response.payments[0].PenaltyStatus;
+				}
 
-		const params = {
-			TableName: this.tableName,
-			Key: {
-				ID: id,
-			},
-			UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
-			ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
-			ExpressionAttributeNames: {
-				'#ID': 'ID',
-				'#Hash': 'Hash',
-				'#Enabled': 'Enabled',
-				'#Offset': 'Offset',
-			},
-			ExpressionAttributeValues: {
-				':clientHash': clientHash,
-				':Enabled': true,
-				':Hash': newHash,
-				':not_enabled': false,
-				':Offset': timestamp,
-			},
-		};
+				if (paidStatus === 'PAID') {
+					const err = 'Cannot remove document that is paid';
+					const validationError = createResponse({
+						body: {
+							err,
+						},
+						statusCode: 405,
+					});
+					callback(null, validationError);
+				} else {
 
+					const params = {
+						TableName: this.tableName,
+						Key: {
+							ID: id,
+						},
+						UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
+						ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
+						ExpressionAttributeNames: {
+							'#ID': 'ID',
+							'#Hash': 'Hash',
+							'#Enabled': 'Enabled',
+							'#Offset': 'Offset',
+						},
+						ExpressionAttributeValues: {
+							':clientHash': clientHash,
+							':Enabled': true,
+							':Hash': newHash,
+							':not_enabled': false,
+							':Offset': timestamp,
+						},
+					};
 
-		const deletedItem = {
-			Enabled,
-			ID: id,
-			Offset: timestamp,
-			Hash: newHash,
-			Value,
-		};
+					const deletedItem = {
+						Enabled,
+						ID: id,
+						Offset: timestamp,
+						Hash: newHash,
+						Value,
+					};
 
-		const checkTest = Validation.penaltyDocumentValidation(body);
-		if (!checkTest.valid) {
-			const err = checkTest.error.message;
-			const validationError = createResponse({
-				body: {
-					err,
-				},
-				statusCode: 405,
-			});
-			callback(null, validationError);
-		} else {
-			const dbUpdate = this.db.update(params).promise();
+					const checkTest = Validation.penaltyDocumentValidation(body);
+					if (!checkTest.valid) {
+						const err = checkTest.error.message;
+						const validationError = createResponse({
+							body: {
+								err,
+							},
+							statusCode: 405,
+						});
+						callback(null, validationError);
+					} else {
+						const dbUpdate = this.db.update(params).promise();
 
-			dbUpdate.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: deletedItem }));
+						dbUpdate.then(() => {
+							callback(null, createResponse({ statusCode: 200, body: deletedItem }));
+						}).catch((err) => {
+							const errResponse = createErrorResponse({ statusCode: 400, body: err });
+							callback(null, errResponse);
+						});
+					}
+				}
 			}).catch((err) => {
-				const response = createErrorResponse({ statusCode: 400, body: err });
-				callback(null, response);
+				callback(null, createErrorResponse({ statusCode: 400, body: err }));
 			});
-		}
 	}
 
 	getDocuments(offset, exclusiveStartKey, callback) {
@@ -282,12 +310,18 @@ export default class PenaltyDocument {
 			IndexName: 'ByOffset',
 			Limit: maxBatchSize,
 		};
+		let localOffset = offset;
+		const date = new Date();
+
+		if (typeof offset === 'undefined' || offset === '0') {
+			localOffset = subtractDays(date, this.daysToHold);
+		}
 
 		if (typeof offset !== 'undefined') {
 			params.KeyConditionExpression = 'Origin = :Origin and #Offset >= :Offset';
 			// params.FilterExpression = '#Offset >= :Offset';
 			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
-			params.ExpressionAttributeValues = { ':Offset': Number(offset), ':Origin': 'APP' };
+			params.ExpressionAttributeValues = { ':Offset': Number(localOffset), ':Origin': 'APP' };
 			// could use ScanIndexForward of false to return in most recent order...
 		}
 
