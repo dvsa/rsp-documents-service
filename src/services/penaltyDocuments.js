@@ -313,7 +313,7 @@ export default class PenaltyDocument {
 		let localOffset = offset;
 		const date = new Date();
 
-		if (typeof offset === 'undefined' || offset === '0') {
+		if (typeof offset === 'undefined' || Number(offset) === 0) {
 			localOffset = subtractDays(date, this.daysToHold);
 		}
 
