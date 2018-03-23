@@ -9,6 +9,7 @@ const penaltyDocuments = new PenaltyDocument(
 	process.env.SITERESOURCE,
 	process.env.PAYMENTURL,
 	process.env.TOKEN_SERVICE_ARN,
+	process.env.DAYS_TO_HOLD || 3,
 );
 
 export default (event, context, callback) => {

@@ -3,7 +3,8 @@
     "ID": "820500000877_FP",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true,
-    "Offset": 1317219245.963,
+    "Offset": 1521311200,
+    "Origin": "APP",
     "Value": {
         "penaltyType": "FP",
         "paymentStatus": "UNPAID",
@@ -39,7 +40,8 @@
     "ID": "820500000878_FP",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true,
-    "Offset": 1417219245.963,
+    "Offset": 1521331200,
+    "Origin": "APP",
     "Value": { 
         "penaltyType" : "FP",
         "paymentStatus": "UNPAID",  
@@ -76,7 +78,8 @@
     "ID": "820500000879_FP",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true, 
-    "Offset": 1517219245.963,
+    "Offset": 1521331200,
+    "Origin": "APP",
     "Value": {
         "penaltyType": "FP",
         "paymentStatus": "UNPAID",
