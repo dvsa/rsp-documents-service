@@ -21,6 +21,7 @@ export default (event, context, callback) => {
 		paymentAmount: event.body.paymentAmount,
 		penaltyRefNo: event.body.penaltyRefNo,
 		penaltyType: event.body.penaltyType,
+		paymentToken: event.body.paymentToken,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));

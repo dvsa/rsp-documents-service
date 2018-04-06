@@ -9,6 +9,7 @@ export default ({ items = [], payments = [] }) => {
 			newArray[foundIndex].Value.paymentStatus = payment.PenaltyStatus;
 			newArray[foundIndex].Value.paymentAuthCode = payment.PaymentDetail.AuthCode;
 			newArray[foundIndex].Value.paymentDate = payment.PaymentDetail.PaymentDate;
+			newArray[foundIndex].Value.paymentRef = payment.PaymentDetail.PaymentRef;
 		}
 	});
 	// postprocess array to mark unpaid items
