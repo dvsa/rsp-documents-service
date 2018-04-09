@@ -18,6 +18,8 @@ const sns = new AWS.SNS();
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 const docTypeMapping = ['FPN', 'IM', 'CDN'];
+const portalOrigin = 'PORTAL';
+const appOrigin = 'APP';
 
 const maxBatchSize = 75;
 
@@ -62,6 +64,7 @@ export default class PenaltyDocument {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
 						data.Item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+						data.Item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
 					}
@@ -87,10 +90,34 @@ export default class PenaltyDocument {
 			},
 		};
 		const dbGet = this.db.get(getParams).promise();
+		const timeNow = getUnixTime();
 
 		dbGet.then((data) => {
 			if (!data.Item) {
-				callback(null, createResponse(404, 'ITEM NOT FOUND'));
+				const dummyPenaltyDoc = {
+					ID: paymentInfo.id,
+					Value: {
+						dateTime: timeNow,
+						siteCode: 5,
+						vehicleDetails: {
+							regNo: 'UNKNOWN',
+						},
+						referenceNo: paymentInfo.penaltyRefNo,
+						penaltyType: paymentInfo.penaltyType,
+						paymentToken: paymentInfo.paymentToken,
+						officerName: 'UNKNOWN',
+						penaltyAmount: Number(paymentInfo.paymentAmount),
+						officerID: 'UNKNOWN',
+					},
+					Enabled: true,
+					Origin: portalOrigin,
+				};
+				dummyPenaltyDoc.Hash =
+					hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
+				dummyPenaltyDoc.Offset = timeNow;
+				// TODO create dummy doc
+				this.createDocument(dummyPenaltyDoc, () => {});
+				callback(null, createResponse({ statusCode: 200, body: dummyPenaltyDoc }));
 				return;
 			}
 
@@ -109,8 +136,9 @@ export default class PenaltyDocument {
 
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
-				console.log('calling sendPaymentNotification');
-				this.sendPaymentNotification(paymentInfo, data.Item);
+				if (data.Item.Origin === appOrigin) {
+					this.sendPaymentNotification(paymentInfo, data.Item);
+				}
 				callback(null, createResponse({ statusCode: 200, body: data.Item }));
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
@@ -134,16 +162,18 @@ export default class PenaltyDocument {
 
 	createDocument(body, callback) {
 
+		delete body.Value.paymentStatus;
+		delete body.paymentAuthCode;
+		delete body.paymentDate;
+		delete body.paymentRef;
+
 		const timestamp = getUnixTime();
 		const { Value, Enabled, ID } = body;
 		const idList = [];
 		// remove payment info, payment service is single point truth
-		delete Value.paymentStatus;
-		delete Value.paymentAuthCode;
-		delete Value.paymentDate;
 		// may not need to remove this delete Value.paymentToken;
 		if (typeof body.Origin === 'undefined') {
-			body.Origin = 'APP';
+			body.Origin = appOrigin;
 		}
 
 		const item = {
@@ -185,6 +215,7 @@ export default class PenaltyDocument {
 							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
 							item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+							item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
 						} else {
 							item.Value.paymentStatus = 'UNPAID';
@@ -321,7 +352,7 @@ export default class PenaltyDocument {
 			params.KeyConditionExpression = 'Origin = :Origin and #Offset >= :Offset';
 			// params.FilterExpression = '#Offset >= :Offset';
 			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
-			params.ExpressionAttributeValues = { ':Offset': Number(localOffset), ':Origin': 'APP' };
+			params.ExpressionAttributeValues = { ':Offset': Number(localOffset), ':Origin': appOrigin };
 			// could use ScanIndexForward of false to return in most recent order...
 		}
 
@@ -342,6 +373,7 @@ export default class PenaltyDocument {
 					delete item.Value.paymentStatus;
 					delete item.Value.paymentAuthCode;
 					delete item.Value.paymentDate;
+					delete item.Value.paymentRef;
 					delete item.Origin; // remove Origin as not needed in response
 				});
 
@@ -471,8 +503,10 @@ export default class PenaltyDocument {
 		delete item.Value.paymentStatus;
 		delete item.Value.paymentAuthCode;
 		delete item.Value.paymentDate;
+		delete item.Value.paymentRef;
+
 		if (typeof item.Origin === 'undefined') {
-			item.Origin = 'APP';
+			item.Origin = appOrigin;
 		}
 		const newHash = hashToken(key, Value, Enabled);
 
@@ -491,7 +525,7 @@ export default class PenaltyDocument {
 				ID: key,
 			},
 			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin',
-			ConditionExpression: 'attribute_not_exists(#ID) OR (attribute_exists(#ID) AND #Hash=:clientHash)',
+			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
 				'#Hash': 'Hash',
@@ -507,14 +541,19 @@ export default class PenaltyDocument {
 				':Hash': newHash,
 				':Offset': timestamp,
 				':Origin': item.Origin,
+				':AppOrigin': appOrigin,
+				':PortalOrigin': portalOrigin,
 			},
+			ReturnValues: 'UPDATED_OLD',
 		};
 
 		return new Promise((resolve) => {
 			const res = Validation.penaltyDocumentValidation(item);
 			if (res.valid) {
 				const dbUpdate = this.db.update(params).promise();
-				dbUpdate.then(() => {
+				dbUpdate.then((data) => {
+					console.log('update item data');
+					console.log(JSON.stringify(data, null, 2));
 					updatedItem.Value.paymentStatus = savedPaymentStatus;
 					if (savedPaymentStatus === 'PAID') {
 						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
@@ -555,6 +594,7 @@ export default class PenaltyDocument {
 			delete item.Value.paymentStatus;
 			delete item.Value.paymentAuthCode;
 			delete item.Value.paymentDate;
+			delete item.Value.paymentRef;
 		});
 
 		this.getPaymentInformation(idList)
