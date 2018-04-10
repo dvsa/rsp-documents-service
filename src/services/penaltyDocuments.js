@@ -65,6 +65,7 @@ export default class PenaltyDocument {
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
 						data.Item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 						data.Item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
+						data.Item.Value.paymentMethod = response.payments[0].PaymentDetail.PaymentMethod;
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
 					}

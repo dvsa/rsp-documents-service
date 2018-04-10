@@ -6,6 +6,7 @@ export default ({ items = [], payments = [] }) => {
 			return item.ID === payment.ID;
 		});
 		if (foundIndex || foundIndex === 0) {
+			console.log(payment.PaymentDetail.PaymentMethod);
 			newArray[foundIndex].Value.paymentStatus = payment.PenaltyStatus;
 			newArray[foundIndex].Value.paymentAuthCode = payment.PaymentDetail.AuthCode;
 			newArray[foundIndex].Value.paymentDate = payment.PaymentDetail.PaymentDate;
