@@ -63,7 +63,7 @@ export default class PenaltyDocument {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-						data.Item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+						data.Item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 						data.Item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
@@ -250,7 +250,7 @@ export default class PenaltyDocument {
 						if (response.payments !== null && typeof response.payments !== 'undefined') {
 							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-							item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+							item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 							item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
 						} else {
@@ -469,7 +469,7 @@ export default class PenaltyDocument {
 									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
 										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-										paymentInfo.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+										paymentInfo.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 									} else {
 										paymentInfo.paymentStatus = 'UNPAID';
 									}
@@ -534,7 +534,7 @@ export default class PenaltyDocument {
 		let savedPaymentDate;
 		if (item.Value.paymentStatus === 'PAID') {
 			savedPaymentAuthCode = ` ${item.Value.paymentAuthCode}`.slice(1);
-			savedPaymentDate = ` ${item.Value.paymentDate}`.slice(1);
+			savedPaymentDate = Number(` ${item.Value.paymentDate}`.slice(1));
 		}
 
 		delete item.Value.paymentStatus;
