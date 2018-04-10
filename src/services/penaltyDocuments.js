@@ -469,7 +469,8 @@ export default class PenaltyDocument {
 									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
 										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-										paymentInfo.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
+										paymentInfo.paymentDate =
+											Number(response.payments[0].PaymentDetail.PaymentDate);
 									} else {
 										paymentInfo.paymentStatus = 'UNPAID';
 									}
