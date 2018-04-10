@@ -112,8 +112,8 @@ export default class PenaltyDocument {
 					Enabled: true,
 					Origin: portalOrigin,
 				};
-				dummyPenaltyDoc.Hash =
-					hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
+				dummyPenaltyDoc.Hash = 'New';
+				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
 				dummyPenaltyDoc.Offset = timeNow;
 				// TODO create dummy doc
 				this.createDocument(dummyPenaltyDoc, () => {});
@@ -137,6 +137,7 @@ export default class PenaltyDocument {
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
 				if (data.Item.Origin === appOrigin) {
+					console.log('payment notification sent');
 					this.sendPaymentNotification(paymentInfo, data.Item);
 				}
 				callback(null, createResponse({ statusCode: 200, body: data.Item }));
@@ -489,15 +490,16 @@ export default class PenaltyDocument {
 		const clientHash = item.Hash ? item.Hash : '<NewHash>';
 		const { Value, Enabled } = item;
 
+		console.log(`item.hash = ${item.Hash}`);
 		// save values before removing them on insert
 		// then add back after insert. temporary measure
 		// to avoid refactoring until proving integration with payment service works
-		const savedPaymentStatus = item.Value.paymentStatus || 'UNPAID';
+		const savedPaymentStatus = ` ${item.Value.paymentStatus}`.slice(1) || 'UNPAID';
 		let savedPaymentAuthCode;
 		let savedPaymentDate;
 		if (item.Value.paymentStatus === 'PAID') {
-			savedPaymentAuthCode = item.Value.paymentAuthCode;
-			savedPaymentDate = item.Value.paymentDate;
+			savedPaymentAuthCode = ` ${item.Value.paymentAuthCode}`.slice(1);
+			savedPaymentDate = ` ${item.Value.paymentDate}`.slice(1);
 		}
 
 		delete item.Value.paymentStatus;
@@ -552,12 +554,22 @@ export default class PenaltyDocument {
 			if (res.valid) {
 				const dbUpdate = this.db.update(params).promise();
 				dbUpdate.then((data) => {
-					console.log('update item data');
-					console.log(JSON.stringify(data, null, 2));
 					updatedItem.Value.paymentStatus = savedPaymentStatus;
 					if (savedPaymentStatus === 'PAID') {
 						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
 						updatedItem.Value.paymentDate = savedPaymentDate;
+					}
+					console.log(` old data origin ${data.Attributes.Origin}  item origin ${item.Origin} savedPaymentStatus ${savedPaymentStatus}`);
+					if (data.Attributes.Origin === portalOrigin && item.Origin === appOrigin && savedPaymentStatus === 'PAID') {
+						const paymentInfo = {
+							penaltyType: item.Value.penaltyType,
+							paymentStatus: savedPaymentStatus,
+							paymentAmount: item.Value.penaltyAmount,
+						};
+						if (paymentInfo) {
+							console.log('sent payment notification for portal to app update');
+							this.sendPaymentNotification(paymentInfo, item);
+						}
 					}
 					resolve(createSimpleResponse({ statusCode: 200, body: updatedItem }));
 				}).catch((err) => {
@@ -605,6 +617,8 @@ export default class PenaltyDocument {
 					const result = {
 						Items: outputValue,
 					};
+					console.log('asyncLoopOrdered');
+					console.log(JSON.stringify(result, null, 2));
 					callback(null, createResponse({ statusCode: 200, body: result }));
 				}).catch((err) => {
 					callback(null, createResponse({ statusCode: 400, body: err }));
@@ -651,6 +665,7 @@ export default class PenaltyDocument {
 			TopicArn: this.snsTopicARN,
 			MessageStructure: 'json',
 		};
+		console.log(JSON.stringify(params, null, 2));
 		return params;
 	}
 
