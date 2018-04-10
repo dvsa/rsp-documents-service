@@ -7,6 +7,7 @@ import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import stream from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
+import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
 
 const handler = {
@@ -20,6 +21,7 @@ const handler = {
 	sites,
 	stream,
 	updateWithPayment,
+	updateUponPaymentDelete,
 };
 
 export default handler;

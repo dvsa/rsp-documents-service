@@ -63,7 +63,7 @@ export default class PenaltyDocument {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-						data.Item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+						data.Item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 						data.Item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
@@ -79,6 +79,40 @@ export default class PenaltyDocument {
 
 	isEmpty(obj) {
 		return JSON.stringify(obj) === JSON.stringify({});
+	}
+
+	updateDocumentUponPaymentDelete(paymentInfo, callback) {
+		const getParams = {
+			TableName: this.tableName,
+			Key: {
+				ID: paymentInfo.id,
+			},
+		};
+		const dbGet = this.db.get(getParams).promise();
+
+		dbGet.then((data) => {
+			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
+			data.Item.Offset = getUnixTime();
+			const putParams = {
+				TableName: this.tableName,
+				Item: data.Item,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+
+			const dbPut = this.db.put(putParams).promise();
+			dbPut.then(() => {
+				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			}).catch((err) => {
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+		});
 	}
 
 	// put
@@ -112,8 +146,8 @@ export default class PenaltyDocument {
 					Enabled: true,
 					Origin: portalOrigin,
 				};
-				dummyPenaltyDoc.Hash =
-					hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
+				dummyPenaltyDoc.Hash = 'New';
+				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
 				dummyPenaltyDoc.Offset = timeNow;
 				// TODO create dummy doc
 				this.createDocument(dummyPenaltyDoc, () => {});
@@ -214,7 +248,7 @@ export default class PenaltyDocument {
 						if (response.payments !== null && typeof response.payments !== 'undefined') {
 							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-							item.Value.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+							item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 							item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
 						} else {
@@ -424,8 +458,6 @@ export default class PenaltyDocument {
 					const docType = docTypeMapping[parsedBody.DocumentType];
 					const docID = `${parsedBody.Reference}_${docType}`;
 					this.getDocument(docID, (err, res) => {
-						console.log('res');
-						console.log(JSON.stringify(res));
 						if (res.statusCode === 404) {
 							this.getPaymentInformation([docID])
 								.then((response) => {
@@ -433,7 +465,8 @@ export default class PenaltyDocument {
 									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
 										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-										paymentInfo.paymentDate = response.payments[0].PaymentDetail.PaymentDate;
+										paymentInfo.paymentDate =
+											Number(response.payments[0].PaymentDetail.PaymentDate);
 									} else {
 										paymentInfo.paymentStatus = 'UNPAID';
 									}
@@ -492,12 +525,12 @@ export default class PenaltyDocument {
 		// save values before removing them on insert
 		// then add back after insert. temporary measure
 		// to avoid refactoring until proving integration with payment service works
-		const savedPaymentStatus = item.Value.paymentStatus || 'UNPAID';
+		const savedPaymentStatus = ` ${item.Value.paymentStatus}`.slice(1) || 'UNPAID';
 		let savedPaymentAuthCode;
 		let savedPaymentDate;
 		if (item.Value.paymentStatus === 'PAID') {
-			savedPaymentAuthCode = item.Value.paymentAuthCode;
-			savedPaymentDate = item.Value.paymentDate;
+			savedPaymentAuthCode = ` ${item.Value.paymentAuthCode}`.slice(1);
+			savedPaymentDate = Number(` ${item.Value.paymentDate}`.slice(1));
 		}
 
 		delete item.Value.paymentStatus;
@@ -552,12 +585,20 @@ export default class PenaltyDocument {
 			if (res.valid) {
 				const dbUpdate = this.db.update(params).promise();
 				dbUpdate.then((data) => {
-					console.log('update item data');
-					console.log(JSON.stringify(data, null, 2));
 					updatedItem.Value.paymentStatus = savedPaymentStatus;
 					if (savedPaymentStatus === 'PAID') {
 						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
 						updatedItem.Value.paymentDate = savedPaymentDate;
+					}
+					if (data.Attributes.Origin === portalOrigin && item.Origin === appOrigin && savedPaymentStatus === 'PAID') {
+						const paymentInfo = {
+							penaltyType: item.Value.penaltyType,
+							paymentStatus: savedPaymentStatus,
+							paymentAmount: item.Value.penaltyAmount,
+						};
+						if (paymentInfo) {
+							this.sendPaymentNotification(paymentInfo, item);
+						}
 					}
 					resolve(createSimpleResponse({ statusCode: 200, body: updatedItem }));
 				}).catch((err) => {
