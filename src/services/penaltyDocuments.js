@@ -81,6 +81,41 @@ export default class PenaltyDocument {
 		return JSON.stringify(obj) === JSON.stringify({});
 	}
 
+	updateDocumentUponPaymentDelete(paymentInfo, callback) {
+		const getParams = {
+			TableName: this.tableName,
+			Key: {
+				ID: paymentInfo.id,
+			},
+		};
+		const dbGet = this.db.get(getParams).promise();
+
+		dbGet.then((data) => {
+			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
+			data.Item.Offset = getUnixTime();
+
+			const putParams = {
+				TableName: this.tableName,
+				Item: data.Item,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+
+			const dbPut = this.db.put(putParams).promise();
+			dbPut.then(() => {
+				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			}).catch((err) => {
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+		});
+	}
+
 	// put
 	updateDocumentWithPayment(paymentInfo, callback) {
 		const getParams = {
