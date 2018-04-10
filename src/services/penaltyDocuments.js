@@ -94,7 +94,6 @@ export default class PenaltyDocument {
 			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
 			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
 			data.Item.Offset = getUnixTime();
-
 			const putParams = {
 				TableName: this.tableName,
 				Item: data.Item,
@@ -172,7 +171,6 @@ export default class PenaltyDocument {
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
 				if (data.Item.Origin === appOrigin) {
-					console.log('payment notification sent');
 					this.sendPaymentNotification(paymentInfo, data.Item);
 				}
 				callback(null, createResponse({ statusCode: 200, body: data.Item }));
@@ -460,8 +458,6 @@ export default class PenaltyDocument {
 					const docType = docTypeMapping[parsedBody.DocumentType];
 					const docID = `${parsedBody.Reference}_${docType}`;
 					this.getDocument(docID, (err, res) => {
-						console.log('res');
-						console.log(JSON.stringify(res));
 						if (res.statusCode === 404) {
 							this.getPaymentInformation([docID])
 								.then((response) => {
@@ -526,7 +522,6 @@ export default class PenaltyDocument {
 		const clientHash = item.Hash ? item.Hash : '<NewHash>';
 		const { Value, Enabled } = item;
 
-		console.log(`item.hash = ${item.Hash}`);
 		// save values before removing them on insert
 		// then add back after insert. temporary measure
 		// to avoid refactoring until proving integration with payment service works
@@ -595,7 +590,6 @@ export default class PenaltyDocument {
 						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
 						updatedItem.Value.paymentDate = savedPaymentDate;
 					}
-					console.log(` old data origin ${data.Attributes.Origin}  item origin ${item.Origin} savedPaymentStatus ${savedPaymentStatus}`);
 					if (data.Attributes.Origin === portalOrigin && item.Origin === appOrigin && savedPaymentStatus === 'PAID') {
 						const paymentInfo = {
 							penaltyType: item.Value.penaltyType,
@@ -603,7 +597,6 @@ export default class PenaltyDocument {
 							paymentAmount: item.Value.penaltyAmount,
 						};
 						if (paymentInfo) {
-							console.log('sent payment notification for portal to app update');
 							this.sendPaymentNotification(paymentInfo, item);
 						}
 					}
@@ -653,8 +646,6 @@ export default class PenaltyDocument {
 					const result = {
 						Items: outputValue,
 					};
-					console.log('asyncLoopOrdered');
-					console.log(JSON.stringify(result, null, 2));
 					callback(null, createResponse({ statusCode: 200, body: result }));
 				}).catch((err) => {
 					callback(null, createResponse({ statusCode: 400, body: err }));
@@ -701,7 +692,6 @@ export default class PenaltyDocument {
 			TopicArn: this.snsTopicARN,
 			MessageStructure: 'json',
 		};
-		console.log(JSON.stringify(params, null, 2));
 		return params;
 	}
 

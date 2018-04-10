@@ -18,10 +18,6 @@ export default (event, context, callback) => {
 	const paymentInfo = {
 		id: event.body.id,
 		paymentStatus: event.body.paymentStatus,
-		paymentAmount: event.body.paymentAmount,
-		penaltyRefNo: event.body.penaltyRefNo,
-		penaltyType: event.body.penaltyType,
-		paymentToken: event.body.paymentToken,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
