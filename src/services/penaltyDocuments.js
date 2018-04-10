@@ -408,6 +408,7 @@ export default class PenaltyDocument {
 					delete item.Value.paymentAuthCode;
 					delete item.Value.paymentDate;
 					delete item.Value.paymentRef;
+					delete item.Value.paymentMethod;
 					delete item.Origin; // remove Origin as not needed in response
 				});
 
@@ -467,6 +468,8 @@ export default class PenaltyDocument {
 										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
 										paymentInfo.paymentDate =
 											Number(response.payments[0].PaymentDetail.PaymentDate);
+										paymentInfo.paymentMethod =
+										response.payments[0].PaymentDetail.PaymentMethod;
 									} else {
 										paymentInfo.paymentStatus = 'UNPAID';
 									}
@@ -537,6 +540,7 @@ export default class PenaltyDocument {
 		delete item.Value.paymentAuthCode;
 		delete item.Value.paymentDate;
 		delete item.Value.paymentRef;
+		delete item.Value.paymentMethod;
 
 		if (typeof item.Origin === 'undefined') {
 			item.Origin = appOrigin;
