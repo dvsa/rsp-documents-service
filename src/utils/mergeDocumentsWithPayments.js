@@ -6,10 +6,12 @@ export default ({ items = [], payments = [] }) => {
 			return item.ID === payment.ID;
 		});
 		if (foundIndex || foundIndex === 0) {
+			console.log(payment.PaymentDetail.PaymentMethod);
 			newArray[foundIndex].Value.paymentStatus = payment.PenaltyStatus;
 			newArray[foundIndex].Value.paymentAuthCode = payment.PaymentDetail.AuthCode;
 			newArray[foundIndex].Value.paymentDate = payment.PaymentDetail.PaymentDate;
 			newArray[foundIndex].Value.paymentRef = payment.PaymentDetail.PaymentRef;
+			newArray[foundIndex].Value.paymentMethod = payment.PaymentDetail.PaymentMethod;
 		}
 	});
 	// postprocess array to mark unpaid items
