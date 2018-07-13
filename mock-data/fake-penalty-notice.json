@@ -8,6 +8,7 @@
     "Value": {
         "penaltyType": "FP",
         "paymentStatus": "UNPAID",
+        "inPaymentGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
         "referenceNo": "820500000877",
@@ -44,7 +45,8 @@
     "Origin": "APP",
     "Value": { 
         "penaltyType" : "FP",
-        "paymentStatus": "UNPAID",  
+        "paymentStatus": "UNPAID",
+        "inPaymentGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
         "referenceNo": "820500000878",

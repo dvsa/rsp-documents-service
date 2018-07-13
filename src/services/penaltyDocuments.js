@@ -246,7 +246,7 @@ export default class PenaltyDocument {
 					const dbPut = this.db.put(params).promise();
 					dbPut.then(() => {
 						// stamp payment info if we have it
-						if (response.payments !== null && typeof response.payments !== 'undefined') {
+						if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
 							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
 							item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
@@ -266,6 +266,48 @@ export default class PenaltyDocument {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
 				callback(null, returnResponse);
 			});
+	}
+
+	createPenaltyGroup(body, callback) {
+		const { ID, Penalties } = body;
+
+		const unixTime = getUnixTime();
+		const groupPutRequest = {
+			PutRequest: {
+				Item: {
+					ID,
+					PenaltyDocumentIds: Penalties.map(p => p.ID),
+				},
+			},
+		};
+
+		const penaltyPutRequests = Penalties.map(p => ({
+			PutRequest: {
+				Item: {
+					ID: p.ID,
+					Value: p.Value,
+					Enabled: p.Enabled,
+					Origin: p.Origin || appOrigin,
+					Hash: hashToken(p.ID, p.Value, p.Enabled),
+					Offset: unixTime,
+				},
+			},
+		}));
+
+		const requestItems = {};
+		requestItems[this.tableName] = penaltyPutRequests;
+		requestItems.penaltyGroups = [groupPutRequest];
+
+		const batchParams = {
+			RequestItems: requestItems,
+		};
+
+		const dbPutPromise = this.db.batchWrite(batchParams).promise();
+		dbPutPromise.then(() => {
+			callback(null, createResponse({ statusCode: 200, body }));
+		}).catch((err) => {
+			callback(null, createResponse({ statusCode: 500, body: `insert failed: ${err}` }));
+		});
 	}
 
 	getPaymentInformation(idList) {
