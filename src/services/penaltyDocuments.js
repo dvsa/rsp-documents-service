@@ -269,13 +269,15 @@ export default class PenaltyDocument {
 	}
 
 	createPenaltyGroup(body, callback) {
-		const { ID, Penalties } = body;
+		const { UserID, Timestamp, Penalties } = body;
+		const generatedId = `${Timestamp}${UserID}`.replace(/\D/g, '');
+		body.ID = generatedId;
 
 		const unixTime = getUnixTime();
 		const groupPutRequest = {
 			PutRequest: {
 				Item: {
-					ID,
+					ID: generatedId,
 					PenaltyDocumentIds: Penalties.map(p => p.ID),
 				},
 			},
@@ -337,7 +339,6 @@ export default class PenaltyDocument {
 				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
 			}
 		} catch (err) {
-			console.log(err);
 			callback(null, createResponse({ statusCode: 503, body: err }));
 		}
 	}
