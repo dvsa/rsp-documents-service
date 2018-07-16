@@ -310,6 +310,33 @@ export default class PenaltyDocument {
 		});
 	}
 
+	getPenaltyGroup(penaltyGroupId, callback) {
+		const params = {
+			TableName: 'penaltyGroups',
+			Key: { ID: penaltyGroupId },
+		};
+
+		const penaltyGroupPromise = this.db.get(params).promise();
+		penaltyGroupPromise.then((penaltyGroupItemContainer) => {
+			const penaltyDocIds = penaltyGroupItemContainer.Item.PenaltyDocumentIds;
+			const requestItems = penaltyDocIds.map(docId => ({
+				ID: docId,
+			}));
+			const penaltyDocumentParams = { RequestItems: {} };
+			penaltyDocumentParams.RequestItems[this.tableName] = { Keys: requestItems };
+			const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
+			penaltyDocPromise.then((responsesContainer) => {
+				const response = { ID: penaltyGroupId };
+				response.Penalties = responsesContainer.Responses.penaltyDocuments;
+				callback(null, createResponse({ statusCode: 200, body: response }));
+			}).catch((err) => {
+				callback(null, createResponse({ statusCode: 500, body: `Error: ${err}` }));
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 404, body: `${err}` }));
+		});
+	}
+
 	getPaymentInformation(idList) {
 		// TODO remove this if before deploying... only for running local
 		if (typeof this.paymentURL === 'undefined') {
