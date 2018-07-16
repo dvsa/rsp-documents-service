@@ -310,31 +310,36 @@ export default class PenaltyDocument {
 		});
 	}
 
-	getPenaltyGroup(penaltyGroupId, callback) {
-		const params = {
+	async getPenaltyGroup(penaltyGroupId, callback) {
+		const groupParams = {
 			TableName: 'penaltyGroups',
 			Key: { ID: penaltyGroupId },
 		};
 
-		const penaltyGroupPromise = this.db.get(params).promise();
-		penaltyGroupPromise.then((penaltyGroupItemContainer) => {
-			const penaltyDocIds = penaltyGroupItemContainer.Item.PenaltyDocumentIds;
-			const requestItems = penaltyDocIds.map(docId => ({
-				ID: docId,
-			}));
-			const penaltyDocumentParams = { RequestItems: {} };
-			penaltyDocumentParams.RequestItems[this.tableName] = { Keys: requestItems };
-			const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
-			penaltyDocPromise.then((responsesContainer) => {
+		try {
+			const penaltyGroupPromise = this.db.get(groupParams).promise();
+			const penaltyGrpContainer = await penaltyGroupPromise;
+			if (penaltyGrpContainer.Item) {
+				const penaltyDocIds = penaltyGrpContainer.Item.PenaltyDocumentIds;
+
+				const requestItems = penaltyDocIds.map(docId => ({
+					ID: docId,
+				}));
+				const penaltyDocumentParams = { RequestItems: {} };
+				penaltyDocumentParams.RequestItems[this.tableName] = { Keys: requestItems };
+				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
+
+				const penaltyDocItemContainer = await penaltyDocPromise;
 				const response = { ID: penaltyGroupId };
-				response.Penalties = responsesContainer.Responses.penaltyDocuments;
+				response.Penalties = penaltyDocItemContainer.Responses.penaltyDocuments;
 				callback(null, createResponse({ statusCode: 200, body: response }));
-			}).catch((err) => {
-				callback(null, createResponse({ statusCode: 500, body: `Error: ${err}` }));
-			});
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 404, body: `${err}` }));
-		});
+			} else {
+				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
+			}
+		} catch (err) {
+			console.log(err);
+			callback(null, createResponse({ statusCode: 503, body: err }));
+		}
 	}
 
 	getPaymentInformation(idList) {
