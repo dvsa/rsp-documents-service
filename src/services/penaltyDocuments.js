@@ -26,12 +26,13 @@ const maxBatchSize = 75;
 export default class PenaltyDocument {
 
 	constructor(
-		db,	tableName, bucketName,
+		db,	penaltyDocTableName, penaltyGroupTableName, bucketName,
 		snsTopicARN, siteResource, paymentURL,
 		tokenServiceARN, daysToHold,
 	) {
 		this.db = db;
-		this.tableName = tableName;
+		this.penaltyDocTableName = penaltyDocTableName;
+		this.penaltyGroupTableName = penaltyGroupTableName;
 		this.bucketName = bucketName;
 		this.snsTopicARN = snsTopicARN;
 		this.siteResource = siteResource;
@@ -42,7 +43,7 @@ export default class PenaltyDocument {
 
 	getDocument(id, callback) {
 		const params = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: id,
 			},
@@ -84,7 +85,7 @@ export default class PenaltyDocument {
 
 	updateDocumentUponPaymentDelete(paymentInfo, callback) {
 		const getParams = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: paymentInfo.id,
 			},
@@ -96,7 +97,7 @@ export default class PenaltyDocument {
 			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
 			data.Item.Offset = getUnixTime();
 			const putParams = {
-				TableName: this.tableName,
+				TableName: this.penaltyDocTableName,
 				Item: data.Item,
 				ConditionExpression: 'attribute_exists(#ID)',
 				ExpressionAttributeNames: {
@@ -119,7 +120,7 @@ export default class PenaltyDocument {
 	// put
 	updateDocumentWithPayment(paymentInfo, callback) {
 		const getParams = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: paymentInfo.id,
 			},
@@ -161,7 +162,7 @@ export default class PenaltyDocument {
 			data.Item.Offset = getUnixTime();
 
 			const putParams = {
-				TableName: this.tableName,
+				TableName: this.penaltyDocTableName,
 				Item: data.Item,
 				ConditionExpression: 'attribute_exists(#ID)',
 				ExpressionAttributeNames: {
@@ -224,7 +225,7 @@ export default class PenaltyDocument {
 		this.getPaymentInformation(idList)
 			.then((response) => {
 				const params = {
-					TableName: this.tableName,
+					TableName: this.penaltyDocTableName,
 					Item: item,
 					ConditionExpression: 'attribute_not_exists(#ID)',
 					ExpressionAttributeNames: {
@@ -297,8 +298,8 @@ export default class PenaltyDocument {
 		}));
 
 		const requestItems = {};
-		requestItems[this.tableName] = penaltyPutRequests;
-		requestItems.penaltyGroups = [groupPutRequest];
+		requestItems[this.penaltyDocTableName] = penaltyPutRequests;
+		requestItems[this.penaltyGroupTableName] = [groupPutRequest];
 
 		const batchParams = {
 			RequestItems: requestItems,
@@ -314,7 +315,7 @@ export default class PenaltyDocument {
 
 	async getPenaltyGroup(penaltyGroupId, callback) {
 		const groupParams = {
-			TableName: 'penaltyGroups',
+			TableName: this.penaltyGroupTableName,
 			Key: { ID: penaltyGroupId },
 		};
 
@@ -328,7 +329,7 @@ export default class PenaltyDocument {
 					ID: docId,
 				}));
 				const penaltyDocumentParams = { RequestItems: {} };
-				penaltyDocumentParams.RequestItems[this.tableName] = { Keys: requestItems };
+				penaltyDocumentParams.RequestItems[this.penaltyDocTableName] = { Keys: requestItems };
 				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
 
 				const penaltyDocItemContainer = await penaltyDocPromise;
@@ -389,7 +390,7 @@ export default class PenaltyDocument {
 				} else {
 
 					const params = {
-						TableName: this.tableName,
+						TableName: this.penaltyDocTableName,
 						Key: {
 							ID: id,
 						},
@@ -447,7 +448,7 @@ export default class PenaltyDocument {
 	getDocuments(offset, exclusiveStartKey, callback) {
 
 		const params = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			IndexName: 'ByOffset',
 			Limit: maxBatchSize,
 		};
@@ -633,7 +634,7 @@ export default class PenaltyDocument {
 		};
 
 		const params = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: key,
 			},
