@@ -53,7 +53,7 @@ export default class PenaltyGroup {
 
 		const dbPutPromise = this.db.batchWrite(batchParams).promise();
 		dbPutPromise.then(() => {
-			callback(null, createResponse({ statusCode: 200, body }));
+			callback(null, createResponse({ statusCode: 201, body }));
 		}).catch((err) => {
 			callback(null, createResponse({ statusCode: 500, body: `insert failed: ${err}` }));
 		});
