@@ -19,14 +19,19 @@ export default class PenaltyGroup {
 		const { UserID, Timestamp, Penalties } = body;
 		const generatedId = `${Timestamp}${UserID}`.replace(/\D/g, '');
 		body.ID = generatedId;
+		body.TotalAmount = body.Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
+		body.PaymentStatus = 'UNPAID';
+		body.Penalties.forEach((penalty) => {
+			penalty.inPenaltyGroup = true;
+		});
+		const penalties = body.Penalties;
+		body.PenaltyDocumentIds = penalties.map(p => p.ID);
+		delete body.Penalties;
 
 		const unixTime = getUnixTime();
 		const groupPutRequest = {
 			PutRequest: {
-				Item: {
-					ID: generatedId,
-					PenaltyDocumentIds: Penalties.map(p => p.ID),
-				},
+				Item: body,
 			},
 		};
 
@@ -53,6 +58,8 @@ export default class PenaltyGroup {
 
 		const dbPutPromise = this.db.batchWrite(batchParams).promise();
 		dbPutPromise.then(() => {
+			delete body.PenaltyDocumentIds;
+			body.Penalties = penalties;
 			callback(null, createResponse({ statusCode: 201, body }));
 		}).catch((err) => {
 			callback(null, createResponse({ statusCode: 500, body: `insert failed: ${err}` }));

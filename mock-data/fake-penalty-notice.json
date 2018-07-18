@@ -29,7 +29,7 @@
         "nonEndorsableOffence": [
             "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
         ],
-        "penaltyAmount": "50.00",
+        "penaltyAmount": 50,
         "paymentDueDate": 479945600,
         "officerName": "Sherlock Holmes",
         "officerID": "Blah111",
@@ -67,7 +67,7 @@
         "nonEndorsableOffence": [
             "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
         ],
-        "penaltyAmount": "50",
+        "penaltyAmount": 80,
         "paymentDueDate": 479945700,
         "officerName": "Jack Reacher",
         "dateTime": 1476180720,
@@ -105,7 +105,7 @@
         "nonEndorsableOffence": [
             "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
         ],
-        "penaltyAmount": "50.00",
+        "penaltyAmount": 50,
         "paymentDueDate": 479945700,
         "officerName": "Jack Reacher",
         "officerID": "blah111",
