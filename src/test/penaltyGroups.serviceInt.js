@@ -19,11 +19,15 @@ describe('penaltyGroups', () => {
 					.end((err, res) => {
 						if (err) throw err;
 						expect(res.body.ID).toEqual(groupId);
+						expect(res.body.Timestamp).toBe(1521311200);
+						expect(res.body.VehicleRegistration).toBe('11 ABC');
+						expect(res.body.Location).toBe('Trowell Services');
 						expect(res.body.Penalties).toHaveLength(2);
-						expect(res.body.Penalties[0].ID).toBe('820500000877_FP');
+						expect(res.body.Penalties[0].ID).toBe('820500000877_FPN');
 						expect(res.body.Penalties[0].Value).toBeDefined();
-						expect(res.body.Penalties[1].ID).toBe('820500000878_FP');
+						expect(res.body.Penalties[1].ID).toBe('820500000878_FPN');
 						expect(res.body.Penalties[1].Value).toBeDefined();
+						expect(res.body.PenaltyDocumentIds).toBeUndefined();
 						done();
 					});
 			});

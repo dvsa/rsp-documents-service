@@ -79,9 +79,12 @@ export default class PenaltyGroup {
 				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
 
 				const penaltyDocItemContainer = await penaltyDocPromise;
-				const response = { ID: penaltyGroupId };
-				response.Penalties = penaltyDocItemContainer.Responses.penaltyDocuments;
-				callback(null, createResponse({ statusCode: 200, body: response }));
+
+				const resp = penaltyGrpContainer.Item;
+				resp.Penalties = penaltyDocItemContainer.Responses.penaltyDocuments;
+				delete resp.PenaltyDocumentIds;
+
+				callback(null, createResponse({ statusCode: 200, body: resp }));
 			} else {
 				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
 			}

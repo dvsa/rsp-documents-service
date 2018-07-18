@@ -1,12 +1,12 @@
 [
 {
-    "ID": "820500000877_FP",
+    "ID": "820500000877_FPN",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true,
     "Offset": 1521311200,
     "Origin": "APP",
     "Value": {
-        "penaltyType": "FP",
+        "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
         "inPaymentGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
@@ -38,13 +38,13 @@
     }
 },
 {
-    "ID": "820500000878_FP",
+    "ID": "820500000878_FPN",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true,
     "Offset": 1521331200,
     "Origin": "APP",
     "Value": { 
-        "penaltyType" : "FP",
+        "penaltyType" : "FPN",
         "paymentStatus": "UNPAID",
         "inPaymentGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
@@ -77,13 +77,13 @@
     }
 },
 {
-    "ID": "820500000879_FP",
+    "ID": "820500000879_FPN",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true, 
     "Offset": 1521331200,
     "Origin": "APP",
     "Value": {
-        "penaltyType": "FP",
+        "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
