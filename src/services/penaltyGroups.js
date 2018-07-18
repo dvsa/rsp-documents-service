@@ -16,35 +16,28 @@ export default class PenaltyGroup {
 	}
 
 	createPenaltyGroup(body, callback) {
-		const { UserID, Timestamp, Penalties } = body;
+		const penGrp = { ...body };
+		const { UserID, Timestamp, Penalties } = penGrp;
 		const generatedId = `${Timestamp}${UserID}`.replace(/\D/g, '');
-		body.ID = generatedId;
-		body.TotalAmount = body.Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
-		body.PaymentStatus = 'UNPAID';
-		body.Penalties.forEach((penalty) => {
-			penalty.inPenaltyGroup = true;
+		penGrp.ID = generatedId;
+		penGrp.TotalAmount = body.Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
+		penGrp.PaymentStatus = 'UNPAID';
+		penGrp.Penalties.forEach((p) => {
+			p.inPenaltyGroup = true;
+			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
+			p.Origin = p.Origin || appOrigin;
+			p.Offset = getUnixTime();
 		});
-		const penalties = body.Penalties;
-		body.PenaltyDocumentIds = penalties.map(p => p.ID);
-		delete body.Penalties;
 
-		const unixTime = getUnixTime();
 		const groupPutRequest = {
 			PutRequest: {
-				Item: body,
+				Item: this.createPersistablePenaltyGroup(penGrp),
 			},
 		};
 
 		const penaltyPutRequests = Penalties.map(p => ({
 			PutRequest: {
-				Item: {
-					ID: p.ID,
-					Value: p.Value,
-					Enabled: p.Enabled,
-					Origin: p.Origin || appOrigin,
-					Hash: hashToken(p.ID, p.Value, p.Enabled),
-					Offset: unixTime,
-				},
+				Item: p,
 			},
 		}));
 
@@ -58,9 +51,7 @@ export default class PenaltyGroup {
 
 		const dbPutPromise = this.db.batchWrite(batchParams).promise();
 		dbPutPromise.then(() => {
-			delete body.PenaltyDocumentIds;
-			body.Penalties = penalties;
-			callback(null, createResponse({ statusCode: 201, body }));
+			callback(null, createResponse({ statusCode: 201, body: penGrp }));
 		}).catch((err) => {
 			callback(null, createResponse({ statusCode: 500, body: `insert failed: ${err}` }));
 		});
@@ -98,6 +89,13 @@ export default class PenaltyGroup {
 		} catch (err) {
 			callback(null, createResponse({ statusCode: 503, body: err }));
 		}
+	}
+
+	createPersistablePenaltyGroup(penaltyGroup) {
+		const persistableGrp = { ...penaltyGroup };
+		persistableGrp.PenaltyDocumentIds = persistableGrp.Penalties.map(p => p.ID);
+		delete persistableGrp.Penalties;
+		return persistableGrp;
 	}
 
 }

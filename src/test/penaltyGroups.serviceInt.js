@@ -76,6 +76,7 @@ describe('penaltyGroups', () => {
 						expect(res.body.Penalties).toHaveLength(2);
 						expect(res.body.Penalties[0].inPenaltyGroup).toBe(true);
 						expect(res.body.Penalties[1].inPenaltyGroup).toBe(true);
+						expect(res.body.PenaltyGroupIds).toBeUndefined();
 						done();
 					});
 			});
