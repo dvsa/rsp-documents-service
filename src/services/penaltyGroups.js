@@ -32,48 +32,33 @@ export default class PenaltyGroup {
 			await this.db.batchWrite(batchWriteParams).promise();
 			return callback(null, createResponse({ statusCode: 201, body: penaltyGroup }));
 		} catch (err) {
-			return callback(null, createResponse({ statusCode: 500, body: `Insert failed: ${err}` }));
+			return callback(null, createResponse({ statusCode: 503, body: `Problem writing to DB: ${err}` }));
 		}
 	}
 
 	async getPenaltyGroup(penaltyGroupId, callback) {
-		const groupParams = {
-			TableName: this.penaltyGroupTableName,
-			Key: { ID: penaltyGroupId },
-		};
-
 		try {
-			const penaltyGroupPromise = this.db.get(groupParams).promise();
-			const penaltyGrpContainer = await penaltyGroupPromise;
-			if (penaltyGrpContainer.Item) {
-				const penaltyDocIds = penaltyGrpContainer.Item.PenaltyDocumentIds;
+			const penaltyGroup = await this._getPenaltyGroupById(penaltyGroupId);
 
-				const requestItems = penaltyDocIds.map(docId => ({
-					ID: docId,
-				}));
-				const penaltyDocumentParams = { RequestItems: {} };
-				penaltyDocumentParams.RequestItems[this.penaltyDocTableName] = { Keys: requestItems };
-				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
-
-				const penaltyDocItemContainer = await penaltyDocPromise;
-
-				const resp = penaltyGrpContainer.Item;
-				resp.Penalties = penaltyDocItemContainer.Responses.penaltyDocuments;
-				delete resp.PenaltyDocumentIds;
-
-				callback(null, createResponse({ statusCode: 200, body: resp }));
-			} else {
-				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
+			if (!penaltyGroup) {
+				const msg = `Penalty Group ${penaltyGroupId} not found`;
+				return callback(null, createResponse({ statusCode: 404, body: { error: msg } }));
 			}
+
+			penaltyGroup.Penalties = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
+			delete penaltyGroup.PenaltyDocumentIds;
+			return callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
 		} catch (err) {
-			callback(null, createResponse({ statusCode: 503, body: err }));
+			return callback(null, createResponse({ statusCode: 503, body: err.message }));
 		}
 	}
 
 	_enrichPenaltyGroupRequest(body) {
 		const penGrp = { ...body };
 		const { UserID, Timestamp, Penalties } = penGrp;
-		const generatedId = `${Timestamp}${UserID}`.replace(/\D/g, '');
+		const paddedUserId = UserID.toString().padStart(6, '0');
+		const compoundId = parseInt(`${Timestamp}${paddedUserId}`, 10);
+		const generatedId = compoundId.toString(36);
 		penGrp.ID = generatedId;
 		penGrp.TotalAmount = Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
 		penGrp.PaymentStatus = 'UNPAID';
@@ -92,7 +77,6 @@ export default class PenaltyGroup {
 				Item: this._createPersistablePenaltyGroup(penaltyGroup),
 			},
 		};
-
 		const penaltyPutRequests = penaltyGroup.Penalties.map(p => ({
 			PutRequest: {
 				Item: p,
@@ -114,6 +98,39 @@ export default class PenaltyGroup {
 		persistableGrp.PenaltyDocumentIds = persistableGrp.Penalties.map(p => p.ID);
 		delete persistableGrp.Penalties;
 		return persistableGrp;
+	}
+
+	async _getPenaltyGroupById(penaltyGroupId) {
+		return new Promise(async (resolve, reject) => {
+			try {
+				const groupParams = {
+					TableName: this.penaltyGroupTableName,
+					Key: { ID: penaltyGroupId },
+				};
+				const penaltyGroupContainer = await this.db.get(groupParams).promise();
+				resolve(penaltyGroupContainer.Item);
+			} catch (err) {
+				reject(new Error(`Problem fetching penaltyGroup: ${err}`));
+			}
+		});
+	}
+
+	async _getPenaltiesWithIds(penaltyIds) {
+		return new Promise(async (resolve, reject) => {
+			try {
+				const requestItems = penaltyIds.map(docId => ({
+					ID: docId,
+				}));
+				const penaltyDocumentParams = { RequestItems: {} };
+				penaltyDocumentParams.RequestItems[this.penaltyDocTableName] = { Keys: requestItems };
+				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
+
+				const penaltyDocItemContainer = await penaltyDocPromise;
+				resolve(penaltyDocItemContainer.Responses.penaltyDocuments);
+			} catch (err) {
+				reject(new Error(`Problem fetching penaltyDocuments: ${err}`));
+			}
+		});
 	}
 
 }

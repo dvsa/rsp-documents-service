@@ -53,7 +53,7 @@ describe('penaltyDocuments', () => {
 				const expectedPenaltyDocument = penaltyDocuments.filter(penaltyDocument => penaltyDocument.referenceNo === '820500000878')[0];
 
 				request
-					.get('/820500000878_FP')
+					.get('/820500000878_FPN')
 					.set('Context-Type', 'application/json')
 					.set('authorization', 'allow')
 					.expect(200)

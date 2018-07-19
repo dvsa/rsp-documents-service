@@ -1,3 +1,5 @@
+import 'babel-polyfill';
+
 import auth from './functions/auth';
 import list from './functions/list';
 import get from './functions/get';
