@@ -1,6 +1,8 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 
+import Validation from 'rsp-validation';
+
 import createResponse from '../utils/createResponse';
 import getUnixTime from '../utils/time';
 import hashToken from '../utils/hash';
@@ -15,46 +17,23 @@ export default class PenaltyGroup {
 		this.penaltyGroupTableName = penaltyGroupTableName;
 	}
 
-	createPenaltyGroup(body, callback) {
-		const penGrp = { ...body };
-		const { UserID, Timestamp, Penalties } = penGrp;
-		const generatedId = `${Timestamp}${UserID}`.replace(/\D/g, '');
-		penGrp.ID = generatedId;
-		penGrp.TotalAmount = body.Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
-		penGrp.PaymentStatus = 'UNPAID';
-		penGrp.Penalties.forEach((p) => {
-			p.inPenaltyGroup = true;
-			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
-			p.Origin = p.Origin || appOrigin;
-			p.Offset = getUnixTime();
-		});
+	async createPenaltyGroup(body, callback) {
+		const validationResult = Validation.penaltyGroupValidation(body);
 
-		const groupPutRequest = {
-			PutRequest: {
-				Item: this.createPersistablePenaltyGroup(penGrp),
-			},
-		};
+		if (!validationResult.valid) {
+			const errMsg = validationResult.error.message;
+			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+		}
 
-		const penaltyPutRequests = Penalties.map(p => ({
-			PutRequest: {
-				Item: p,
-			},
-		}));
+		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
+		const batchWriteParams = this._createPenaltyGroupPutParameters(penaltyGroup);
 
-		const requestItems = {};
-		requestItems[this.penaltyDocTableName] = penaltyPutRequests;
-		requestItems[this.penaltyGroupTableName] = [groupPutRequest];
-
-		const batchParams = {
-			RequestItems: requestItems,
-		};
-
-		const dbPutPromise = this.db.batchWrite(batchParams).promise();
-		dbPutPromise.then(() => {
-			callback(null, createResponse({ statusCode: 201, body: penGrp }));
-		}).catch((err) => {
-			callback(null, createResponse({ statusCode: 500, body: `insert failed: ${err}` }));
-		});
+		try {
+			await this.db.batchWrite(batchWriteParams).promise();
+			return callback(null, createResponse({ statusCode: 201, body: penaltyGroup }));
+		} catch (err) {
+			return callback(null, createResponse({ statusCode: 500, body: `Insert failed: ${err}` }));
+		}
 	}
 
 	async getPenaltyGroup(penaltyGroupId, callback) {
@@ -91,7 +70,46 @@ export default class PenaltyGroup {
 		}
 	}
 
-	createPersistablePenaltyGroup(penaltyGroup) {
+	_enrichPenaltyGroupRequest(body) {
+		const penGrp = { ...body };
+		const { UserID, Timestamp, Penalties } = penGrp;
+		const generatedId = `${Timestamp}${UserID}`.replace(/\D/g, '');
+		penGrp.ID = generatedId;
+		penGrp.TotalAmount = Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
+		penGrp.PaymentStatus = 'UNPAID';
+		penGrp.Penalties.forEach((p) => {
+			p.inPenaltyGroup = true;
+			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
+			p.Origin = p.Origin || appOrigin;
+			p.Offset = getUnixTime();
+		});
+		return penGrp;
+	}
+
+	_createPenaltyGroupPutParameters(penaltyGroup) {
+		const groupPutRequest = {
+			PutRequest: {
+				Item: this._createPersistablePenaltyGroup(penaltyGroup),
+			},
+		};
+
+		const penaltyPutRequests = penaltyGroup.Penalties.map(p => ({
+			PutRequest: {
+				Item: p,
+			},
+		}));
+
+		const requestItems = {};
+		requestItems[this.penaltyDocTableName] = penaltyPutRequests;
+		requestItems[this.penaltyGroupTableName] = [groupPutRequest];
+
+		const batchParams = {
+			RequestItems: requestItems,
+		};
+		return batchParams;
+	}
+
+	_createPersistablePenaltyGroup(penaltyGroup) {
 		const persistableGrp = { ...penaltyGroup };
 		persistableGrp.PenaltyDocumentIds = persistableGrp.Penalties.map(p => p.ID);
 		delete persistableGrp.Penalties;

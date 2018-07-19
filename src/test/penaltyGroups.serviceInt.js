@@ -46,14 +46,38 @@ describe('penaltyGroups', () => {
 					Penalties: [
 						{
 							ID: 'p1',
+							Hash: 'somehash',
+							Enabled: true,
 							Value: {
+								penaltyType: 'FPN',
 								penaltyAmount: 150,
+								paymentToken: '1234abcdef',
+								referenceNo: '12345678',
+								vehicleDetails: {
+									regNo: 'AA123',
+								},
+								officerName: 'Joe Bloggs',
+								officerID: 'XYZ',
+								dateTime: 12345678,
+								siteCode: 3,
 							},
 						},
 						{
 							ID: 'p2',
+							Hash: 'somehash',
+							Enabled: true,
 							Value: {
+								penaltyType: 'IM',
 								penaltyAmount: 80,
+								paymentToken: '1234abcdef',
+								referenceNo: '87654321',
+								vehicleDetails: {
+									regNo: 'BB123',
+								},
+								officerName: 'Joe Bloggs',
+								officerID: 'XYZ',
+								dateTime: 12345678,
+								siteCode: 3,
 							},
 						},
 					],
