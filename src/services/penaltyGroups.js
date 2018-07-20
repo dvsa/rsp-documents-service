@@ -18,11 +18,13 @@ export default class PenaltyGroup {
 	}
 
 	async createPenaltyGroup(body, callback) {
-		const validationResult = Validation.penaltyGroupValidation(body);
+		if (process.env.DO_PENALTY_GROUP_VALIDATION) {
+			const validationResult = Validation.penaltyGroupValidation(body);
 
-		if (!validationResult.valid) {
-			const errMsg = validationResult.error.message;
-			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+			if (!validationResult.valid) {
+				const errMsg = validationResult.error.message;
+				return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+			}
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
