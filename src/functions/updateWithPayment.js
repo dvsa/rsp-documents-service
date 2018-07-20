@@ -4,7 +4,7 @@ import PenaltyDocument from '../services/penaltyDocuments';
 
 const penaltyDocuments = new PenaltyDocument(
 	doc,
-	process.env.DYNAMODB_TABLE,
+	process.env.DYNAMODB_PENALTY_DOC_TABLE,
 	process.env.BUCKETNAME,
 	process.env.SNSTOPICARN,
 	process.env.SITERESOURCE,
