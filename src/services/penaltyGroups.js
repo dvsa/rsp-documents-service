@@ -47,7 +47,8 @@ export default class PenaltyGroup {
 				return callback(null, createResponse({ statusCode: 404, body: { error: msg } }));
 			}
 
-			penaltyGroup.Penalties = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
+			const penaltyDocs = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
+			penaltyGroup.Payments = this._groupPenaltyDocsToPayments(penaltyDocs);
 			delete penaltyGroup.PenaltyDocumentIds;
 			return callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
 		} catch (err) {
@@ -133,6 +134,27 @@ export default class PenaltyGroup {
 				reject(new Error(`Problem fetching penaltyDocuments: ${err}`));
 			}
 		});
+	}
+
+	_groupPenaltyDocsToPayments(penaltyDocs) {
+		const penaltiesByType = penaltyDocs.reduce((payments, doc) => {
+			const { penaltyType } = doc.Value;
+			if (Object.keys(payments).includes(penaltyType)) {
+				payments[penaltyType].push(doc);
+			}
+			return payments;
+		}, { FPN: [], IM: [], CDN: [] });
+
+		const paymentList = Object.keys(penaltiesByType).map(categoryName => ({
+			PaymentCategory: categoryName,
+			TotalAmount: penaltiesByType[categoryName]
+				.reduce((total, penalty) => total + penalty.Value.penaltyAmount, 0),
+			PaymentStatus: penaltiesByType[categoryName]
+				.every(penalty => penalty.Value.paymentStatus === 'PAID') ? 'PAID' : 'UNPAID',
+			Penalties: penaltiesByType[categoryName],
+		}));
+
+		return paymentList.filter(group => group.Penalties.length > 0);
 	}
 
 }
