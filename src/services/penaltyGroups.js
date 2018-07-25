@@ -58,11 +58,9 @@ export default class PenaltyGroup {
 
 	_enrichPenaltyGroupRequest(body) {
 		const penGrp = { ...body };
-		const { UserID, Timestamp, Penalties } = penGrp;
-		const paddedUserId = UserID.toString().padStart(6, '0');
-		const compoundId = parseInt(`${Timestamp}${paddedUserId}`, 10);
-		const generatedId = compoundId.toString(36);
-		penGrp.ID = generatedId;
+		const { Timestamp, SiteCode, Penalties } = penGrp;
+		const penaltyGroupId = PenaltyGroup.generatePenaltyGroupId(Timestamp, SiteCode);
+		penGrp.ID = penaltyGroupId;
 		penGrp.TotalAmount = Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
 		penGrp.PaymentStatus = 'UNPAID';
 		penGrp.Penalties.forEach((p) => {
@@ -72,6 +70,18 @@ export default class PenaltyGroup {
 			p.Offset = getUnixTime();
 		});
 		return penGrp;
+	}
+
+	static generatePenaltyGroupId(timestamp, siteCode) {
+		const absoluteSiteCode = Math.abs(siteCode);
+		const lengthOfSiteCode = Math.ceil(Math.log10(absoluteSiteCode));
+		const numberOfOnes = siteCode < 0 ? 1 : 0;
+		const lengthOfPaddedSiteCode = 4;
+		const numberOfZeros = lengthOfPaddedSiteCode - lengthOfSiteCode - numberOfOnes;
+		const paddedSiteCode = `${'1'.repeat(numberOfOnes)}${'0'.repeat(numberOfZeros)}${absoluteSiteCode}`;
+		const concatId = parseInt(`${timestamp}${paddedSiteCode}`, 10);
+		const encodedConcatId = concatId.toString(36);
+		return encodedConcatId;
 	}
 
 	_createPenaltyGroupPutParameters(penaltyGroup) {
