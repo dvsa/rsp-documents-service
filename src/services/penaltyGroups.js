@@ -19,7 +19,6 @@ export default class PenaltyGroup {
 
 	async createPenaltyGroup(body, callback) {
 		const validationResult = Validation.penaltyGroupValidation(body);
-
 		if (!validationResult.valid) {
 			const errMsg = validationResult.error.message;
 			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));

@@ -53,6 +53,7 @@ describe('penaltyGroups', () => {
 							Enabled: true,
 							Value: {
 								penaltyType: 'FPN',
+								inPenaltyGroup: true,
 								penaltyAmount: 150,
 								paymentToken: '1234abcdef',
 								referenceNo: '12345678',
@@ -71,6 +72,7 @@ describe('penaltyGroups', () => {
 							Enabled: true,
 							Value: {
 								penaltyType: 'IM',
+								inPenaltyGroup: true,
 								penaltyAmount: 80,
 								paymentToken: '1234abcdef',
 								referenceNo: '87654321',
