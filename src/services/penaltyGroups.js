@@ -18,13 +18,11 @@ export default class PenaltyGroup {
 	}
 
 	async createPenaltyGroup(body, callback) {
-		if (process.env.DO_PENALTY_GROUP_VALIDATION) {
-			const validationResult = Validation.penaltyGroupValidation(body);
+		const validationResult = Validation.penaltyGroupValidation(body);
 
-			if (!validationResult.valid) {
-				const errMsg = validationResult.error.message;
-				return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
-			}
+		if (!validationResult.valid) {
+			const errMsg = validationResult.error.message;
+			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
@@ -79,7 +77,10 @@ export default class PenaltyGroup {
 		const lengthOfPaddedSiteCode = 4;
 		const numberOfZeros = lengthOfPaddedSiteCode - lengthOfSiteCode - numberOfOnes;
 		const paddedSiteCode = `${'1'.repeat(numberOfOnes)}${'0'.repeat(numberOfZeros)}${absoluteSiteCode}`;
-		const concatId = parseInt(`${timestamp}${paddedSiteCode}`, 10);
+
+		const parsedTimestamp = timestamp.toFixed(3) * 1000;
+
+		const concatId = parseInt(`${parsedTimestamp}${paddedSiteCode}`, 10);
 		const encodedConcatId = concatId.toString(36);
 		return encodedConcatId;
 	}
