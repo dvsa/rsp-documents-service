@@ -42,7 +42,7 @@ describe('penaltyGroups', () => {
 		context('a new penalty group', () => {
 			it('should return created penalty group with generated ID', (done) => {
 				const fakePenaltyGroupPayload = {
-					Timestamp: 1532528872164,
+					Timestamp: 1532945465.234729,
 					SiteCode: -72,
 					Location: 'Trowell Services',
 					VehicleRegistration: '11 ABC',
@@ -94,8 +94,8 @@ describe('penaltyGroups', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.ID).toBe('46wd0g1mwds');
-						expect(res.body.Timestamp).toBe(1532528872164);
+						expect(res.body.ID).toBe('46xu68x7wps');
+						expect(res.body.Timestamp).toBe(1532945465.234729);
 						expect(res.body.Location).toBe('Trowell Services');
 						expect(res.body.VehicleRegistration).toBe('11 ABC');
 						expect(res.body.TotalAmount).toBe(230);
