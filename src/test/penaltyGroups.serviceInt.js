@@ -98,6 +98,7 @@ describe('penaltyGroups', () => {
 						if (err) throw err;
 						expect(res.body.ID).toBe('46xu68x7wps');
 						expect(res.body.Timestamp).toBe(1532945465.234729);
+						expect(res.body.Offset).toBeCloseTo(Date.now() / 1000, 1);
 						expect(res.body.Location).toBe('Trowell Services');
 						expect(res.body.VehicleRegistration).toBe('11 ABC');
 						expect(res.body.TotalAmount).toBe(230);
