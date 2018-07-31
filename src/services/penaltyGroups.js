@@ -59,6 +59,7 @@ export default class PenaltyGroup {
 		const penaltyGroupId = PenaltyGroup.generatePenaltyGroupId(Timestamp, SiteCode);
 		penGrp.ID = penaltyGroupId;
 		penGrp.TotalAmount = Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
+		penGrp.Offset = Date.now() / 1000;
 		penGrp.PaymentStatus = 'UNPAID';
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;

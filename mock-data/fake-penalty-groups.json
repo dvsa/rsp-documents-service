@@ -3,6 +3,7 @@
     "ID": "15317465650001337",
     "PaymentStatus": "UNPAID",
     "Timestamp": 1521311200,
+    "Offset": 1521311200.345,
     "VehicleRegistration": "11 ABC",
     "Location": "Trowell Services",
     "TotalAmount": 130,
