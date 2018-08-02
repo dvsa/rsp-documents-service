@@ -15,6 +15,7 @@ export default class PenaltyGroup {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
+		this.maxBatchSize = 75;
 	}
 
 	async createPenaltyGroup(body, callback) {
@@ -53,6 +54,25 @@ export default class PenaltyGroup {
 		}
 	}
 
+	async listPenaltyGroups(offsetFrom, callback) {
+		try {
+			const params = {
+				TableName: this.penaltyGroupTableName,
+				IndexName: 'ByOffset',
+				Limit: this.maxBatchSize,
+				KeyConditionExpression: '#Origin = :Origin and #Offset > :Offset',
+				ExpressionAttributeNames: { '#Offset': 'Offset', '#Origin': 'Origin' },
+				ExpressionAttributeValues: { ':Offset': offsetFrom, ':Origin': 'APP' },
+			};
+
+			const result = await this.db.query(params).promise();
+			return callback(null, createResponse({ statusCode: 200, body: result }));
+		} catch (error) {
+			const resp = createResponse({ statusCode: 500, body: error });
+			return callback(null, resp);
+		}
+	}
+
 	_enrichPenaltyGroupRequest(body) {
 		const penGrp = { ...body };
 		const { Timestamp, SiteCode, Penalties } = penGrp;
@@ -61,6 +81,7 @@ export default class PenaltyGroup {
 		penGrp.TotalAmount = Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
 		penGrp.Offset = Date.now() / 1000;
 		penGrp.PaymentStatus = 'UNPAID';
+		penGrp.Origin = penGrp.Origin || appOrigin;
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
