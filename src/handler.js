@@ -2,6 +2,7 @@ import 'babel-polyfill';
 
 import auth from './functions/auth';
 import list from './functions/list';
+import listGroups from './functions/listGroups';
 import get from './functions/get';
 import create from './functions/create';
 import createPenaltyGroup from './functions/createPenaltyGroup';
@@ -17,6 +18,7 @@ import getDocumentByToken from './functions/getDocumentByToken';
 const handler = {
 	auth,
 	list,
+	listGroups,
 	get,
 	getDocumentByToken,
 	create,
