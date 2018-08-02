@@ -60,7 +60,7 @@ export default class PenaltyGroup {
 				TableName: this.penaltyGroupTableName,
 				IndexName: 'ByOffset',
 				Limit: this.maxBatchSize,
-				KeyConditionExpression: '#Origin = :Origin and #Offset >= :Offset',
+				KeyConditionExpression: '#Origin = :Origin and #Offset > :Offset',
 				ExpressionAttributeNames: { '#Offset': 'Offset', '#Origin': 'Origin' },
 				ExpressionAttributeValues: { ':Offset': offsetFrom, ':Origin': 'APP' },
 			};

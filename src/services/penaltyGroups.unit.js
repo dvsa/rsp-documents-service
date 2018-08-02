@@ -88,7 +88,7 @@ const whenDbWithLimitAndOffset = (mockDb, limit, offset) => {
 			TableName: 'penaltyGroups',
 			IndexName: 'ByOffset',
 			Limit: limit,
-			KeyConditionExpression: '#Origin = :Origin and #Offset >= :Offset',
+			KeyConditionExpression: '#Origin = :Origin and #Offset > :Offset',
 			ExpressionAttributeNames: { '#Offset': 'Offset', '#Origin': 'Origin' },
 			ExpressionAttributeValues: { ':Offset': offset, ':Origin': 'APP' },
 		});

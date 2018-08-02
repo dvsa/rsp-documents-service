@@ -9,8 +9,8 @@ const penaltyGroupService = new PenaltyGroupService(
 );
 
 export default (event, context, callback) => {
-	const { offset } = event.queryStringParameters;
-	const numericOffset = Number(offset);
+	const { Offset } = event.queryStringParameters;
+	const numericOffset = Number(Offset);
 
 	if (Number.isNaN(numericOffset)) {
 		return callback({ statusCode: 400, body: 'No numeric Offset provided' });

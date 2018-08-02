@@ -26,25 +26,25 @@ describe('listGroups', () => {
 	};
 
 	describe('when there is no offset provided', () => {
-		const offset = undefined;
+		const Offset = undefined;
 		it('should respond 400 without calling PenaltyGroupService', () => {
-			listGroups({ queryStringParameters: { offset } }, {}, callbackSpy);
+			listGroups({ queryStringParameters: { Offset } }, {}, callbackSpy);
 			assert400ResponseWithNoPenaltySvcCall();
 		});
 	});
 
 	describe('when the offset provided is not numeric', () => {
-		const offset = 'abc';
+		const Offset = 'abc';
 		it('should respond 400 without calling PenaltyGroupService', () => {
-			listGroups({ queryStringParameters: { offset } }, {}, callbackSpy);
+			listGroups({ queryStringParameters: { Offset } }, {}, callbackSpy);
 			assert400ResponseWithNoPenaltySvcCall();
 		});
 	});
 
 	describe('when a numeric offset string is provided', () => {
-		const offset = '1234567890.345';
+		const Offset = '1234567890.345';
 		it('should call PenaltyGroupService with offset and callback', () => {
-			listGroups({ queryStringParameters: { offset } }, {}, callbackSpy);
+			listGroups({ queryStringParameters: { Offset } }, {}, callbackSpy);
 			sinon.assert.calledWith(penaltyGrpSvc, 1234567890.345, callbackSpy);
 		});
 	});
