@@ -74,7 +74,7 @@ export default class PenaltyGroup {
 		}
 	}
 
-	updateDocumentWithPayment(paymentInfo, callback) {
+	updatePenaltyGroupWithPayment(paymentInfo, callback) {
 		const getParams = {
 			TableName: this.penaltyGroupTableName,
 			Key: {
