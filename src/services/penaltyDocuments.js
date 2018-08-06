@@ -299,7 +299,7 @@ export default class PenaltyDocument {
 				Payload: payloadStr,
 			})
 				.promise()
-				.then(data => resolve(JSON.parse(data.Payload).body))
+				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
 				.catch(err => reject(err));
 		});
 	}
