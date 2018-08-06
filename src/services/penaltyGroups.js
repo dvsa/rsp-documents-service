@@ -84,9 +84,9 @@ export default class PenaltyGroup {
 		const dbGet = this.db.get(getParams).promise();
 
 		dbGet.then((data) => {
-
 			data.Item.PaymentStatus = paymentInfo.paymentStatus;
-			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
+			// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group has been deleted)
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item, true);
 			data.Item.Offset = getUnixTime();
 
 			const putParams = {
