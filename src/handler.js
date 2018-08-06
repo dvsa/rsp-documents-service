@@ -1,6 +1,5 @@
 import 'babel-polyfill';
 
-import auth from './functions/auth';
 import list from './functions/list';
 import listGroups from './functions/listGroups';
 import get from './functions/get';
@@ -14,9 +13,9 @@ import stream from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
+import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
 
 const handler = {
-	auth,
 	list,
 	listGroups,
 	get,
@@ -30,6 +29,7 @@ const handler = {
 	stream,
 	updateWithPayment,
 	updateUponPaymentDelete,
+	updatePenaltyGroupWithPayment,
 };
 
 export default handler;

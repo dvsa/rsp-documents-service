@@ -4,6 +4,7 @@
 import Validation from 'rsp-validation';
 
 import createResponse from '../utils/createResponse';
+import createErrorResponse from '../utils/createErrorResponse';
 import getUnixTime from '../utils/time';
 import hashToken from '../utils/hash';
 
@@ -71,6 +72,45 @@ export default class PenaltyGroup {
 			const resp = createResponse({ statusCode: 500, body: error });
 			return callback(null, resp);
 		}
+	}
+
+	updatePenaltyGroupWithPayment(paymentInfo, callback) {
+		const getParams = {
+			TableName: this.penaltyGroupTableName,
+			Key: {
+				ID: paymentInfo.id,
+			},
+		};
+		const dbGet = this.db.get(getParams).promise();
+
+		dbGet.then((data) => {
+			data.Item.PaymentStatus = paymentInfo.paymentStatus;
+			// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group has been deleted)
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item, true);
+			data.Item.Offset = getUnixTime();
+
+			const putParams = {
+				TableName: this.penaltyGroupTableName,
+				Item: data.Item,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+
+			const dbPut = this.db.put(putParams).promise();
+			dbPut.then(() => {
+				if (data.Item.Origin === appOrigin) {
+					// TODO: Send payment notification
+				}
+				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			}).catch((err) => {
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+		});
 	}
 
 	_enrichPenaltyGroupRequest(body) {
