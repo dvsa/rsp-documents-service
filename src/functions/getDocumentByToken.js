@@ -10,6 +10,7 @@ const penaltyDocuments = new PenaltyDocument(
 	process.env.PAYMENTURL,
 	process.env.TOKEN_SERVICE_ARN,
 	process.env.DAYS_TO_HOLD || 3,
+	process.env.PAYMENTS_BATCH_FETCH_ARN,
 );
 
 export default (event, context, callback) => {

@@ -28,7 +28,7 @@ export default class PenaltyDocument {
 	constructor(
 		db,	penaltyDocTableName, bucketName,
 		snsTopicARN, siteResource, paymentURL,
-		tokenServiceARN, daysToHold,
+		tokenServiceARN, daysToHold, paymentsBatchFetchArn,
 	) {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
@@ -38,6 +38,7 @@ export default class PenaltyDocument {
 		this.paymentURL = paymentURL;
 		this.tokenServiceARN = tokenServiceARN;
 		this.daysToHold = daysToHold;
+		this.paymentsBatchFetchArn = paymentsBatchFetchArn;
 	}
 
 	getDocument(id, callback) {
@@ -58,7 +59,7 @@ export default class PenaltyDocument {
 			const idList = [];
 			idList.push(id);
 			delete data.Item.Origin;
-			this.getPaymentInformation(idList)
+			this.getPaymentInformationViaInvocation(idList)
 				.then((response) => {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
@@ -221,7 +222,7 @@ export default class PenaltyDocument {
 		};
 
 		idList.push(ID);
-		this.getPaymentInformation(idList)
+		this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				const params = {
 					TableName: this.penaltyDocTableName,
@@ -285,6 +286,21 @@ export default class PenaltyDocument {
 		return request(options);
 	}
 
+	getPaymentInformationViaInvocation(idList) {
+		const arn = this.paymentsBatchFetchArn;
+		const payload = {
+			body: {
+				ids: idList,
+			},
+		};
+		const invocationPromise = lambda.invoke({
+			FunctionName: arn,
+			Payload: JSON.stringify(payload),
+		}).promise();
+
+		return invocationPromise;
+	}
+
 	// Delete
 	deleteDocument(id, body, callback) {
 		const timestamp = getUnixTime();
@@ -296,7 +312,7 @@ export default class PenaltyDocument {
 		let paidStatus = 'UNPAID';
 		const idList = [];
 		idList.push(id);
-		this.getPaymentInformation(idList)
+		this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 					paidStatus = response.payments[0].PenaltyStatus;
@@ -413,7 +429,7 @@ export default class PenaltyDocument {
 					delete item.Origin; // remove Origin as not needed in response
 				});
 
-				this.getPaymentInformation(idList)
+				this.getPaymentInformationViaInvocation(idList)
 					.then((response) => {
 						let mergedList = [];
 						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
@@ -461,7 +477,7 @@ export default class PenaltyDocument {
 					const docID = `${parsedBody.Reference}_${docType}`;
 					this.getDocument(docID, (err, res) => {
 						if (res.statusCode === 404) {
-							this.getPaymentInformation([docID])
+							this.getPaymentInformationViaInvocation([docID])
 								.then((response) => {
 									const paymentInfo = {};
 									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
@@ -643,7 +659,7 @@ export default class PenaltyDocument {
 			delete item.Value.paymentRef;
 		});
 
-		this.getPaymentInformation(idList)
+		this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				let mergedList = [];
 				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
