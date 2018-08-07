@@ -287,18 +287,21 @@ export default class PenaltyDocument {
 	}
 
 	getPaymentInformationViaInvocation(idList) {
-		const arn = this.paymentsBatchFetchArn;
-		const payload = {
-			body: {
+		return new Promise((resolve, reject) => {
+			const arn = this.paymentsBatchFetchArn;
+			const body = JSON.stringify({
 				ids: idList,
-			},
-		};
-		const invocationPromise = lambda.invoke({
-			FunctionName: arn,
-			Payload: JSON.stringify(payload),
-		}).promise();
-
-		return invocationPromise;
+			});
+			const payload = { body };
+			const payloadStr = JSON.stringify(payload);
+			lambda.invoke({
+				FunctionName: arn,
+				Payload: payloadStr,
+			})
+				.promise()
+				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
+				.catch(err => reject(err));
+		});
 	}
 
 	// Delete
