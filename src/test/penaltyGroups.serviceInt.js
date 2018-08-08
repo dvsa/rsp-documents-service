@@ -8,6 +8,7 @@ import _ from 'lodash';
 const url = 'http://localhost:3000/penaltyGroup';
 const request = supertest(url);
 const groupId = '46xu68x7o6b';
+let docClient;
 
 describe('penaltyGroups', () => {
 
@@ -16,6 +17,7 @@ describe('penaltyGroups', () => {
 			region: 'eu-west-1',
 			endpoint: 'http://localhost:8000',
 		});
+		docClient = new AWS.DynamoDB.DocumentClient();
 	});
 
 	context('GET', () => {
@@ -159,6 +161,33 @@ describe('penaltyGroups', () => {
 		});
 	});
 
+	context('DELETE', () => {
+		context('when DELETE called against penalty group of ID', () => {
+			let testPenaltyGroupId;
+			let testDocIds;
+			beforeEach(async () => {
+				const { id, docIds } = await insertDeletionTestPenaltyGroup();
+				testPenaltyGroupId = id;
+				testDocIds = docIds;
+			});
+			afterEach(async () => {
+				await removeDeleteTestPenaltyGroup(testPenaltyGroupId, testDocIds);
+			});
+
+			it('should mark the penalty group and all its documents as disabled and return 204', async () => {
+				await request
+					.delete(`/penaltyGroup/${testPenaltyGroupId}`)
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect('Content-Type', 'application/json')
+					.expect(204);
+
+				await assertPenaltyGroupDisabled(testPenaltyGroupId);
+				await assertPenaltyDocumentsDisabled(testDocIds);
+			});
+		});
+	});
+
 });
 
 async function insertNPenaltyGroupsIncrementingFromOffset(groupCount, startOffset) {
@@ -173,7 +202,6 @@ async function insertNPenaltyGroupsIncrementingFromOffset(groupCount, startOffse
 			},
 		}
 	));
-	const docClient = new AWS.DynamoDB.DocumentClient();
 	const batchPutRequests = _.chunk(putRequests, 25);
 	try {
 		const putPromises = batchPutRequests.map((p) => {
@@ -192,7 +220,6 @@ async function insertNPenaltyGroupsIncrementingFromOffset(groupCount, startOffse
 }
 
 async function removePenaltyGroupsById(ids) {
-	const docClient = new AWS.DynamoDB.DocumentClient();
 	const deletePromises = ids.map((id) => {
 		const params = {
 			Key: {
@@ -207,4 +234,82 @@ async function removePenaltyGroupsById(ids) {
 	} catch (error) {
 		console.log(`Error cleaning up penalty groups ${error}`);
 	}
+}
+
+async function removePenaltyDocumentsById(ids) {
+	const deletePromises = ids.map((id) => {
+		const params = {
+			Key: {
+				ID: id,
+			},
+			TableName: 'penaltyDocuments',
+		};
+		return docClient.delete(params).promise();
+	});
+	try {
+		await Promise.all(deletePromises);
+	} catch (error) {
+		console.log(`Error cleaning up penalty documents ${error}`);
+	}
+}
+
+async function insertDeletionTestPenaltyGroup() {
+	const docIds = ['deleteintegdoc01', 'deleteintegdoc02', 'deleteintegdoc03'];
+	const groupPutRequest = {
+		PutRequest: {
+			Item: {
+				ID: 'deleteinteg',
+				Offset: Date.now(),
+				Origin: 'APP',
+				PenaltyDocumentIds: docIds,
+				Enabled: true,
+			},
+		},
+	};
+	const documentPutRequests = docIds.map(id => ({
+		PutRequest: {
+			Item: {
+				ID: id,
+				Enabled: true,
+			},
+		},
+	}));
+	const params = {
+		RequestItems: {
+			penaltyGroups: [groupPutRequest],
+			penaltyDocuments: documentPutRequests,
+		},
+	};
+
+	await docClient.batchWrite(params).promise();
+
+	return { id: 'deleteinteg', docIds };
+}
+
+async function removeDeleteTestPenaltyGroup(penaltyGroupId, penaltyDocumentIds) {
+	await removePenaltyGroupsById([penaltyGroupId]);
+	await removePenaltyDocumentsById(penaltyDocumentIds);
+}
+
+async function assertPenaltyGroupDisabled(penaltyGroupId) {
+	const penaltyGroup = await docClient.get({
+		TableName: 'penaltyGroups',
+		Key: {
+			ID: penaltyGroupId,
+		},
+	}).promise();
+
+	expect(penaltyGroup.Enabled).toBe(false);
+}
+
+async function assertPenaltyDocumentsDisabled(documentIds) {
+	documentIds.forEach((id) => {
+		const document = docClient.get({
+			TableName: 'penaltyDocuments',
+			Key: {
+				ID: id,
+			},
+		});
+		expect(document.Enabled).toBe(false);
+	});
 }
