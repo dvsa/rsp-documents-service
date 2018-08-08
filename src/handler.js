@@ -7,6 +7,7 @@ import create from './functions/create';
 import createPenaltyGroup from './functions/createPenaltyGroup';
 import getPenaltyGroup from './functions/getPenaltyGroup';
 import remove from './functions/delete';
+import deleteGroup from './functions/deleteGroup';
 import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import stream from './functions/stream';
@@ -24,6 +25,7 @@ const handler = {
 	createPenaltyGroup,
 	getPenaltyGroup,
 	remove,
+	deleteGroup,
 	updateMulti,
 	sites,
 	stream,

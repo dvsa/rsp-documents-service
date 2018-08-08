@@ -74,6 +74,10 @@ export default class PenaltyGroup {
 		}
 	}
 
+	delete(penaltyGroupId) {
+
+	}
+
 	updatePenaltyGroupWithPayment(paymentInfo, callback) {
 		const getParams = {
 			TableName: this.penaltyGroupTableName,
