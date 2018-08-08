@@ -122,6 +122,7 @@ export default class PenaltyGroup {
 		penGrp.Offset = Date.now() / 1000;
 		penGrp.PaymentStatus = 'UNPAID';
 		penGrp.Origin = penGrp.Origin || appOrigin;
+		penGrp.IsEnabled = true;
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);

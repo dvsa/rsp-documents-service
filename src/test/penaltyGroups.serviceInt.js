@@ -43,6 +43,7 @@ describe('penaltyGroups', () => {
 						expect(res.body.Payments[0].Penalties[1].ID).toBe('820500000878_FPN');
 						expect(res.body.Payments[0].Penalties[1].Value).toBeDefined();
 						expect(res.body.PenaltyDocumentIds).toBeUndefined();
+						expect(res.body.IsEnabled).toBe(true);
 						done();
 					});
 			});
@@ -151,6 +152,7 @@ describe('penaltyGroups', () => {
 						expect(res.body.Penalties[0].inPenaltyGroup).toBe(true);
 						expect(res.body.Penalties[1].inPenaltyGroup).toBe(true);
 						expect(res.body.PenaltyGroupIds).toBeUndefined();
+						expect(res.body.IsEnabled).toBe(true);
 						done();
 					});
 			});
