@@ -9,7 +9,6 @@ import PenaltyGroupService from './penaltyGroups';
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
 	let dbQueryStub;
-	let callbackSpy;
 
 	beforeEach(() => {
 		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups');
@@ -18,6 +17,7 @@ describe('PenaltyGroupService', () => {
 	describe('listPenaltyGroups', () => {
 		let groups;
 		const offset = 100;
+		let callbackSpy;
 		beforeEach(() => {
 			dbQueryStub = sinon.stub(doc, 'query');
 			callbackSpy = sinon.spy(() => ('callback result'));
@@ -82,6 +82,15 @@ describe('PenaltyGroupService', () => {
 	});
 
 	describe('delete', () => {
+		let callbackSpy;
+
+		beforeEach(() => {
+			callbackSpy = sinon.spy();
+		});
+		afterEach(() => {
+			callbackSpy.resetHistory();
+		});
+
 		context('when database returns enabled penalty group with document IDs', () => {
 			let dbGetStub;
 			let dbUpdateStub;
@@ -89,24 +98,46 @@ describe('PenaltyGroupService', () => {
 				dbGetStub = sinon.stub(doc, 'get');
 				dbGetStub.returns({
 					promise: () => Promise.resolve({
-						ID: 'abc123def45',
-						Enabled: true,
-						PenaltyDocumentIds: ['doc1', 'doc2'],
+						Item: {
+							ID: 'abc123def45',
+							Enabled: true,
+							PenaltyDocumentIds: ['doc1', 'doc2'],
+						},
 					}),
 				});
 				dbUpdateStub = sinon.stub(doc, 'update');
+				dbUpdateStub.returns({
+					promise: () => Promise.resolve(),
+				});
 			});
 			afterEach(() => {
 				doc.get.restore();
 				doc.update.restore();
 			});
-			xit('should set Enabled to be false for the group, followed by each document', async () => {
-				await penaltyGroupSvc.delete();
+
+			it('should set Enabled to be false for the group, followed by each document', async () => {
+				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
 				sinon.assert.callOrder(
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyGroups', Key: { ID: 'abc123def45' } })),
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc1' } })),
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc2' } })),
 				);
+				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 204 }));
+			});
+		});
+
+		context('when database request rejects', () => {
+			let dbGetStub;
+			beforeEach(() => {
+				dbGetStub = sinon.stub(doc, 'get');
+				dbGetStub.returns({
+					promise: () => Promise.reject(new Error('error')),
+				});
+			});
+
+			it('should invoke callback with status 404', async () => {
+				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
+				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 404 }));
 			});
 		});
 	});

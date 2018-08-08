@@ -1,6 +1,5 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-/* eslint-disable */
 
 import Validation from 'rsp-validation';
 
@@ -76,34 +75,21 @@ export default class PenaltyGroup {
 	}
 
 	async delete(penaltyGroupId, callback) {
-		const { PenaltyDocumentIds } = await this._getPenaltyGroupById(penaltyGroupId);
-		await this.db.update({
-			TableName: this.penaltyGroupTableName,
-			Key: {
-				ID: penaltyGroupId,
-			},
-			UpdateExpression: 'set #e = :e',
-			ExpressionAttributeNames: { '#e': 'Enabled' },
-			ExpressionAttributeValues: {
-				':e' : false,
-			},
-		}).promise();
-		const documentUpdatePromises = PenaltyDocumentIds.map((id) => {
-			const updateParams = {
-				TableName: this.penaltyDocTableName,
-				Key: {
-					ID: id,
-				},
-				UpdateExpression: 'set #e = :e',
-				ExpressionAttributeNames: { '#e': 'Enabled' },
-				ExpressionAttributeValues: {
-					':e': false,
-				},
-			};
-			return this.db.update(updateParams).promise();
-		});
-		await Promise.all(documentUpdatePromises);
-		return callback(null, createResponse({ statusCode: 204, body: {} }));
+		try {
+			const { PenaltyDocumentIds } = await this._getPenaltyGroupById(penaltyGroupId);
+			const groupParams = this._disableIdInTableParams(this.penaltyGroupTableName, penaltyGroupId);
+			await this.db.update(groupParams).promise();
+
+			const documentUpdatePromises = PenaltyDocumentIds.map((id) => {
+				const docUpdateParams = this._disableIdInTableParams(this.penaltyDocTableName, id);
+				return this.db.update(docUpdateParams).promise();
+			});
+			await Promise.all(documentUpdatePromises);
+
+			return callback(null, createResponse({ statusCode: 204 }));
+		} catch (error) {
+			return callback(null, createResponse({ statusCode: 404 }));
+		}
 	}
 
 	updatePenaltyGroupWithPayment(paymentInfo, callback) {
@@ -260,6 +246,20 @@ export default class PenaltyGroup {
 		}));
 
 		return paymentList.filter(group => group.Penalties.length > 0);
+	}
+
+	_disableIdInTableParams(tableName, id) {
+		return {
+			TableName: tableName,
+			Key: {
+				ID: id,
+			},
+			UpdateExpression: 'set #e = :e',
+			ExpressionAttributeNames: { '#e': 'Enabled' },
+			ExpressionAttributeValues: {
+				':e': false,
+			},
+		};
 	}
 
 }
