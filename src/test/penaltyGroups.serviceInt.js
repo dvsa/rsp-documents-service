@@ -45,7 +45,7 @@ describe('penaltyGroups', () => {
 						expect(res.body.Payments[0].Penalties[1].ID).toBe('820500000878_FPN');
 						expect(res.body.Payments[0].Penalties[1].Value).toBeDefined();
 						expect(res.body.PenaltyDocumentIds).toBeUndefined();
-						expect(res.body.IsEnabled).toBe(true);
+						expect(res.body.Enabled).toBe(true);
 						done();
 					});
 			});
@@ -154,7 +154,7 @@ describe('penaltyGroups', () => {
 						expect(res.body.Penalties[0].inPenaltyGroup).toBe(true);
 						expect(res.body.Penalties[1].inPenaltyGroup).toBe(true);
 						expect(res.body.PenaltyGroupIds).toBeUndefined();
-						expect(res.body.IsEnabled).toBe(true);
+						expect(res.body.Enabled).toBe(true);
 						done();
 					});
 			});
@@ -176,7 +176,7 @@ describe('penaltyGroups', () => {
 
 			it('should mark the penalty group and all its documents as disabled and return 204', async () => {
 				await request
-					.delete(`/penaltyGroup/${testPenaltyGroupId}`)
+					.delete(`/${testPenaltyGroupId}`)
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
 					.expect('Content-Type', 'application/json')
@@ -299,17 +299,17 @@ async function assertPenaltyGroupDisabled(penaltyGroupId) {
 		},
 	}).promise();
 
-	expect(penaltyGroup.Enabled).toBe(false);
+	expect(penaltyGroup.Item.Enabled).toBe(false);
 }
 
 async function assertPenaltyDocumentsDisabled(documentIds) {
-	documentIds.forEach((id) => {
-		const document = docClient.get({
+	documentIds.forEach(async (id) => {
+		const document = await docClient.get({
 			TableName: 'penaltyDocuments',
 			Key: {
 				ID: id,
 			},
-		});
-		expect(document.Enabled).toBe(false);
+		}).promise();
+		expect(document.Item.Enabled).toBe(false);
 	});
 }

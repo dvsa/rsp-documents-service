@@ -8,23 +8,19 @@ import PenaltyGroupService from './penaltyGroups';
 
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
-	let mockDb;
+	let dbQueryStub;
 	let callbackSpy;
 
 	beforeEach(() => {
-		mockDb = sinon.stub(doc, 'query');
-		callbackSpy = sinon.spy(() => ('callback result'));
 		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups');
-	});
-
-	afterEach(() => {
-		doc.query.restore();
 	});
 
 	describe('listPenaltyGroups', () => {
 		let groups;
 		const offset = 100;
 		beforeEach(() => {
+			dbQueryStub = sinon.stub(doc, 'query');
+			callbackSpy = sinon.spy(() => ('callback result'));
 			groups = [
 				{
 					ID: '1234567890a',
@@ -36,11 +32,15 @@ describe('PenaltyGroupService', () => {
 				},
 			];
 		});
+		afterEach(() => {
+			doc.query.restore();
+		});
+
 		describe('when database call is successful', () => {
 			beforeEach(() => {
 				const batchSize = 2;
 				penaltyGroupSvc.maxBatchSize = batchSize;
-				whenDbWithLimitAndOffset(mockDb, batchSize, offset)
+				whenDbCalledWithLimitAndOffset(dbQueryStub, batchSize, offset)
 					.returns({
 						promise: () => Promise.resolve({
 							data: {
@@ -66,7 +66,7 @@ describe('PenaltyGroupService', () => {
 			beforeEach(() => {
 				const batchSize = 100;
 				penaltyGroupSvc.maxBatchSize = batchSize;
-				whenDbWithLimitAndOffset(mockDb, batchSize, offset)
+				whenDbCalledWithLimitAndOffset(dbQueryStub, batchSize, offset)
 					.throws({});
 			});
 			it('should return a 500 with the error', async () => {
@@ -80,9 +80,39 @@ describe('PenaltyGroupService', () => {
 			});
 		});
 	});
+
+	describe('delete', () => {
+		context('when database returns enabled penalty group with document IDs', () => {
+			let dbGetStub;
+			let dbUpdateStub;
+			beforeEach(() => {
+				dbGetStub = sinon.stub(doc, 'get');
+				dbGetStub.returns({
+					promise: () => Promise.resolve({
+						ID: 'abc123def45',
+						Enabled: true,
+						PenaltyDocumentIds: ['doc1', 'doc2'],
+					}),
+				});
+				dbUpdateStub = sinon.stub(doc, 'update');
+			});
+			afterEach(() => {
+				doc.get.restore();
+				doc.update.restore();
+			});
+			xit('should set Enabled to be false for the group, followed by each document', async () => {
+				await penaltyGroupSvc.delete();
+				sinon.assert.callOrder(
+					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyGroups', Key: { ID: 'abc123def45' } })),
+					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc1' } })),
+					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc2' } })),
+				);
+			});
+		});
+	});
 });
 
-const whenDbWithLimitAndOffset = (mockDb, limit, offset) => {
+const whenDbCalledWithLimitAndOffset = (mockDb, limit, offset) => {
 	return mockDb
 		.withArgs({
 			TableName: 'penaltyGroups',

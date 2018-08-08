@@ -1,5 +1,6 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
+/* eslint-disable */
 
 import Validation from 'rsp-validation';
 
@@ -74,8 +75,35 @@ export default class PenaltyGroup {
 		}
 	}
 
-	delete(penaltyGroupId) {
-
+	async delete(penaltyGroupId, callback) {
+		const { PenaltyDocumentIds } = await this._getPenaltyGroupById(penaltyGroupId);
+		await this.db.update({
+			TableName: this.penaltyGroupTableName,
+			Key: {
+				ID: penaltyGroupId,
+			},
+			UpdateExpression: 'set #e = :e',
+			ExpressionAttributeNames: { '#e': 'Enabled' },
+			ExpressionAttributeValues: {
+				':e' : false,
+			},
+		}).promise();
+		const documentUpdatePromises = PenaltyDocumentIds.map((id) => {
+			const updateParams = {
+				TableName: this.penaltyDocTableName,
+				Key: {
+					ID: id,
+				},
+				UpdateExpression: 'set #e = :e',
+				ExpressionAttributeNames: { '#e': 'Enabled' },
+				ExpressionAttributeValues: {
+					':e': false,
+				},
+			};
+			return this.db.update(updateParams).promise();
+		});
+		await Promise.all(documentUpdatePromises);
+		return callback(null, createResponse({ statusCode: 204, body: {} }));
 	}
 
 	updatePenaltyGroupWithPayment(paymentInfo, callback) {
@@ -126,7 +154,7 @@ export default class PenaltyGroup {
 		penGrp.Offset = Date.now() / 1000;
 		penGrp.PaymentStatus = 'UNPAID';
 		penGrp.Origin = penGrp.Origin || appOrigin;
-		penGrp.IsEnabled = true;
+		penGrp.Enabled = true;
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
