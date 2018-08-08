@@ -16,14 +16,16 @@ export default class PenaltyGroup {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
-		this.maxBatchSize = 75;
+		this.maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
 	}
 
 	async createPenaltyGroup(body, callback) {
-		const validationResult = Validation.penaltyGroupValidation(body);
-		if (!validationResult.valid) {
-			const errMsg = validationResult.error.message;
-			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+		if (process.env.ENABLE_PENALTY_GROUP_VALIDATION) {
+			const validationResult = Validation.penaltyGroupValidation(body);
+			if (!validationResult.valid) {
+				const errMsg = validationResult.error.message;
+				return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+			}
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
