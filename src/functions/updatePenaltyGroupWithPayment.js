@@ -10,10 +10,10 @@ const penaltyGroupService = new PenaltyGroupService(
 
 export default (event, context, callback) => {
 
-	const paymentInfo = {
-		id: event.body.id,
-		paymentStatus: event.body.paymentStatus,
-	};
+	let paymentInfo = event.body;
+	if (typeof paymentInfo === 'string') {
+		paymentInfo = JSON.parse(event.body);
+	}
 	// id body document
 	penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo, callback);
 };
