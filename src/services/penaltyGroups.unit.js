@@ -144,7 +144,7 @@ const whenDbWithLimitAndOffset = (mockDbQuery, limit, offset) => {
 		});
 };
 
-const getExpectedBatchParams = (mockPenalties) => {
+function getExpectedBatchParams(mockPenalties) {
 	return {
 		RequestItems: {
 			penaltyDocuments: [
@@ -161,9 +161,9 @@ const getExpectedBatchParams = (mockPenalties) => {
 			],
 		},
 	};
-};
+}
 
-const getExpectedPutParams = (penaltyGroup) => {
+function getExpectedPutParams(penaltyGroup) {
 	return {
 		TableName: 'penaltyGroups',
 		Item: penaltyGroup,
@@ -172,4 +172,4 @@ const getExpectedPutParams = (penaltyGroup) => {
 			'#ID': 'ID',
 		},
 	};
-};
+}
