@@ -22,7 +22,6 @@ describe('list', () => {
 				pathParameters: null,
 			};
 			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake((offset, exclusiveStartKey, callback) => {
-				console.log('im fake');
 				const response = createResponse({
 					body: penaltyDocuments,
 				});
@@ -33,8 +32,6 @@ describe('list', () => {
 		it('should return a 200 success', (done) => {
 
 			list(event, null, (err, res) => {
-				console.log(JSON.stringify(err, null, 2));
-				console.log(JSON.stringify(res, null, 2));
 
 				expect(err).toBe(null);
 				expect(res.statusCode).toBe(200);
