@@ -79,7 +79,6 @@ export default class PenaltyGroup {
 	async updatePenaltyGroupWithPayment(paymentInfo, callback) {
 		const { id, paymentStatus, penaltyType } = paymentInfo;
 		const oldPaymentStatus = paymentStatus === 'PAID' ? 'UNPAID' : 'PAID';
-
 		try {
 			const penaltyGroup = await this._getPenaltyGroupById(id);
 			const penaltyDocs = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
@@ -94,8 +93,8 @@ export default class PenaltyGroup {
 			await this.db.batchWrite(batchWriteParams).promise();
 			// Check if all other penalties have been paid
 			const otherPenalties = penaltyDocs.filter(p => p.Value.penaltyType !== penaltyType);
-			const anyNotUpdated = otherPenalties.some(p => p.Value.paymentStatus === oldPaymentStatus);
-			if (!anyNotUpdated) {
+			const anyOutstanding = otherPenalties.some(p => p.Value.paymentStatus === oldPaymentStatus);
+			if (!anyOutstanding) {
 				// Update penalty group payment status if all penalties have been paid
 				penaltyGroup.PaymentStatus = paymentStatus;
 				// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group was deleted)
@@ -117,7 +116,9 @@ export default class PenaltyGroup {
 					// TODO: Send payment notification
 				}
 				callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
+				return;
 			}
+			callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
 		} catch (err) {
 			callback(null, createErrorResponse({ statusCode: 500, body: err }));
 		}
@@ -235,7 +236,7 @@ export default class PenaltyGroup {
 
 	_createUpdatePenaltiesPutParameters(penalties, tableName, paymentStatus) {
 		const putRequests = penalties.map((p) => {
-			p.paymentStatus = paymentStatus;
+			p.Value.paymentStatus = paymentStatus;
 			return {
 				PutRequest: { Item: p },
 			};
