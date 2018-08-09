@@ -2,17 +2,20 @@
 
 import expect from 'expect';
 import sinon from 'sinon';
+import _ from 'lodash';
 import { doc } from 'serverless-dynamodb-client';
 
 import PenaltyGroupService from './penaltyGroups';
+import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
+import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
 
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
-	let mockDb;
+	let mockDbQuery;
 	let callbackSpy;
 
 	beforeEach(() => {
-		mockDb = sinon.stub(doc, 'query');
+		mockDbQuery = sinon.stub(doc, 'query');
 		callbackSpy = sinon.spy(() => ('callback result'));
 		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups');
 	});
@@ -40,7 +43,7 @@ describe('PenaltyGroupService', () => {
 			beforeEach(() => {
 				const batchSize = 2;
 				penaltyGroupSvc.maxBatchSize = batchSize;
-				whenDbWithLimitAndOffset(mockDb, batchSize, offset)
+				whenDbWithLimitAndOffset(mockDbQuery, batchSize, offset)
 					.returns({
 						promise: () => Promise.resolve({
 							data: {
@@ -66,7 +69,7 @@ describe('PenaltyGroupService', () => {
 			beforeEach(() => {
 				const batchSize = 100;
 				penaltyGroupSvc.maxBatchSize = batchSize;
-				whenDbWithLimitAndOffset(mockDb, batchSize, offset)
+				whenDbWithLimitAndOffset(mockDbQuery, batchSize, offset)
 					.throws({});
 			});
 			it('should return a 500 with the error', async () => {
@@ -80,10 +83,57 @@ describe('PenaltyGroupService', () => {
 			});
 		});
 	});
+
+	describe('updatePenaltyGroupWithPayment', () => {
+		let mockPaymentInfo;
+		let mockBatchWrite;
+		let mockPut;
+		let mockGetPenaltiesWithIds;
+		let mockGetPenaltyGroupById;
+		const mockPenaltyGroup = _.find(mockPenaltyGroupsData, ['ID', '46xu68x7o6b']);
+		const mockPenalties = mockPenaltiesData.filter((p) => {
+			return mockPenaltyGroup.PenaltyDocumentIds.includes(p.ID);
+		});
+		const expectedBatchWriteParams = getExpectedBatchParams(mockPenalties);
+		const expectedPutParams = getExpectedPutParams(mockPenaltyGroup);
+		beforeEach(() => {
+			callbackSpy = sinon.spy(() => ('callback result'));
+			mockPaymentInfo = {
+				id: 'id',
+				paymentStatus: 'UNPAID',
+				penaltyType: 'FPN',
+			};
+			mockBatchWrite = sinon.stub(doc, 'batchWrite')
+				.returns({
+					promise: () => Promise.resolve('batchWrite resolved'),
+				});
+			mockPut = sinon.stub(doc, 'put')
+				.returns({
+					promise: () => Promise.resolve('put resolved'),
+				});
+			mockGetPenaltyGroupById = sinon.stub(penaltyGroupSvc, '_getPenaltyGroupById').callsFake(() => mockPenaltyGroup);
+			mockGetPenaltiesWithIds = sinon.stub(penaltyGroupSvc, '_getPenaltiesWithIds').callsFake(() => mockPenalties);
+		});
+
+		it('call the correct methods when invoked and returns a success', async () => {
+			await penaltyGroupSvc.updatePenaltyGroupWithPayment(
+				mockPaymentInfo,
+				callbackSpy,
+			);
+			expect(mockGetPenaltyGroupById.called).toBe(true);
+			expect(mockGetPenaltiesWithIds.called).toBe(true);
+			expect(mockPut.getCall(0).args[0]).toEqual(expectedPutParams);
+			expect(mockBatchWrite.getCall(0).args[0]).toEqual(expectedBatchWriteParams);
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 200,
+				body: JSON.stringify(mockPenaltyGroup),
+			}));
+		});
+	});
 });
 
-const whenDbWithLimitAndOffset = (mockDb, limit, offset) => {
-	return mockDb
+const whenDbWithLimitAndOffset = (mockDbQuery, limit, offset) => {
+	return mockDbQuery
 		.withArgs({
 			TableName: 'penaltyGroups',
 			IndexName: 'ByOffset',
@@ -92,4 +142,34 @@ const whenDbWithLimitAndOffset = (mockDb, limit, offset) => {
 			ExpressionAttributeNames: { '#Offset': 'Offset', '#Origin': 'Origin' },
 			ExpressionAttributeValues: { ':Offset': offset, ':Origin': 'APP' },
 		});
+};
+
+const getExpectedBatchParams = (mockPenalties) => {
+	return {
+		RequestItems: {
+			penaltyDocuments: [
+				{
+					PutRequest: {
+						Item: mockPenalties[0],
+					},
+				},
+				{
+					PutRequest: {
+						Item: mockPenalties[1],
+					},
+				},
+			],
+		},
+	};
+};
+
+const getExpectedPutParams = (penaltyGroup) => {
+	return {
+		TableName: 'penaltyGroups',
+		Item: penaltyGroup,
+		ConditionExpression: 'attribute_exists(#ID)',
+		ExpressionAttributeNames: {
+			'#ID': 'ID',
+		},
+	};
 };
