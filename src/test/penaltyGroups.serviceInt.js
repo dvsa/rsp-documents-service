@@ -8,6 +8,7 @@ import _ from 'lodash';
 const url = 'http://localhost:3000/penaltyGroup';
 const request = supertest(url);
 const groupId = '46xu68x7o6b';
+const disabledGroupId = '87xu68s7o6c';
 let docClient;
 
 describe('penaltyGroups', () => {
@@ -22,7 +23,7 @@ describe('penaltyGroups', () => {
 
 	context('GET', () => {
 		context('an individual penalty group', () => {
-			it('should return all penalty groups', (done) => {
+			it('should return a penalty group by ID', (done) => {
 				request
 					.get(`/${groupId}`)
 					.set('Content-Type', 'application/json')
@@ -46,6 +47,18 @@ describe('penaltyGroups', () => {
 						expect(res.body.Payments[0].Penalties[1].Value).toBeDefined();
 						expect(res.body.PenaltyDocumentIds).toBeUndefined();
 						expect(res.body.Enabled).toBe(true);
+						done();
+					});
+			});
+			it('should respond 404 if the penalty group is disabled', (done) => {
+				request
+					.get(`/${disabledGroupId}`)
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect(404)
+					.expect('Content-Type', 'application/json')
+					.end((err) => {
+						if (err) throw err;
 						done();
 					});
 			});

@@ -25,6 +25,7 @@
     "TotalAmount": 130,
     "SiteCode": 3,
     "Origin": "APP",
+    "Enabled": false,
     "PenaltyDocumentIds": [
       "820500000879_FPN",
       "820500000880_IM"
