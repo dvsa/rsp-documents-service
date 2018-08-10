@@ -115,8 +115,7 @@ export default class PenaltyGroup {
 			if (!anyOutstanding) {
 				// Update penalty group payment status if all penalties have been paid
 				penaltyGroup.PaymentStatus = paymentStatus;
-				// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group was deleted)
-				penaltyGroup.Hash = hashToken(id, penaltyGroup, true);
+				penaltyGroup.Hash = hashToken(id, penaltyGroup, paymentStatus);
 				penaltyGroup.Offset = getUnixTime();
 
 				const putParams = {
@@ -152,6 +151,7 @@ export default class PenaltyGroup {
 		penGrp.PaymentStatus = 'UNPAID';
 		penGrp.Origin = penGrp.Origin || appOrigin;
 		penGrp.Enabled = true;
+		penGrp.Hash = hashToken(penaltyGroupId, penGrp, penGrp.Enabled);
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
