@@ -20,6 +20,7 @@ describe('PenaltyGroupService', () => {
 	});
 	afterEach(() => {
 		doc.query.restore();
+		callbackSpy.resetHistory();
 	});
 
 	describe('listPenaltyGroups', () => {
@@ -85,18 +86,21 @@ describe('PenaltyGroupService', () => {
 	});
 
 	describe('delete', () => {
+		let dbGetStub;
+		let dbUpdateStub;
+
 		beforeEach(() => {
+			dbGetStub = sinon.stub(doc, 'get');
+			dbUpdateStub = sinon.stub(doc, 'update');
 			callbackSpy = sinon.spy();
 		});
 		afterEach(() => {
-			callbackSpy.resetHistory();
+			doc.get.restore();
+			doc.update.restore();
 		});
 
 		context('when database returns enabled penalty group with document IDs', () => {
-			let dbGetStub;
-			let dbUpdateStub;
 			beforeEach(() => {
-				dbGetStub = sinon.stub(doc, 'get');
 				dbGetStub.returns({
 					promise: () => Promise.resolve({
 						Item: {
@@ -106,14 +110,9 @@ describe('PenaltyGroupService', () => {
 						},
 					}),
 				});
-				dbUpdateStub = sinon.stub(doc, 'update');
 				dbUpdateStub.returns({
 					promise: () => Promise.resolve(),
 				});
-			});
-			afterEach(() => {
-				doc.get.restore();
-				doc.update.restore();
 			});
 
 			it('should set Enabled to be false for the group, followed by each document', async () => {
@@ -128,17 +127,15 @@ describe('PenaltyGroupService', () => {
 		});
 
 		context('when database request rejects', () => {
-			let dbGetStub;
 			beforeEach(() => {
-				dbGetStub = sinon.stub(doc, 'get');
 				dbGetStub.returns({
 					promise: () => Promise.reject(new Error('error')),
 				});
 			});
 
-			it('should invoke callback with status 404', async () => {
+			it('should invoke callback with status 400 including the error', async () => {
 				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 404 }));
+				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 400, body: sinon.match('error') }));
 			});
 		});
 	});

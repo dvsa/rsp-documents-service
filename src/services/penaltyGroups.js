@@ -90,7 +90,7 @@ export default class PenaltyGroup {
 
 			return callback(null, createResponse({ statusCode: 204 }));
 		} catch (error) {
-			return callback(null, createResponse({ statusCode: 404 }));
+			return callback(null, createResponse({ statusCode: 400, body: error.message }));
 		}
 	}
 
