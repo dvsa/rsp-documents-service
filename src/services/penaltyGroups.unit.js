@@ -16,18 +16,18 @@ describe('PenaltyGroupService', () => {
 
 	beforeEach(() => {
 		mockDbQuery = sinon.stub(doc, 'query');
-		callbackSpy = sinon.spy(() => ('callback result'));
 		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups');
 	});
-
 	afterEach(() => {
 		doc.query.restore();
+		callbackSpy.resetHistory();
 	});
 
 	describe('listPenaltyGroups', () => {
 		let groups;
 		const offset = 100;
 		beforeEach(() => {
+			callbackSpy = sinon.spy(() => ('callback result'));
 			groups = [
 				{
 					ID: '1234567890a',
@@ -39,6 +39,7 @@ describe('PenaltyGroupService', () => {
 				},
 			];
 		});
+
 		describe('when database call is successful', () => {
 			beforeEach(() => {
 				const batchSize = 2;
@@ -80,6 +81,61 @@ describe('PenaltyGroupService', () => {
 					body: {},
 				}));
 				expect(result).toBe('callback result');
+			});
+		});
+	});
+
+	describe('delete', () => {
+		let dbGetStub;
+		let dbUpdateStub;
+
+		beforeEach(() => {
+			dbGetStub = sinon.stub(doc, 'get');
+			dbUpdateStub = sinon.stub(doc, 'update');
+			callbackSpy = sinon.spy();
+		});
+		afterEach(() => {
+			doc.get.restore();
+			doc.update.restore();
+		});
+
+		context('when database returns enabled penalty group with document IDs', () => {
+			beforeEach(() => {
+				dbGetStub.returns({
+					promise: () => Promise.resolve({
+						Item: {
+							ID: 'abc123def45',
+							Enabled: true,
+							PenaltyDocumentIds: ['doc1', 'doc2'],
+						},
+					}),
+				});
+				dbUpdateStub.returns({
+					promise: () => Promise.resolve(),
+				});
+			});
+
+			it('should set Enabled to be false for the group, followed by each document', async () => {
+				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
+				sinon.assert.callOrder(
+					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyGroups', Key: { ID: 'abc123def45' } })),
+					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc1' } })),
+					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc2' } })),
+				);
+				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 204 }));
+			});
+		});
+
+		context('when database request rejects', () => {
+			beforeEach(() => {
+				dbGetStub.returns({
+					promise: () => Promise.reject(new Error('error')),
+				});
+			});
+
+			it('should invoke callback with status 400 including the error', async () => {
+				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
+				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 400, body: sinon.match('error') }));
 			});
 		});
 	});

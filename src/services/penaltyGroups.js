@@ -43,7 +43,7 @@ export default class PenaltyGroup {
 		try {
 			const penaltyGroup = await this._getPenaltyGroupById(penaltyGroupId);
 
-			if (!penaltyGroup) {
+			if (!penaltyGroup || penaltyGroup.Enabled === false) {
 				const msg = `Penalty Group ${penaltyGroupId} not found`;
 				return callback(null, createResponse({ statusCode: 404, body: { error: msg } }));
 			}
@@ -76,6 +76,24 @@ export default class PenaltyGroup {
 		}
 	}
 
+	async delete(penaltyGroupId, callback) {
+		try {
+			const { PenaltyDocumentIds } = await this._getPenaltyGroupById(penaltyGroupId);
+			const groupParams = this._disableIdInTableParams(this.penaltyGroupTableName, penaltyGroupId);
+			await this.db.update(groupParams).promise();
+
+			const documentUpdatePromises = PenaltyDocumentIds.map((id) => {
+				const docUpdateParams = this._disableIdInTableParams(this.penaltyDocTableName, id);
+				return this.db.update(docUpdateParams).promise();
+			});
+			await Promise.all(documentUpdatePromises);
+
+			return callback(null, createResponse({ statusCode: 204 }));
+		} catch (error) {
+			return callback(null, createResponse({ statusCode: 400, body: error.message }));
+		}
+	}
+
 	async updatePenaltyGroupWithPayment(paymentInfo, callback) {
 		const { id, paymentStatus, penaltyType } = paymentInfo;
 		const oldPaymentStatus = paymentStatus === 'PAID' ? 'UNPAID' : 'PAID';
@@ -97,8 +115,7 @@ export default class PenaltyGroup {
 			if (!anyOutstanding) {
 				// Update penalty group payment status if all penalties have been paid
 				penaltyGroup.PaymentStatus = paymentStatus;
-				// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group was deleted)
-				penaltyGroup.Hash = hashToken(id, penaltyGroup, true);
+				penaltyGroup.Hash = hashToken(id, penaltyGroup, penaltyGroup.Enabled);
 				penaltyGroup.Offset = getUnixTime();
 
 				const putParams = {
@@ -133,6 +150,8 @@ export default class PenaltyGroup {
 		penGrp.Offset = Date.now() / 1000;
 		penGrp.PaymentStatus = 'UNPAID';
 		penGrp.Origin = penGrp.Origin || appOrigin;
+		penGrp.Enabled = true;
+		penGrp.Hash = hashToken(penaltyGroupId, penGrp, penGrp.Enabled);
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
@@ -232,6 +251,20 @@ export default class PenaltyGroup {
 		}));
 
 		return paymentList.filter(group => group.Penalties.length > 0);
+	}
+
+	_disableIdInTableParams(tableName, id) {
+		return {
+			TableName: tableName,
+			Key: {
+				ID: id,
+			},
+			UpdateExpression: 'set #e = :e',
+			ExpressionAttributeNames: { '#e': 'Enabled' },
+			ExpressionAttributeValues: {
+				':e': false,
+			},
+		};
 	}
 
 	_createUpdatePenaltiesPutParameters(penalties, tableName, paymentStatus) {
