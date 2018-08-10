@@ -16,14 +16,16 @@ export default class PenaltyGroup {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
-		this.maxBatchSize = 75;
+		this.maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
 	}
 
 	async createPenaltyGroup(body, callback) {
-		const validationResult = Validation.penaltyGroupValidation(body);
-		if (!validationResult.valid) {
-			const errMsg = validationResult.error.message;
-			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+		if (process.env.ENABLE_PENALTY_GROUP_VALIDATION) {
+			const validationResult = Validation.penaltyGroupValidation(body);
+			if (!validationResult.valid) {
+				const errMsg = validationResult.error.message;
+				return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+			}
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
@@ -92,43 +94,52 @@ export default class PenaltyGroup {
 		}
 	}
 
-	updatePenaltyGroupWithPayment(paymentInfo, callback) {
-		const getParams = {
-			TableName: this.penaltyGroupTableName,
-			Key: {
-				ID: paymentInfo.id,
-			},
-		};
-		const dbGet = this.db.get(getParams).promise();
+	async updatePenaltyGroupWithPayment(paymentInfo, callback) {
+		const { id, paymentStatus, penaltyType } = paymentInfo;
+		const oldPaymentStatus = paymentStatus === 'PAID' ? 'UNPAID' : 'PAID';
+		try {
+			const penaltyGroup = await this._getPenaltyGroupById(id);
+			const penaltyDocs = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
+			const penaltiesByType = this._groupPenaltiesByType(penaltyDocs);
+			const penaltiesToUpdate = penaltiesByType[penaltyType];
+			const batchWriteParams = this._createUpdatePenaltiesPutParameters(
+				penaltiesToUpdate,
+				this.penaltyDocTableName,
+				paymentStatus,
+			);
+			// Update penalties
+			await this.db.batchWrite(batchWriteParams).promise();
+			// Check if all other penalties have been paid
+			const otherPenalties = penaltyDocs.filter(p => p.Value.penaltyType !== penaltyType);
+			const anyOutstanding = otherPenalties.some(p => p.Value.paymentStatus === oldPaymentStatus);
+			if (!anyOutstanding) {
+				// Update penalty group payment status if all penalties have been paid
+				penaltyGroup.PaymentStatus = paymentStatus;
+				// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group was deleted)
+				penaltyGroup.Hash = hashToken(id, penaltyGroup, true);
+				penaltyGroup.Offset = getUnixTime();
 
-		dbGet.then((data) => {
-			data.Item.PaymentStatus = paymentInfo.paymentStatus;
-			// TODO: Implement 'Enabled' flag (indicates whether or not a penalty group has been deleted)
-			data.Item.Hash = hashToken(paymentInfo.id, data.Item, true);
-			data.Item.Offset = getUnixTime();
+				const putParams = {
+					TableName: this.penaltyGroupTableName,
+					Item: penaltyGroup,
+					ConditionExpression: 'attribute_exists(#ID)',
+					ExpressionAttributeNames: {
+						'#ID': 'ID',
+					},
+				};
 
-			const putParams = {
-				TableName: this.penaltyGroupTableName,
-				Item: data.Item,
-				ConditionExpression: 'attribute_exists(#ID)',
-				ExpressionAttributeNames: {
-					'#ID': 'ID',
-				},
-			};
+				await this.db.put(putParams).promise();
 
-			const dbPut = this.db.put(putParams).promise();
-			dbPut.then(() => {
-				if (data.Item.Origin === appOrigin) {
+				if (penaltyGroup.Origin === appOrigin) {
 					// TODO: Send payment notification
 				}
-				callback(null, createResponse({ statusCode: 200, body: data.Item }));
-			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: 400, err });
-				callback(null, returnResponse);
-			});
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
-		});
+				callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
+				return;
+			}
+			callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
+		} catch (err) {
+			callback(null, createErrorResponse({ statusCode: 500, body: err }));
+		}
 	}
 
 	_enrichPenaltyGroupRequest(body) {
@@ -228,13 +239,7 @@ export default class PenaltyGroup {
 	}
 
 	_groupPenaltyDocsToPayments(penaltyDocs) {
-		const penaltiesByType = penaltyDocs.reduce((payments, doc) => {
-			const { penaltyType } = doc.Value;
-			if (Object.keys(payments).includes(penaltyType)) {
-				payments[penaltyType].push(doc);
-			}
-			return payments;
-		}, { FPN: [], IM: [], CDN: [] });
+		const penaltiesByType = this._groupPenaltiesByType(penaltyDocs);
 
 		const paymentList = Object.keys(penaltiesByType).map(categoryName => ({
 			PaymentCategory: categoryName,
@@ -260,6 +265,31 @@ export default class PenaltyGroup {
 				':e': false,
 			},
 		};
+	}
+
+	_createUpdatePenaltiesPutParameters(penalties, tableName, paymentStatus) {
+		const putRequests = penalties.map((p) => {
+			p.Value.paymentStatus = paymentStatus;
+			return {
+				PutRequest: { Item: p },
+			};
+		});
+		return {
+			RequestItems: {
+				[tableName]: putRequests,
+			},
+		};
+	}
+
+	_groupPenaltiesByType(penaltyDocs) {
+		const penaltiesByType = penaltyDocs.reduce((payments, doc) => {
+			const { penaltyType } = doc.Value;
+			if (Object.keys(payments).includes(penaltyType)) {
+				payments[penaltyType].push(doc);
+			}
+			return payments;
+		}, { FPN: [], IM: [], CDN: [] });
+		return penaltiesByType;
 	}
 
 }

@@ -21,7 +21,7 @@ const docTypeMapping = ['FPN', 'IM', 'CDN'];
 const portalOrigin = 'PORTAL';
 const appOrigin = 'APP';
 
-const maxBatchSize = 75;
+const maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
 
 export default class PenaltyDocument {
 
