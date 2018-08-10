@@ -115,7 +115,7 @@ export default class PenaltyGroup {
 			if (!anyOutstanding) {
 				// Update penalty group payment status if all penalties have been paid
 				penaltyGroup.PaymentStatus = paymentStatus;
-				penaltyGroup.Hash = hashToken(id, penaltyGroup, paymentStatus);
+				penaltyGroup.Hash = hashToken(id, penaltyGroup, penaltyGroup.Enabled);
 				penaltyGroup.Offset = getUnixTime();
 
 				const putParams = {
