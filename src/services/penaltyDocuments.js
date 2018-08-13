@@ -1,6 +1,6 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import AWS from 'aws-sdk';
+import { DynamoDB, SNS, S3, Lambda } from 'aws-sdk';
 import Validation from 'rsp-validation';
 import request from 'request-promise';
 import hashToken from '../utils/hash';
@@ -13,10 +13,10 @@ import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
 
-const parse = AWS.DynamoDB.Converter.unmarshall;
-const sns = new AWS.SNS();
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const lambda = new AWS.Lambda({ region: 'eu-west-1' });
+const parse = DynamoDB.Converter.unmarshall;
+const sns = new SNS();
+const s3 = new S3({ apiVersion: '2006-03-01' });
+const lambda = new Lambda({ region: 'eu-west-1' });
 const docTypeMapping = ['FPN', 'IM', 'CDN'];
 const portalOrigin = 'PORTAL';
 const appOrigin = 'APP';
