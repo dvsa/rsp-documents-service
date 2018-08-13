@@ -16,7 +16,7 @@ describe('PenaltyGroupService', () => {
 
 	beforeEach(() => {
 		mockDbQuery = sinon.stub(doc, 'query');
-		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups');
+		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups', process.env.SNSTOPICARN);
 	});
 	afterEach(() => {
 		doc.query.restore();

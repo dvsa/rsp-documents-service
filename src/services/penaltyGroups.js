@@ -1,6 +1,6 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-
+import { SNS } from 'aws-sdk';
 import Validation from 'rsp-validation';
 
 import createResponse from '../utils/createResponse';
@@ -8,15 +8,17 @@ import createErrorResponse from '../utils/createErrorResponse';
 import getUnixTime from '../utils/time';
 import hashToken from '../utils/hash';
 
+const sns = new SNS();
 const appOrigin = 'APP';
 
 export default class PenaltyGroup {
 
-	constructor(db, penaltyDocTableName, penaltyGroupTableName) {
+	constructor(db, penaltyDocTableName, penaltyGroupTableName, snsTopicARN) {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
 		this.maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
+		this.snsTopicARN = snsTopicARN;
 	}
 
 	async createPenaltyGroup(body, callback) {
@@ -130,10 +132,16 @@ export default class PenaltyGroup {
 				await this.db.put(putParams).promise();
 
 				if (penaltyGroup.Origin === appOrigin) {
-					// TODO: Send payment notification
+					paymentInfo.paymentAmount = PenaltyGroup.sumPenaltyAmounts(penaltiesToUpdate);
+					this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 				}
+
 				callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
 				return;
+			}
+			if (penaltyGroup.Origin === appOrigin) {
+				paymentInfo.paymentAmount = PenaltyGroup.sumPenaltyAmounts(penaltiesToUpdate);
+				this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 			}
 			callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
 		} catch (err) {
@@ -174,6 +182,16 @@ export default class PenaltyGroup {
 		const concatId = parseInt(`${parsedTimestamp}${paddedSiteCode}`, 10);
 		const encodedConcatId = concatId.toString(36);
 		return encodedConcatId;
+	}
+
+	async sendPaymentNotification(paymentInfo, documentInfo) {
+		const params = this._paymentMessageParams(paymentInfo, documentInfo);
+		try {
+			const data = await sns.publish(params).promise();
+			console.log('Results from sending message: ', JSON.stringify(data, null, 2));
+		} catch (err) {
+			console.log('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+		}
 	}
 
 	_createPenaltyGroupPutParameters(penaltyGroup) {
@@ -290,6 +308,51 @@ export default class PenaltyGroup {
 			return payments;
 		}, { FPN: [], IM: [], CDN: [] });
 		return penaltiesByType;
+	}
+
+	_paymentMessageParams(paymentInfo, documentInfo) {
+		const text = 'Payment has been made!';
+		const aps = {
+			'content-available': 1,
+			badge: 0,
+		};
+
+		const message = {
+			default: text,
+			APNS: JSON.stringify({
+				aps,
+				site: documentInfo.Value.siteCode,
+				offset: documentInfo.Offset,
+				refNo: paymentInfo.id,
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
+			}),
+			APNS_SANDBOX: JSON.stringify({
+				aps,
+				offset: documentInfo.Offset,
+				site: documentInfo.Value.siteCode,
+				refNo: paymentInfo.id,
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
+			}),
+		};
+		const params = {
+			Subject: text,
+			Message: JSON.stringify(message),
+			TopicArn: this.snsTopicARN,
+			MessageStructure: 'json',
+		};
+		return params;
+	}
+
+	static sumPenaltyAmounts(penalties) {
+		return penalties
+			.map(p => p.Value.penaltyAmount)
+			.reduce((acc, curr) => acc + curr);
 	}
 
 }
