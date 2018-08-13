@@ -132,6 +132,7 @@ export default class PenaltyGroup {
 				await this.db.put(putParams).promise();
 
 				if (penaltyGroup.Origin === appOrigin) {
+					paymentInfo.paymentAmount = PenaltyGroup.sumPenaltyAmounts(penaltiesToUpdate);
 					this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 				}
 				callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
@@ -341,6 +342,12 @@ export default class PenaltyGroup {
 			MessageStructure: 'json',
 		};
 		return params;
+	}
+
+	static sumPenaltyAmounts(penalties) {
+		return penalties
+			.map(p => p.Value.penaltyAmount)
+			.reduce((acc, curr) => acc + curr);
 	}
 
 }
