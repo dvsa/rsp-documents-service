@@ -13,11 +13,12 @@ const appOrigin = 'APP';
 
 export default class PenaltyGroup {
 
-	constructor(db, penaltyDocTableName, penaltyGroupTableName) {
+	constructor(db, penaltyDocTableName, penaltyGroupTableName, snsTopicARN) {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
 		this.maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
+		this.snsTopicARN = snsTopicARN;
 	}
 
 	async createPenaltyGroup(body, callback) {
