@@ -1,6 +1,6 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-
+import { SNS } from 'aws-sdk';
 import Validation from 'rsp-validation';
 
 import createResponse from '../utils/createResponse';
@@ -8,6 +8,7 @@ import createErrorResponse from '../utils/createErrorResponse';
 import getUnixTime from '../utils/time';
 import hashToken from '../utils/hash';
 
+const sns = new SNS();
 const appOrigin = 'APP';
 
 export default class PenaltyGroup {
@@ -130,7 +131,7 @@ export default class PenaltyGroup {
 				await this.db.put(putParams).promise();
 
 				if (penaltyGroup.Origin === appOrigin) {
-					// TODO: Send payment notification
+					this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 				}
 				callback(null, createResponse({ statusCode: 200, body: penaltyGroup }));
 				return;
@@ -174,6 +175,16 @@ export default class PenaltyGroup {
 		const concatId = parseInt(`${parsedTimestamp}${paddedSiteCode}`, 10);
 		const encodedConcatId = concatId.toString(36);
 		return encodedConcatId;
+	}
+
+	async sendPaymentNotification(paymentInfo, documentInfo) {
+		const params = this._paymentMessageParams(paymentInfo, documentInfo);
+		try {
+			const data = await sns.publish(params).promise();
+			console.log('Results from sending message: ', JSON.stringify(data, null, 2));
+		} catch (err) {
+			console.log('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+		}
 	}
 
 	_createPenaltyGroupPutParameters(penaltyGroup) {
@@ -290,6 +301,45 @@ export default class PenaltyGroup {
 			return payments;
 		}, { FPN: [], IM: [], CDN: [] });
 		return penaltiesByType;
+	}
+
+	_paymentMessageParams(paymentInfo, documentInfo) {
+		const text = 'Payment has been made!';
+		const aps = {
+			'content-available': 1,
+			badge: 0,
+		};
+
+		const message = {
+			default: text,
+			APNS: JSON.stringify({
+				aps,
+				site: documentInfo.Value.siteCode,
+				offset: documentInfo.Offset,
+				refNo: 'N/A',
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
+			}),
+			APNS_SANDBOX: JSON.stringify({
+				aps,
+				offset: documentInfo.Offset,
+				site: documentInfo.Value.siteCode,
+				refNo: 'N/A',
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
+			}),
+		};
+		const params = {
+			Subject: text,
+			Message: JSON.stringify(message),
+			TopicArn: this.snsTopicARN,
+			MessageStructure: 'json',
+		};
+		return params;
 	}
 
 }
