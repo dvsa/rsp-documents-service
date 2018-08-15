@@ -87,15 +87,18 @@ describe('PenaltyGroupService', () => {
 
 	describe('delete', () => {
 		let dbGetStub;
+		let dbBatchGetStub;
 		let dbUpdateStub;
 
 		beforeEach(() => {
 			dbGetStub = sinon.stub(doc, 'get');
+			dbBatchGetStub = sinon.stub(doc, 'batchGet');
 			dbUpdateStub = sinon.stub(doc, 'update');
 			callbackSpy = sinon.spy();
 		});
 		afterEach(() => {
 			doc.get.restore();
+			doc.batchGet.restore();
 			doc.update.restore();
 		});
 
@@ -107,6 +110,22 @@ describe('PenaltyGroupService', () => {
 							ID: 'abc123def45',
 							Enabled: true,
 							PenaltyDocumentIds: ['doc1', 'doc2'],
+						},
+					}),
+				});
+				dbBatchGetStub.returns({
+					promise: () => Promise.resolve({
+						Responses: {
+							penaltyDocuments: [
+								{
+									ID: 'doc1',
+									Value: {},
+								},
+								{
+									ID: 'doc2',
+									Value: {},
+								},
+							],
 						},
 					}),
 				});

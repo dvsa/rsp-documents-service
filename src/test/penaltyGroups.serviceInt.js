@@ -19,6 +19,7 @@ describe('penaltyGroups', () => {
 			endpoint: 'http://localhost:8000',
 		});
 		docClient = new AWS.DynamoDB.DocumentClient();
+		extendJestWithUnixSeconds();
 	});
 
 	context('GET', () => {
@@ -286,6 +287,8 @@ async function insertDeletionTestPenaltyGroup() {
 			Item: {
 				ID: id,
 				Enabled: true,
+				Hash: 'original-hash',
+				Value: {},
 			},
 		},
 	}));
@@ -315,7 +318,7 @@ async function assertPenaltyGroupDisabled(penaltyGroupId) {
 	}).promise();
 
 	expect(penaltyGroup.Item.Enabled).toBe(false);
-	expect(penaltyGroup.Item.Offset).toBeCloseTo(Date.now() / 1000, 1);
+	expect(penaltyGroup.Item.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
 }
 
 async function assertPenaltyDocumentsDisabled(documentIds) {
@@ -327,6 +330,25 @@ async function assertPenaltyDocumentsDisabled(documentIds) {
 			},
 		}).promise();
 		expect(document.Item.Enabled).toBe(false);
-		expect(document.Item.Offset).toBeCloseTo(Date.now() / 1000, 1);
+		expect(document.Item.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
+		expect(document.Item.Hash).not.toBe('original-hash');
+	});
+}
+
+function extendJestWithUnixSeconds() {
+	expect.extend({
+		toBeWithinNUnixSeconds(received, argument, n) {
+			const pass = (Math.abs(received - argument) < n);
+			if (pass) {
+				return {
+					pass: true,
+					message: () => `expected ${received} not to be within ${n} unix seconds of ${argument}`,
+				};
+			}
+			return {
+				pass: false,
+				message: () => `expected ${received} to be within ${n} unix seconds of ${argument}`,
+			};
+		},
 	});
 }
