@@ -84,9 +84,19 @@ export default class PenaltyGroup {
 			const groupParams = this._disableIdInTableParams(this.penaltyGroupTableName, penaltyGroupId);
 			await this.db.update(groupParams).promise();
 
-			const documentUpdatePromises = PenaltyDocumentIds.map((id) => {
-				const docUpdateParams = this._disableIdInTableParams(this.penaltyDocTableName, id);
-				return this.db.update(docUpdateParams).promise();
+			const penaltyDocuments = await this._getPenaltyDocumentsWithIds(PenaltyDocumentIds);
+			const docIdsToHashes = penaltyDocuments.map(doc => ({
+				id: doc.ID,
+				hash: hashToken(doc.ID, doc.Value, false),
+			}));
+
+			const documentUpdatePromises = docIdsToHashes.map((idToHash) => {
+				const updateParams = this._disableIdInTableParams(
+					this.penaltyDocTableName,
+					idToHash.id,
+					idToHash.hash,
+				);
+				return this.db.update(updateParams).promise();
 			});
 			await Promise.all(documentUpdatePromises);
 
@@ -271,8 +281,8 @@ export default class PenaltyGroup {
 		return paymentList.filter(group => group.Penalties.length > 0);
 	}
 
-	_disableIdInTableParams(tableName, id) {
-		return {
+	_disableIdInTableParams(tableName, id, newHash) {
+		const params = {
 			TableName: tableName,
 			Key: {
 				ID: id,
@@ -281,9 +291,17 @@ export default class PenaltyGroup {
 			ExpressionAttributeNames: { '#e': 'Enabled', '#o': 'Offset' },
 			ExpressionAttributeValues: {
 				':e': false,
-				':o': Date.now(),
+				':o': Date.now() / 1000,
 			},
 		};
+
+		if (newHash !== undefined) {
+			params.UpdateExpression += ', #h = :h';
+			params.ExpressionAttributeNames['#h'] = 'Hash';
+			params.ExpressionAttributeValues[':h'] = newHash;
+		}
+
+		return params;
 	}
 
 	_createUpdatePenaltiesPutParameters(penalties, tableName, paymentStatus) {
@@ -348,6 +366,20 @@ export default class PenaltyGroup {
 			MessageStructure: 'json',
 		};
 		return params;
+	}
+
+	async _getPenaltyDocumentsWithIds(ids) {
+		const batchGetParams = {
+			RequestItems: {
+				[this.penaltyDocTableName]: {
+					Keys: ids.map(id => ({
+						ID: id,
+					})),
+				},
+			},
+		};
+		const res = await this.db.batchGet(batchGetParams).promise();
+		return res.Responses[this.penaltyDocTableName];
 	}
 
 	static sumPenaltyAmounts(penalties) {
