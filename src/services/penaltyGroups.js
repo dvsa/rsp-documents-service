@@ -277,10 +277,11 @@ export default class PenaltyGroup {
 			Key: {
 				ID: id,
 			},
-			UpdateExpression: 'set #e = :e',
-			ExpressionAttributeNames: { '#e': 'Enabled' },
+			UpdateExpression: 'set #e = :e, #o = :o',
+			ExpressionAttributeNames: { '#e': 'Enabled', '#o': 'Offset' },
 			ExpressionAttributeValues: {
 				':e': false,
+				':o': Date.now(),
 			},
 		};
 	}

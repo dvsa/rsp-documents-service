@@ -315,6 +315,7 @@ async function assertPenaltyGroupDisabled(penaltyGroupId) {
 	}).promise();
 
 	expect(penaltyGroup.Item.Enabled).toBe(false);
+	expect(penaltyGroup.Item.Offset / 1000).toBeCloseTo(Date.now() / 1000, 1);
 }
 
 async function assertPenaltyDocumentsDisabled(documentIds) {
