@@ -315,7 +315,7 @@ async function assertPenaltyGroupDisabled(penaltyGroupId) {
 	}).promise();
 
 	expect(penaltyGroup.Item.Enabled).toBe(false);
-	expect(penaltyGroup.Item.Offset / 1000).toBeCloseTo(Date.now() / 1000, 1);
+	expect(penaltyGroup.Item.Offset).toBeCloseTo(Date.now() / 1000, 1);
 }
 
 async function assertPenaltyDocumentsDisabled(documentIds) {
@@ -327,5 +327,6 @@ async function assertPenaltyDocumentsDisabled(documentIds) {
 			},
 		}).promise();
 		expect(document.Item.Enabled).toBe(false);
+		expect(document.Item.Offset).toBeCloseTo(Date.now() / 1000, 1);
 	});
 }

@@ -281,7 +281,7 @@ export default class PenaltyGroup {
 			ExpressionAttributeNames: { '#e': 'Enabled', '#o': 'Offset' },
 			ExpressionAttributeValues: {
 				':e': false,
-				':o': Date.now(),
+				':o': Date.now() / 1000,
 			},
 		};
 	}
