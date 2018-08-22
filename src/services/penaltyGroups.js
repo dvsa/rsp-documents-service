@@ -26,6 +26,7 @@ export default class PenaltyGroup {
 			const validationResult = Validation.penaltyGroupValidation(body);
 			if (!validationResult.valid) {
 				const errMsg = validationResult.error.message;
+				console.log(errMsg);
 				return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
 			}
 		}
