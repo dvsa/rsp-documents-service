@@ -22,13 +22,12 @@ export default class PenaltyGroup {
 	}
 
 	async createPenaltyGroup(body, callback) {
-		if (process.env.ENABLE_PENALTY_GROUP_VALIDATION) {
-			const validationResult = Validation.penaltyGroupValidation(body);
-			if (!validationResult.valid) {
-				const errMsg = validationResult.error.message;
-				console.log(errMsg);
-				return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
-			}
+		const validationResult = Validation.penaltyGroupValidation(body);
+		if (!validationResult.valid) {
+			const errMsg = validationResult.error.message;
+			console.log(errMsg);
+			console.log(`Got payload: ${JSON.stringify(body)}`);
+			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
