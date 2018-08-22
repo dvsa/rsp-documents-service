@@ -66,7 +66,7 @@
     "js-sha256": "^0.7.1",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
-    "rsp-validation": "^1.5.4",
+    "rsp-validation": "^1.5.5",
     "serverless-dynamodb-client": "0.0.2",
     "uuid": "^3.1.0"
   }
