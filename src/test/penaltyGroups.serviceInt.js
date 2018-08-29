@@ -106,7 +106,8 @@ describe('penaltyGroups', () => {
 					Timestamp: 1532945465.234729,
 					SiteCode: -72,
 					Location: 'Trowell Services',
-					VehicleRegistration: '11 ABC',
+					VehicleRegistration: '11 abc',
+					Offset: 123,
 					Penalties: [
 						{
 							ID: 'p1',
@@ -162,12 +163,14 @@ describe('penaltyGroups', () => {
 						expect(res.body.Timestamp).toBe(1532945465.234729);
 						expect(res.body.Offset).toBeCloseTo(Date.now() / 1000, 1);
 						expect(res.body.Location).toBe('Trowell Services');
-						expect(res.body.VehicleRegistration).toBe('11 ABC');
+						expect(res.body.VehicleRegistration).toBe('11ABC');
 						expect(res.body.TotalAmount).toBe(230);
 						expect(res.body.PaymentStatus).toBe('UNPAID');
 						expect(res.body.Penalties).toHaveLength(2);
 						expect(res.body.Penalties[0].inPenaltyGroup).toBe(true);
 						expect(res.body.Penalties[1].inPenaltyGroup).toBe(true);
+						expect(res.body.Penalties[0].penaltyGroupId).toBe('46xu68x7wps');
+						expect(res.body.Penalties[1].penaltyGroupId).toBe('46xu68x7wps');
 						expect(res.body.PenaltyGroupIds).toBeUndefined();
 						expect(res.body.Enabled).toBe(true);
 						expect(res.body.Hash).toBeDefined();
