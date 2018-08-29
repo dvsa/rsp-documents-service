@@ -1,5 +1,6 @@
 import createResponse from '../utils/createResponse';
 import createErrorResponse from '../utils/createErrorResponse';
+import onlyUnique from '../utils/onlyUnique';
 
 export default class VehicleRegistrationSearch {
 	constructor(db, penaltyDocTableName, penaltyGroupTableName) {
@@ -31,7 +32,7 @@ export default class VehicleRegistrationSearch {
 				}
 				console.log('Getting penalty groups');
 				// Otherwise, get the penalty groups
-				const penaltyGroupIds = penaltiesInGroups.map(p => p.Value.penaltyGroupId);
+				const penaltyGroupIds = penaltiesInGroups.map(p => p.penaltyGroupId);
 				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
 				const PenaltyGroups = Responses[this.penaltyGroupTableName];
 				console.log('pen group data');
@@ -48,13 +49,21 @@ export default class VehicleRegistrationSearch {
 		}
 	}
 	async _batchGetPenaltyGroups(ids) {
+		const uniqueIds = ids.filter(onlyUnique);
+		console.log(uniqueIds.map(id => ({
+			ID: id,
+		})));
 		const batchGetParams = {
 			RequestItems: {
 				[this.penaltyGroupTableName]: {
-					Keys: ids.map(id => ({ ID: id })),
+					Keys: uniqueIds.map(id => ({
+						ID: id,
+					})),
 				},
 			},
 		};
+		console.log('batchGetParams');
+		console.log(batchGetParams);
 		try {
 			const data = await this.db.batchGet(batchGetParams).promise();
 			return data;
