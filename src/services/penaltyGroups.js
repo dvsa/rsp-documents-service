@@ -163,6 +163,7 @@ export default class PenaltyGroup {
 		const penGrp = { ...body };
 		const { Timestamp, SiteCode, Penalties } = penGrp;
 		const penaltyGroupId = PenaltyGroup.generatePenaltyGroupId(Timestamp, SiteCode);
+		penGrp.VehicleRegistration = penGrp.VehicleRegistration.replace(/ /g, '').toUpperCase();
 		penGrp.ID = penaltyGroupId;
 		penGrp.TotalAmount = Penalties.reduce((total, pen) => pen.Value.penaltyAmount + total, 0);
 		penGrp.Offset = Date.now() / 1000;
