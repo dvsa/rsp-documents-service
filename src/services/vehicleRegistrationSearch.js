@@ -8,21 +8,31 @@ export default class VehicleRegistrationSearch {
 		this.penaltyGroupTableName = penaltyGroupTableName;
 	}
 	async search(vehicleReg, callback) {
-		let data;
 		try {
-			// Check in penalty groups first
-			data = await this._searchPenaltyGroups(vehicleReg);
-			console.log('pen group data');
-			console.log(data);
-			if (data.Items.length > 0) {
-				return callback(null, createResponse({ statusCode: 200, body: data.Items }));
-			}
-			// Check in single penalties next
-			data = await this._searchSinglePenalties(vehicleReg);
+			// Check in single penalties first
+			const { Items } = await this._searchSinglePenalties(vehicleReg);
 			console.log('single pen data');
-			console.log(data);
-			if (data.Items.length > 0) {
-				return callback(null, createResponse({ statusCode: 200, body: data.Items }));
+			console.log(Items);
+			if (Items.length > 0) {
+				const Penalties = Items.filter(item => !item.inPenaltyGroup);
+				const penaltiesInGroups = Items.filter(item => item.inPenaltyGroup);
+				// If there no penalties in groups, just return the penalties
+				if (penaltiesInGroups.length < 1) {
+					return callback(null, createResponse({
+						statusCode: 200,
+						body: { Penalties, PenaltyGroups: [] },
+					}));
+				}
+				// Otherwise, get the penalty groups
+				const penaltyGroupIds = penaltiesInGroups.map(p => p.Value.penaltyGroupId);
+				const data = await this._batchGetPenaltyGroups(penaltyGroupIds);
+				const PenaltyGroups = data.Items;
+				console.log('pen group data');
+				console.log(data);
+				return callback(null, createResponse({
+					statusCode: 200,
+					body: { Penalties, PenaltyGroups },
+				}));
 			}
 			// Return 404 not found
 			return callback(null, createResponse({ statusCode: 404, body: 'No penalties found' }));
@@ -30,15 +40,16 @@ export default class VehicleRegistrationSearch {
 			return callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		}
 	}
-	async _searchPenaltyGroups(vehicleReg) {
-		const params = {
-			TableName: this.penaltyGroupTableName,
-			IndexName: 'VehicleRegistration',
-			KeyConditionExpression: 'VehicleRegistration = :value',
-			ExpressionAttributeValues: { ':value': vehicleReg },
+	async _batchGetPenaltyGroups(ids) {
+		const batchGetParams = {
+			RequestItems: {
+				[this.penaltyGroupTableName]: {
+					Keys: ids.map(id => ({ ID: id })),
+				},
+			},
 		};
 		try {
-			const data = await this.db.query(params).promise();
+			const data = await this.db.batchGet(batchGetParams).promise();
 			return data;
 		} catch (err) {
 			return err;
@@ -47,13 +58,13 @@ export default class VehicleRegistrationSearch {
 	async _searchSinglePenalties(vehicleReg) {
 		const params = {
 			TableName: this.penaltyDocTableName,
-			FilterExpression: '#Value.#vehicleDetails.#regNo = :value', // a string representing a constraint on the attribute
-			ExpressionAttributeNames: { // a map of substitutions for attribute names
+			FilterExpression: '#Value.#vehicleDetails.#regNo = :value',
+			ExpressionAttributeNames: {
 				'#Value': 'Value',
 				'#vehicleDetails': 'vehicleDetails',
 				'#regNo': 'regNo',
 			},
-			ExpressionAttributeValues: { // a map of substitutions for all attribute values
+			ExpressionAttributeValues: {
 				':value': vehicleReg,
 			},
 		};
