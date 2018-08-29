@@ -29,6 +29,7 @@ export default class VehicleRegistrationSearch {
 						body: { Penalties, PenaltyGroups: [] },
 					}));
 				}
+				console.log('Getting penalty groups');
 				// Otherwise, get the penalty groups
 				const penaltyGroupIds = penaltiesInGroups.map(p => p.Value.penaltyGroupId);
 				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
