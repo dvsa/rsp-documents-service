@@ -172,6 +172,7 @@ export default class PenaltyGroup {
 		penGrp.Hash = hashToken(penaltyGroupId, penGrp, penGrp.Enabled);
 		penGrp.Penalties.forEach((p) => {
 			p.inPenaltyGroup = true;
+			p.penaltyGroupId = penaltyGroupId;
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
 			p.Origin = p.Origin || appOrigin;
 			p.Offset = getUnixTime();

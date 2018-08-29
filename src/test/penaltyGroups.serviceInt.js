@@ -107,6 +107,7 @@ describe('penaltyGroups', () => {
 					SiteCode: -72,
 					Location: 'Trowell Services',
 					VehicleRegistration: '11 ABC',
+					Offset: 123,
 					Penalties: [
 						{
 							ID: 'p1',
@@ -168,6 +169,8 @@ describe('penaltyGroups', () => {
 						expect(res.body.Penalties).toHaveLength(2);
 						expect(res.body.Penalties[0].inPenaltyGroup).toBe(true);
 						expect(res.body.Penalties[1].inPenaltyGroup).toBe(true);
+						expect(res.body.Penalties[0].penaltyGroupId).toBe('46xu68x7wps');
+						expect(res.body.Penalties[1].penaltyGroupId).toBe('46xu68x7wps');
 						expect(res.body.PenaltyGroupIds).toBeUndefined();
 						expect(res.body.Enabled).toBe(true);
 						expect(res.body.Hash).toBeDefined();
