@@ -23,7 +23,7 @@ export default class VehicleRegistrationSearch {
 				});
 				console.log('Penalties');
 				console.log(Penalties);
-				// If there no penalties in groups, just return the penalties
+				// If there are no penalties in groups, just return the penalties
 				if (penaltiesInGroups.length < 1) {
 					return callback(null, createResponse({
 						statusCode: 200,
@@ -33,45 +33,48 @@ export default class VehicleRegistrationSearch {
 				console.log('Getting penalty groups');
 				// Otherwise, get the penalty groups
 				const penaltyGroupIds = penaltiesInGroups.map(p => p.penaltyGroupId);
-				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
-				const PenaltyGroups = Responses[this.penaltyGroupTableName];
-				console.log('pen group data');
-				console.log(Responses);
-				return callback(null, createResponse({
-					statusCode: 200,
-					body: { Penalties, PenaltyGroups },
-				}));
+				this._batchGetPenaltyGroups(penaltyGroupIds)
+					.then((data) => {
+						const { Responses } = data;
+						const PenaltyGroups = Responses[this.penaltyGroupTableName];
+						console.log('pen group data');
+						console.log(Responses);
+						return callback(null, createResponse({
+							statusCode: 200,
+							body: { Penalties, PenaltyGroups },
+						}));
+					})
+					.catch((err) => {
+						console.log('_batchGetPenaltyGroups error');
+						console.log(err);
+						callback(null, createErrorResponse({ statusCode: 400, body: err }));
+					});
 			}
 			// Return 404 not found
-			return callback(null, createResponse({ statusCode: 404, body: 'No penalties found' }));
+			return callback(null, createErrorResponse({ statusCode: 404, body: 'No penalties found' }));
 		} catch (err) {
 			return callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		}
 	}
-	async _batchGetPenaltyGroups(ids) {
+	_batchGetPenaltyGroups(ids) {
 		const uniqueIds = ids.filter(onlyUnique);
-		console.log(uniqueIds.map(id => ({
+		const batchGetRequestKeys = uniqueIds.map(id => ({
 			ID: id,
-		})));
+		}));
+		console.log(batchGetRequestKeys);
+		console.log(typeof batchGetRequestKeys);
 		const batchGetParams = {
 			RequestItems: {
 				[this.penaltyGroupTableName]: {
-					Keys: uniqueIds.map(id => ({
-						ID: id,
-					})),
+					Keys: batchGetRequestKeys,
 				},
 			},
 		};
 		console.log('batchGetParams');
 		console.log(batchGetParams);
-		try {
-			const data = await this.db.batchGet(batchGetParams).promise();
-			return data;
-		} catch (err) {
-			return err;
-		}
+		return this.db.batchGet(batchGetParams).promise();
 	}
-	async _searchSinglePenalties(vehicleReg) {
+	_searchSinglePenalties(vehicleReg) {
 		const params = {
 			TableName: this.penaltyDocTableName,
 			FilterExpression: '#Value.#vehicleDetails.#regNo = :value',
@@ -84,11 +87,6 @@ export default class VehicleRegistrationSearch {
 				':value': vehicleReg,
 			},
 		};
-		try {
-			const data = await this.db.scan(params).promise();
-			return data;
-		} catch (err) {
-			return err;
-		}
+		return this.db.scan(params).promise();
 	}
 }
