@@ -15,7 +15,7 @@ export default class VehicleRegistrationSearch {
 			console.log(Items);
 			if (Items.length > 0) {
 				const Penalties = Items.filter((item) => {
-					return typeof item.inPenaltyGroup === 'undefined' && typeof item.Value.inPenaltyGroup === 'undefined';
+					return typeof !item.inPenaltyGroup && !item.Value.inPenaltyGroup;
 				});
 				const penaltiesInGroups = Items.filter((item) => {
 					return item.inPenaltyGroup || item.Value.inPenaltyGroup;
@@ -31,10 +31,10 @@ export default class VehicleRegistrationSearch {
 				}
 				// Otherwise, get the penalty groups
 				const penaltyGroupIds = penaltiesInGroups.map(p => p.Value.penaltyGroupId);
-				const data = await this._batchGetPenaltyGroups(penaltyGroupIds);
-				const PenaltyGroups = data.Responses[this.penaltyGroupTableName];
+				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
+				const PenaltyGroups = Responses[this.penaltyGroupTableName];
 				console.log('pen group data');
-				console.log(data);
+				console.log(Responses);
 				return callback(null, createResponse({
 					statusCode: 200,
 					body: { Penalties, PenaltyGroups },
