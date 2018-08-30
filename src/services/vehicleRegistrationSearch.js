@@ -53,6 +53,7 @@ export default class VehicleRegistrationSearch {
 			// Return 404 not found
 			return callback(null, createErrorResponse({ statusCode: 404, body: 'No penalties found' }));
 		} catch (err) {
+			console.log(err);
 			return callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		}
 	}
@@ -77,16 +78,11 @@ export default class VehicleRegistrationSearch {
 	_searchSinglePenalties(vehicleReg) {
 		const params = {
 			TableName: this.penaltyDocTableName,
-			FilterExpression: '#Value.#vehicleDetails.#regNo = :value',
-			ExpressionAttributeNames: {
-				'#Value': 'Value',
-				'#vehicleDetails': 'vehicleDetails',
-				'#regNo': 'regNo',
-			},
-			ExpressionAttributeValues: {
-				':value': vehicleReg,
-			},
+			IndexName: 'ByVehicleRegistration',
+			KeyConditionExpression: '#VehicleRegistration = :vehicleRegistration',
+			ExpressionAttributeNames: { '#VehicleRegistration': 'VehicleRegistration' },
+			ExpressionAttributeValues: { ':vehicleRegistration': vehicleReg },
 		};
-		return this.db.scan(params).promise();
+		return this.db.query(params).promise();
 	}
 }
