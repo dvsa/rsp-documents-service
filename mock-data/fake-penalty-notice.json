@@ -6,6 +6,7 @@
     "Offset": 1521311200.345,
     "Origin": "APP",
     "penaltyGroupId": "46xu68x7o6b",
+    "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
@@ -45,6 +46,7 @@
     "Offset": 1521331200.345,
     "Origin": "APP",
     "penaltyGroupId": "46xu68x7o6b",
+    "VehicleRegistration": "QM05 VH",
     "Value": { 
         "penaltyType" : "FPN",
         "paymentStatus": "UNPAID",
@@ -84,6 +86,7 @@
     "Enabled": true, 
     "Offset": 1521331200,
     "Origin": "APP",
+    "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
@@ -122,6 +125,7 @@
     "Enabled": true, 
     "Offset": 1521331200,
     "Origin": "APP",
+    "VehicleRegistration": "FD17 LKD",
     "Value": {
         "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
@@ -160,6 +164,7 @@
     "Enabled": true, 
     "Offset": 1521331200,
     "Origin": "APP",
+    "VehicleRegistration": "XL 07 PLS",
     "Value": {
         "penaltyType": "IM",
         "paymentStatus": "UNPAID",
@@ -199,6 +204,7 @@
     "Offset": 1521311200.345,
     "Origin": "APP",
     "penaltyGroupId": "46xu68x7o6c",
+    "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
@@ -238,6 +244,7 @@
     "Offset": 1521311200.345,
     "Origin": "APP",
     "penaltyGroupId": "46xu68x7o6c",
+    "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
