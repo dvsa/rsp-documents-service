@@ -219,6 +219,7 @@ export default class PenaltyDocument {
 			Origin: body.Origin,
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
+			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
 
 		idList.push(ID);
@@ -574,6 +575,7 @@ export default class PenaltyDocument {
 			Offset: timestamp,
 			Hash: newHash,
 			Value,
+			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
 
 		const params = {
