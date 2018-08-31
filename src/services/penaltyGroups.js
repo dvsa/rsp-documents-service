@@ -177,6 +177,7 @@ export default class PenaltyGroup {
 			p.Hash = hashToken(p.ID, p.Value, p.Enabled);
 			p.Origin = p.Origin || appOrigin;
 			p.Offset = getUnixTime();
+			p.VehicleRegistration = p.Value.vehicleDetails.regNo;
 		});
 		return penGrp;
 	}

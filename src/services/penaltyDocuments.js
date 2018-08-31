@@ -219,6 +219,7 @@ export default class PenaltyDocument {
 			Origin: body.Origin,
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
+			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
 
 		idList.push(ID);
@@ -539,7 +540,6 @@ export default class PenaltyDocument {
 	// Update list
 
 	updateItem(item) {
-
 		const timestamp = getUnixTime();
 		const key = item.ID;
 		const clientHash = item.Hash ? item.Hash : '<NewHash>';
@@ -574,14 +574,14 @@ export default class PenaltyDocument {
 			Offset: timestamp,
 			Hash: newHash,
 			Value,
+			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
-
 		const params = {
 			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: key,
 			},
-			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin',
+			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin, #VehicleRegistration = :VehicleRegistration',
 			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
@@ -590,6 +590,7 @@ export default class PenaltyDocument {
 				'#Value': 'Value',
 				'#Offset': 'Offset',
 				'#Origin': 'Origin',
+				'#VehicleRegistration': 'VehicleRegistration',
 			},
 			ExpressionAttributeValues: {
 				':clientHash': clientHash,
@@ -600,6 +601,7 @@ export default class PenaltyDocument {
 				':Origin': item.Origin,
 				':AppOrigin': appOrigin,
 				':PortalOrigin': portalOrigin,
+				':VehicleRegistration': updatedItem.VehicleRegistration,
 			},
 			ReturnValues: 'UPDATED_OLD',
 		};

@@ -15,6 +15,7 @@ import updateWithPayment from './functions/updateWithPayment';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
+import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
 
 const handler = {
 	list,
@@ -32,6 +33,7 @@ const handler = {
 	updateWithPayment,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
+	searchByVehicleRegistration,
 };
 
 export default handler;
