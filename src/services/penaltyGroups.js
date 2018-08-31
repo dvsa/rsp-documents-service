@@ -212,6 +212,8 @@ export default class PenaltyGroup {
 				Item: this._createPersistablePenaltyGroup(penaltyGroup),
 			},
 		};
+		// Add VehicleRegistration to the top level
+		penaltyGroup.Penalties.forEach(this._addVehicleRegistrationToTopLevel);
 		const penaltyPutRequests = penaltyGroup.Penalties.map(p => ({
 			PutRequest: {
 				Item: p,
@@ -388,6 +390,10 @@ export default class PenaltyGroup {
 		return penalties
 			.map(p => p.Value.penaltyAmount)
 			.reduce((acc, curr) => acc + curr);
+	}
+
+	_addVehicleRegistrationToTopLevel(penalty) {
+		penalty.VehicleRegistration = penalty.vehicleDetails.regNo;
 	}
 
 }
