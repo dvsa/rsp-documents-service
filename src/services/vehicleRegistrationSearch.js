@@ -38,7 +38,7 @@ export default class VehicleRegistrationSearch {
 						}));
 					})
 					.catch((err) => {
-						callback(null, createErrorResponse({ statusCode: 400, body: err }));
+						return callback(null, createErrorResponse({ statusCode: 400, body: err }));
 					});
 			}
 			// Return 404 not found
