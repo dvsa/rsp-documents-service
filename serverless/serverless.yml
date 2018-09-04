@@ -77,7 +77,7 @@ functions:
     handler: handler.updateUponPaymentDelete
     memorySize: 128  
   streamDocuments:
-    handler: handler.stream 
+    handler: handler.stream
   sites:
     handler: handler.sites
     memorySize: 128
@@ -328,6 +328,20 @@ functions:
                   description: "500 server error"
                 responseModels:
                   application/json: "ErrorResponse"
+  searchByVehicleRegistration:
+    handler: handler.searchByVehicleRegistration
+    memorySize: 128
+    events:
+      -
+        http:
+          path: vehicle-reg/{vehicleReg}
+          method: GET
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+          documentation:
+            summary: "Search for penalties by vehicle registrations"
+            description: "Search for penalties by vehicle registrations"
 resources:
   Resources:
     penaltyDocuments:
@@ -356,6 +370,8 @@ resources:
             AttributeType: S
           - AttributeName: Offset
             AttributeType: N
+          - AttributeName: VehicleRegistration
+            AttributeType: S
         KeySchema:
           - AttributeName: ID
             KeyType: HASH
@@ -371,6 +387,15 @@ resources:
                 KeyType: HASH
               - AttributeName: Offset
                 KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - IndexName: VehicleRegistration
+            KeySchema:
+              - AttributeName: VehicleRegistration
+                KeyType: HASH
             Projection:
               ProjectionType: ALL
             ProvisionedThroughput:
@@ -440,5 +465,19 @@ resources:
                 - dynamodb:GetShardIterator
                 - dynamodb:ListStreams
               Resource: arn:aws:dynamodb:*:*:table/penaltyGroups/index/ByOffset
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: arn:aws:dynamodb:*:*:table/penaltyGroups/index/VehicleRegistration
         Roles:
           - Ref: IamRoleLambdaExecution
