@@ -10,7 +10,6 @@ import remove from './functions/delete';
 import deleteGroup from './functions/deleteGroup';
 import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
-import stream from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
@@ -29,7 +28,6 @@ const handler = {
 	deleteGroup,
 	updateMulti,
 	sites,
-	stream,
 	updateWithPayment,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
