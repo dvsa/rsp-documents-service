@@ -262,7 +262,7 @@ export default class PenaltyGroup {
 				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
 
 				const penaltyDocItemContainer = await penaltyDocPromise;
-				resolve(penaltyDocItemContainer.Responses.penaltyDocuments);
+				resolve(penaltyDocItemContainer.Responses[this.penaltyDocTableName]);
 			} catch (err) {
 				reject(new Error(`Problem fetching penaltyDocuments: ${err}`));
 			}
