@@ -23,7 +23,7 @@ describe('penaltyDocuments', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.penaltyDocuments.length).toEqual(3);
+						expect(res.body.penaltyDocuments).toHaveLength(3);
 						done();
 					});
 
@@ -53,7 +53,7 @@ describe('penaltyDocuments', () => {
 				const expectedPenaltyDocument = penaltyDocuments.filter(penaltyDocument => penaltyDocument.referenceNo === '820500000878')[0];
 
 				request
-					.get('/820500000878')
+					.get('/820500000878_FPN')
 					.set('Context-Type', 'application/json')
 					.set('authorization', 'allow')
 					.expect(200)
@@ -94,7 +94,7 @@ describe('penaltyDocuments', () => {
 							.set('authorization', 'allow')
 							.end((_err, _res) => {
 								if (_err) throw _err;
-								expect(_res.body.users.length).toEqual(5);
+								expect(_res.body.users).toHaveLength(5);
 								done();
 							});
 					});
@@ -108,7 +108,7 @@ describe('penaltyDocuments', () => {
 
 			request
 				.delete('/2')
-				.set('Context-Type', 'application/json')
+				.set('Content-Type', 'application/json')
 				.set('authorization', 'allow')
 				.expect(200)
 				.end((err, res) => {
@@ -119,7 +119,7 @@ describe('penaltyDocuments', () => {
 						.set('authorization', 'allow')
 						.end((_err, _res) => {
 							if (_err) throw _err;
-							expect(_res.body.users.length).toEqual(4);
+							expect(_res.body.users).toHaveLength(4);
 							done();
 						});
 				});

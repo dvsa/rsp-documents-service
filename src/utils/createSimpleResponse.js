@@ -4,7 +4,5 @@ export default ({ body = {}, statusCode = 200, error }) => {
 		item: body,
 		error,
 	};
-
-	console.log(`error : ${error}`);
 	return response;
 };

@@ -1,33 +1,47 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import AWS from 'aws-sdk';
-import Joi from 'joi';
+import { SNS, S3, Lambda } from 'aws-sdk';
+import Validation from 'rsp-validation';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import createResponse from '../utils/createResponse';
 import createSimpleResponse from '../utils/createSimpleResponse';
 import createErrorResponse from '../utils/createErrorResponse';
 import createStringResponse from '../utils/createStringResponse';
-import penaltyValidation from '../validationModels/penaltyValidation';
+import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
+import formatMinimalDocument from '../utils/formatMinimalDocument';
+import subtractDays from '../utils/subtractDays';
 
-const parse = AWS.DynamoDB.Converter.unmarshall;
-const sns = new AWS.SNS();
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const sns = new SNS();
+const s3 = new S3({ apiVersion: '2006-03-01' });
+const lambda = new Lambda({ region: 'eu-west-1' });
+const docTypeMapping = ['FPN', 'IM', 'CDN'];
+const portalOrigin = 'PORTAL';
+const appOrigin = 'APP';
 
+const maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
 
 export default class PenaltyDocument {
 
-	constructor(db, tableName, bucketName, snsTopicARN, siteResource) {
+	constructor(
+		db,	penaltyDocTableName, bucketName,
+		snsTopicARN, siteResource, paymentURL,
+		tokenServiceARN, daysToHold, paymentsBatchFetchArn,
+	) {
 		this.db = db;
-		this.tableName = tableName;
+		this.penaltyDocTableName = penaltyDocTableName;
 		this.bucketName = bucketName;
 		this.snsTopicARN = snsTopicARN;
 		this.siteResource = siteResource;
+		this.paymentURL = paymentURL;
+		this.tokenServiceARN = tokenServiceARN;
+		this.daysToHold = daysToHold;
+		this.paymentsBatchFetchArn = paymentsBatchFetchArn;
 	}
 
 	getDocument(id, callback) {
 		const params = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: id,
 			},
@@ -36,105 +50,240 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(params).promise();
 
 		dbGet.then((data) => {
-			if (!data.Item) {
-				callback(null, createResponse(404, 'ITEM NOT FOUND'));
+			if (!data.Item || this.isEmpty(data)) {
+				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
 				return;
 			}
-			callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			const idList = [];
+			idList.push(id);
+			delete data.Item.Origin;
+			this.getPaymentInformationViaInvocation(idList)
+				.then((response) => {
+					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+						data.Item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+						data.Item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
+						data.Item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
+						data.Item.Value.paymentMethod = response.payments[0].PaymentDetail.PaymentMethod;
+					} else {
+						data.Item.Value.paymentStatus = 'UNPAID';
+					}
+					callback(null, createResponse({ statusCode: 200, body: data.Item }));
+				}).catch((err) => {
+					callback(null, createErrorResponse({ statusCode: 400, body: err }));
+				});
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		});
 	}
 
+	isEmpty(obj) {
+		return JSON.stringify(obj) === JSON.stringify({});
+	}
+
+	updateDocumentUponPaymentDelete(paymentInfo, callback) {
+		const getParams = {
+			TableName: this.penaltyDocTableName,
+			Key: {
+				ID: paymentInfo.id,
+			},
+		};
+		const dbGet = this.db.get(getParams).promise();
+
+		dbGet.then((data) => {
+			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
+			data.Item.Offset = getUnixTime();
+			const putParams = {
+				TableName: this.penaltyDocTableName,
+				Item: data.Item,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+
+			const dbPut = this.db.put(putParams).promise();
+			dbPut.then(() => {
+				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			}).catch((err) => {
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+		});
+	}
+
+	// put
+	updateDocumentWithPayment(paymentInfo, callback) {
+		const getParams = {
+			TableName: this.penaltyDocTableName,
+			Key: {
+				ID: paymentInfo.id,
+			},
+		};
+		const dbGet = this.db.get(getParams).promise();
+		const timeNow = getUnixTime();
+
+		dbGet.then((data) => {
+			if (!data.Item) {
+				const dummyPenaltyDoc = {
+					ID: paymentInfo.id,
+					Value: {
+						dateTime: timeNow,
+						siteCode: 5,
+						vehicleDetails: {
+							regNo: 'UNKNOWN',
+						},
+						referenceNo: paymentInfo.penaltyRefNo,
+						penaltyType: paymentInfo.penaltyType,
+						paymentToken: paymentInfo.paymentToken,
+						officerName: 'UNKNOWN',
+						penaltyAmount: Number(paymentInfo.paymentAmount),
+						officerID: 'UNKNOWN',
+					},
+					Enabled: true,
+					Origin: portalOrigin,
+				};
+				dummyPenaltyDoc.Hash = 'New';
+				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
+				dummyPenaltyDoc.Offset = timeNow;
+				// TODO create dummy doc
+				this.createDocument(dummyPenaltyDoc, () => {});
+				callback(null, createResponse({ statusCode: 200, body: dummyPenaltyDoc }));
+				return;
+			}
+
+			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
+			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
+			data.Item.Offset = getUnixTime();
+
+			const putParams = {
+				TableName: this.penaltyDocTableName,
+				Item: data.Item,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+
+			const dbPut = this.db.put(putParams).promise();
+			dbPut.then(() => {
+				if (data.Item.Origin === appOrigin) {
+					this.sendPaymentNotification(paymentInfo, data.Item);
+				}
+				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			}).catch((err) => {
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
+			});
+		}).catch((err) => {
+			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+		});
+	}
+
+	sendPaymentNotification(paymentInfo, documentInfo) {
+		const params = this.paymentMessageParams(paymentInfo, documentInfo);
+		sns.publish(params, (err, data) => {
+			if (err) {
+				console.log('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+			} else {
+				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
+			}
+		});
+	}
+
 	createDocument(body, callback) {
+
+		delete body.Value.paymentStatus;
+		delete body.paymentAuthCode;
+		delete body.paymentDate;
+		delete body.paymentRef;
 
 		const timestamp = getUnixTime();
 		const { Value, Enabled, ID } = body;
+		const idList = [];
+		// remove payment info, payment service is single point truth
+		// may not need to remove this delete Value.paymentToken;
+		if (typeof body.Origin === 'undefined') {
+			body.Origin = appOrigin;
+		}
 
 		const item = {
 			ID,
 			Value,
 			Enabled,
+			Origin: body.Origin,
 			Hash: hashToken(ID, Value, Enabled),
 			Offset: timestamp,
+			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
 
-		const params = {
-			TableName: this.tableName,
-			Item: item,
-			ConditionExpression: 'attribute_not_exists(#ID)',
-			ExpressionAttributeNames: {
-				'#ID': 'ID',
-			},
-		};
+		idList.push(ID);
+		this.getPaymentInformationViaInvocation(idList)
+			.then((response) => {
+				const params = {
+					TableName: this.penaltyDocTableName,
+					Item: item,
+					ConditionExpression: 'attribute_not_exists(#ID)',
+					ExpressionAttributeNames: {
+						'#ID': 'ID',
+					},
+				};
 
-		const checkTest = this.validatePenalty(body, penaltyValidation, false);
-		if (!checkTest.valid) {
-			callback(null, checkTest.response);
-		} else {
-			const dbPut = this.db.put(params).promise();
+				const checkTest = Validation.penaltyDocumentValidation(body);
+				if (!checkTest.valid) {
+					const err = checkTest.error.message;
+					const validationError = createResponse({
+						body: {
+							err,
+						},
+						statusCode: 405,
+					});
+					callback(null, validationError);
+				} else {
+					const dbPut = this.db.put(params).promise();
+					dbPut.then(() => {
+						// stamp payment info if we have it
+						if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+							item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
+							item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
+							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
+						} else {
+							item.Value.paymentStatus = 'UNPAID';
+						}
 
-			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: item }));
+						callback(null, createResponse({ statusCode: 200, body: item }));
+					}).catch((err) => {
+						const returnResponse = createErrorResponse({ statusCode: 400, err });
+						callback(null, returnResponse);
+					});
+				}
 			}).catch((err) => {
-				const response = createErrorResponse({ statusCode: 400, err });
-				callback(null, response);
+				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				callback(null, returnResponse);
 			});
-		}
 	}
 
-	// Update
-	updateDocument(id, body, callback) {
-
-		// TODO: Verifiy Data
-		const timestamp = getUnixTime();
-		const { Enabled, Value, Hash } = body;
-
-		const newHash = hashToken(id, Value, Enabled);
-		const params = {
-			TableName: this.tableName,
-			Key: {
-				ID: id,
-			},
-			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled',
-			ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash',
-			ExpressionAttributeNames: {
-				'#ID': 'ID',
-				'#Hash': 'Hash',
-				'#Enabled': 'Enabled',
-				'#Value': 'Value',
-				'#Offset': 'Offset',
-			},
-			ExpressionAttributeValues: {
-				':clientHash': Hash,
-				':Enabled': Enabled,
-				':Value': Value,
-				':Hash': newHash,
-				':Offset': timestamp,
-			},
-		};
-
-		const updatedItem = {
-			Enabled,
-			ID: id,
-			Offset: timestamp,
-			Hash: newHash,
-			Value,
-		};
-
-		const checkTest = this.validatePenalty(body, penaltyValidation, true);
-		if (!checkTest.valid) {
-			callback(null, checkTest.response);
-		} else {
-			const dbUpdate = this.db.update(params).promise();
-
-			dbUpdate.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: updatedItem }));
-			}).catch((err) => {
-				const response = createErrorResponse({ statusCode: 400, err });
-				callback(null, response);
+	getPaymentInformationViaInvocation(idList) {
+		return new Promise((resolve, reject) => {
+			const arn = this.paymentsBatchFetchArn;
+			const body = JSON.stringify({
+				ids: idList,
 			});
-		}
+			const payload = { body };
+			const payloadStr = JSON.stringify(payload);
+			lambda.invoke({
+				FunctionName: arn,
+				Payload: payloadStr,
+			})
+				.promise()
+				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
+				.catch(err => reject(err));
+		});
 	}
 
 	// Delete
@@ -143,108 +292,286 @@ export default class PenaltyDocument {
 		const clientHash = body.Hash;
 		const Enabled = false;
 		const { Value } = body;
-
+		// may not need to remove this delete Value.paymentToken;
 		const newHash = hashToken(id, Value, Enabled);
+		let paidStatus = 'UNPAID';
+		const idList = [];
+		idList.push(id);
+		this.getPaymentInformationViaInvocation(idList)
+			.then((response) => {
+				if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+					paidStatus = response.payments[0].PenaltyStatus;
+				}
 
-		const params = {
-			TableName: this.tableName,
-			Key: {
-				ID: id,
-			},
-			UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
-			ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
-			ExpressionAttributeNames: {
-				'#ID': 'ID',
-				'#Hash': 'Hash',
-				'#Enabled': 'Enabled',
-				'#Offset': 'Offset',
-			},
-			ExpressionAttributeValues: {
-				':clientHash': clientHash,
-				':Enabled': true,
-				':Hash': newHash,
-				':not_enabled': false,
-				':Offset': timestamp,
-			},
-		};
+				if (paidStatus === 'PAID') {
+					const err = 'Cannot remove document that is paid';
+					const validationError = createResponse({
+						body: {
+							err,
+						},
+						statusCode: 405,
+					});
+					callback(null, validationError);
+				} else {
 
-		const deletedItem = {
-			Enabled,
-			ID: id,
-			Offset: timestamp,
-			Hash: newHash,
-			Value,
-		};
+					const params = {
+						TableName: this.penaltyDocTableName,
+						Key: {
+							ID: id,
+						},
+						UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
+						ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
+						ExpressionAttributeNames: {
+							'#ID': 'ID',
+							'#Hash': 'Hash',
+							'#Enabled': 'Enabled',
+							'#Offset': 'Offset',
+						},
+						ExpressionAttributeValues: {
+							':clientHash': clientHash,
+							':Enabled': true,
+							':Hash': newHash,
+							':not_enabled': false,
+							':Offset': timestamp,
+						},
+					};
 
-		const checkTest = this.validatePenalty(body, penaltyValidation, true);
-		if (!checkTest.valid) {
-			callback(null, checkTest.response);
-		} else {
-			const dbUpdate = this.db.update(params).promise();
+					const deletedItem = {
+						Enabled,
+						ID: id,
+						Offset: timestamp,
+						Hash: newHash,
+						Value,
+					};
 
-			dbUpdate.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: deletedItem }));
+					const checkTest = Validation.penaltyDocumentValidation(body);
+					if (!checkTest.valid) {
+						const err = checkTest.error.message;
+						const validationError = createResponse({
+							body: {
+								err,
+							},
+							statusCode: 405,
+						});
+						callback(null, validationError);
+					} else {
+						const dbUpdate = this.db.update(params).promise();
+
+						dbUpdate.then(() => {
+							callback(null, createResponse({ statusCode: 200, body: deletedItem }));
+						}).catch((err) => {
+							const errResponse = createErrorResponse({ statusCode: 400, body: err });
+							callback(null, errResponse);
+						});
+					}
+				}
 			}).catch((err) => {
-				const response = createErrorResponse({ statusCode: 400, body: err });
-				callback(null, response);
+				callback(null, createErrorResponse({ statusCode: 400, body: err }));
 			});
-		}
-
 	}
 
-	getDocuments(offset, callback) {
+	getDocuments(offset, exclusiveStartKey, callback) {
 
 		const params = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
+			IndexName: 'ByOffset',
+			Limit: maxBatchSize,
 		};
+		let localOffset = offset;
+		const date = new Date();
 
-		if (offset !== 'undefined')	{
-			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
-			params.FilterExpression = '#Offset >= :Offset';
-			params.ExpressionAttributeValues = { ':Offset': Number(offset) };
+		if (typeof offset === 'undefined' || Number(offset) === 0) {
+			localOffset = subtractDays(date, this.daysToHold);
 		}
 
-		const dbScan = this.db.scan(params).promise();
+		if (typeof offset !== 'undefined') {
+			params.KeyConditionExpression = 'Origin = :Origin and #Offset >= :Offset';
+			// params.FilterExpression = '#Offset >= :Offset';
+			params.ExpressionAttributeNames = { '#Offset': 'Offset' };
+			params.ExpressionAttributeValues = { ':Offset': Number(localOffset), ':Origin': appOrigin };
+			// could use ScanIndexForward of false to return in most recent order...
+		}
+
+		if (exclusiveStartKey !== 'undefined') {
+			params.ExclusiveStartKey = exclusiveStartKey;
+		}
+
+		const dbScan = this.db.query(params).promise();
+		const idList = [];
 
 		dbScan.then((data) => {
-			callback(null, createResponse({ statusCode: 200, body: data }));
+			// TODO need to loop through data and populate with payment info
+			const items = data.Items;
+
+			if (data.Count > 0) {
+				items.forEach((item) => {
+					idList.push(item.ID);
+					delete item.Value.paymentStatus;
+					delete item.Value.paymentAuthCode;
+					delete item.Value.paymentDate;
+					delete item.Value.paymentRef;
+					delete item.Value.paymentMethod;
+					delete item.Origin; // remove Origin as not needed in response
+				});
+
+				this.getPaymentInformationViaInvocation(idList)
+					.then((response) => {
+						let mergedList = [];
+						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+						callback(null, createResponse({
+							statusCode: 200,
+							body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
+						}));
+					})
+					.catch((err) => {
+						callback(null, createErrorResponse({ statusCode: 400, err }));
+					});
+			} else {
+				// no records found in scan so return empty
+				callback(null, createResponse({
+					statusCode: 200,
+					body: { Items: [] },
+				}));
+			}
 		}).catch((err) => {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
+		});
+	}
+
+	getDocumentByToken(token, callback) {
+		lambda.invoke({
+			FunctionName: this.tokenServiceARN,
+			Payload: `{"body": { "Token": "${token}" } }`,
+		}, (error, data) => {
+			if (error) {
+				console.log('Token service returned an error');
+				console.log(JSON.stringify(error, null, 2));
+				callback(null, createErrorResponse({ statusCode: 400, error }));
+			} else if (data.Payload) {
+				try {
+					const parsedPayload = JSON.parse(data.Payload);
+					if (parsedPayload.statusCode === 400) {
+						console.log('Token service returned an error');
+						const parsedBody = JSON.parse(parsedPayload.body);
+						callback(null, createErrorResponse({ statusCode: 400, err: { name: 'Token Error', message: parsedBody.message } }));
+						return;
+					}
+
+					const parsedBody = JSON.parse(parsedPayload.body);
+					const docType = docTypeMapping[parsedBody.DocumentType];
+					const docID = `${parsedBody.Reference}_${docType}`;
+					this.getDocument(docID, (err, res) => {
+						if (res.statusCode === 404) {
+							this.getPaymentInformationViaInvocation([docID])
+								.then((response) => {
+									const paymentInfo = {};
+									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
+										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+										paymentInfo.paymentDate =
+											Number(response.payments[0].PaymentDetail.PaymentDate);
+										paymentInfo.paymentMethod =
+										response.payments[0].PaymentDetail.PaymentMethod;
+									} else {
+										paymentInfo.paymentStatus = 'UNPAID';
+									}
+
+									const minimalDocument = formatMinimalDocument(
+										parsedBody,
+										docID,
+										token,
+										docType,
+										paymentInfo,
+									);
+
+									callback(null, createResponse({ statusCode: 200, body: minimalDocument }));
+								})
+								.catch((e) => {
+									console.log(JSON.stringify(e, null, 2));
+									callback(null, createErrorResponse({ statusCode: 400, e }));
+								});
+						} else if (res.statusCode === 200) {
+							callback(null, createResponse({ statusCode: 200, body: JSON.parse(res.body) }));
+						} else {
+							callback(null, createErrorResponse({
+								statusCode: 400,
+								err: {
+									name: 'Error from GetDocument',
+									message: 'The GetDocument method returned an unhandled error',
+								},
+							}));
+						}
+					});
+				} catch (e) {
+					console.log(JSON.stringify(e, null, 2));
+					callback(null, createErrorResponse({ statusCode: 400, e }));
+				}
+				return;
+			}
+			callback(null, createErrorResponse({
+				statusCode: 400,
+				err: {
+					name: 'No data returned from Token Service',
+					message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
+				},
+			}));
 		});
 	}
 
 	// Update list
 
 	updateItem(item) {
-
 		const timestamp = getUnixTime();
 		const key = item.ID;
 		const clientHash = item.Hash ? item.Hash : '<NewHash>';
 		const { Value, Enabled } = item;
 
+		// save values before removing them on insert
+		// then add back after insert. temporary measure
+		// to avoid refactoring until proving integration with payment service works
+		const savedPaymentStatus = ` ${item.Value.paymentStatus}`.slice(1) || 'UNPAID';
+		let savedPaymentAuthCode;
+		let savedPaymentDate;
+		if (item.Value.paymentStatus === 'PAID') {
+			savedPaymentAuthCode = ` ${item.Value.paymentAuthCode}`.slice(1);
+			savedPaymentDate = Number(` ${item.Value.paymentDate}`.slice(1));
+		}
+
+		delete item.Value.paymentStatus;
+		delete item.Value.paymentAuthCode;
+		delete item.Value.paymentDate;
+		delete item.Value.paymentRef;
+		delete item.Value.paymentMethod;
+
+		if (typeof item.Origin === 'undefined') {
+			item.Origin = appOrigin;
+		}
 		const newHash = hashToken(key, Value, Enabled);
 
 		const updatedItem = {
 			Enabled,
 			ID: key,
+			Origin: item.Origin,
 			Offset: timestamp,
 			Hash: newHash,
 			Value,
+			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
-
 		const params = {
-			TableName: this.tableName,
+			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: key,
 			},
-			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled',
-			ConditionExpression: 'attribute_not_exists(#ID) OR (attribute_exists(#ID) AND #Hash=:clientHash)',
+			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin, #VehicleRegistration = :VehicleRegistration',
+			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
 				'#Hash': 'Hash',
 				'#Enabled': 'Enabled',
 				'#Value': 'Value',
 				'#Offset': 'Offset',
+				'#Origin': 'Origin',
+				'#VehicleRegistration': 'VehicleRegistration',
 			},
 			ExpressionAttributeValues: {
 				':clientHash': clientHash,
@@ -252,31 +579,48 @@ export default class PenaltyDocument {
 				':Value': Value,
 				':Hash': newHash,
 				':Offset': timestamp,
+				':Origin': item.Origin,
+				':AppOrigin': appOrigin,
+				':PortalOrigin': portalOrigin,
+				':VehicleRegistration': updatedItem.VehicleRegistration,
 			},
+			ReturnValues: 'UPDATED_OLD',
 		};
 
 		return new Promise((resolve) => {
-			const res = this.validatePenalty(item, penaltyValidation, false);
+			const res = Validation.penaltyDocumentValidation(item);
 			if (res.valid) {
-				console.log(`success ${res.valid}`);
 				const dbUpdate = this.db.update(params).promise();
-				dbUpdate.then(() => {
+				dbUpdate.then((data) => {
+					updatedItem.Value.paymentStatus = savedPaymentStatus;
+					if (savedPaymentStatus === 'PAID') {
+						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
+						updatedItem.Value.paymentDate = savedPaymentDate;
+					}
+					if (data.Attributes.Origin === portalOrigin && item.Origin === appOrigin && savedPaymentStatus === 'PAID') {
+						const paymentInfo = {
+							penaltyType: item.Value.penaltyType,
+							paymentStatus: savedPaymentStatus,
+							paymentAmount: item.Value.penaltyAmount,
+						};
+						if (paymentInfo) {
+							this.sendPaymentNotification(paymentInfo, item);
+						}
+					}
 					resolve(createSimpleResponse({ statusCode: 200, body: updatedItem }));
 				}).catch((err) => {
-					// const error = {
-					// 	ID: key,
-					// 	error: res.response,
-					// };
-					console.log(`errored - in catch ${err}`);
-					console.log(JSON.stringify(res, null, 2));
+					updatedItem.Value.paymentStatus = savedPaymentStatus;
+					if (savedPaymentStatus === 'PAID') {
+						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
+						updatedItem.Value.paymentDate = savedPaymentDate;
+					}
 					resolve(createSimpleResponse({ statusCode: 400, body: updatedItem, error: err }));
 				});
 			} else {
-				console.log(`fail ${res.valid}`);
 				resolve(createSimpleResponse({
 					statusCode: 400,
 					body: updatedItem,
-					error: res.response.err,
+					error: res.error.message,
 				}));
 			}
 		});
@@ -292,25 +636,82 @@ export default class PenaltyDocument {
 
 	updateDocuments(items, context, callback) {
 		//  let items = JSON.parse(event.body).Items;
-		this.asyncLoopOrdered(this, this.updateItem, items).then((outputValue) => {
-			const result = {
-				Items: outputValue,
-			};
-			callback(null, createResponse({ statusCode: 200, body: result }));
-		}).catch((err) => {
-			callback(null, createResponse({ statusCode: 400, body: err }));
+		const idList = [];
+		items.forEach((item) => {
+			idList.push(item.ID);
+			delete item.Value.paymentStatus;
+			delete item.Value.paymentAuthCode;
+			delete item.Value.paymentDate;
+			delete item.Value.paymentRef;
 		});
+
+		this.getPaymentInformationViaInvocation(idList)
+			.then((response) => {
+				let mergedList = [];
+				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+				this.asyncLoopOrdered(this, this.updateItem, mergedList).then((outputValue) => {
+					const result = {
+						Items: outputValue,
+					};
+					callback(null, createResponse({ statusCode: 200, body: result }));
+				}).catch((err) => {
+					callback(null, createResponse({ statusCode: 400, body: err }));
+				});
+			})
+			.catch((err) => {
+				callback(null, createErrorResponse({ statusCode: 400, err }));
+			});
 	}
 
-	apnsMessageParams(offset, count, ids) {
+	paymentMessageParams(paymentInfo, documentInfo) {
+		const text = 'Payment has been made!';
+		const aps = {
+			'content-available': 1,
+			badge: 0,
+		};
+
+		const message = {
+			default: text,
+			APNS: JSON.stringify({
+				aps,
+				site: documentInfo.Value.siteCode,
+				offset: documentInfo.Offset,
+				refNo: documentInfo.Value.referenceNo,
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
+			}),
+			APNS_SANDBOX: JSON.stringify({
+				aps,
+				offset: documentInfo.Offset,
+				site: documentInfo.Value.siteCode,
+				refNo: documentInfo.Value.referenceNo,
+				regNo: documentInfo.Value.vehicleDetails.regNo,
+				type: paymentInfo.penaltyType,
+				status: paymentInfo.paymentStatus,
+				amount: Number(paymentInfo.paymentAmount),
+			}),
+		};
+		const params = {
+			Subject: text,
+			Message: JSON.stringify(message),
+			TopicArn: this.snsTopicARN,
+			MessageStructure: 'json',
+		};
+		return params;
+	}
+
+	apnsMessageParams(offset, count) {
 
 		const text = 'New documents are available!';
+		const site = 0;
 
 		const aps = {
-			alert: {
-				title: 'DVSA Officer FPNs',
-				body: text,
-			},
+			// alert: {
+			// 	title: 'DVSA Officer FPNs',
+			// 	body: text,
+			// },
 			'content-available': 1,
 			badge: count,
 		};
@@ -320,13 +721,13 @@ export default class PenaltyDocument {
 			APNS: JSON.stringify({
 				aps,
 				offset,
-				ids,
+				site,
 			}),
 
 			APNS_SANDBOX: JSON.stringify({
 				aps,
 				offset,
-				ids,
+				site,
 			}),
 		};
 
@@ -339,154 +740,14 @@ export default class PenaltyDocument {
 		return params;
 	}
 
-	streamDocuments(event, context, callback) {
-
-		let maxOffset = 0.0;
-		let count = 0;
-		const updatedIds = [];
-
-		console.log(event);
-
-		event.Records.forEach((record) => {
-			const item = parse(record.dynamodb.NewImage);
-			if (item.Offset > maxOffset) {
-				maxOffset = item.Offset;
-			}
-			count += 1;
-			updatedIds.push(item.ID);
-		});
-		const params = this.apnsMessageParams(maxOffset, count, updatedIds);
-		console.log(params);
-		sns.publish(params, (err, data) => {
-			if (err) {
-				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
-			} else {
-				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
-			}
-		});
-		callback(null, `Successfully processed ${event.Records.length} records.`);
-	}
-
 	getSites(event, context, callback) {
-		console.log(event);
-
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
 		s3.getObject(params, (err, data) => {
 			if (err) {
-				console.log(err, err.stack); // an error occurred
 				callback(null, createResponse({ statusCode: 400, body: err }));
 			} else {
-				console.log(data); // successful response
 				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
 			}
 		});
-	}
-
-	validatePenalty(data, penaltyValidationModel) {
-		const validationResult = Joi.validate(data, penaltyValidationModel.request);
-		console.log(JSON.stringify(validationResult, null, 2));
-		if (validationResult.error) {
-			const err = 'Invalid Input';
-			const error = createResponse({
-				body: {
-					err,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		// additional validations
-		if (data.Value.penaltyType !== 'IM' && data.ID !== `${data.Value.referenceNo}_${data.Value.penaltyType}`) {
-			const errMsg = 'ID does not match referenceNo and penaltyType';
-			const error = createResponse({
-				body: {
-					errMsg,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		if (data.Value.penaltyType !== 'IM' && data.Value.referenceNo.length < 12) {
-			const errMsg = 'ReferenceNo is too short';
-			const error = createResponse({
-				body: {
-					errMsg,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		if (data.Value.penaltyType !== 'IM' && data.Value.referenceNo.length > 13) {
-			const errMsg = 'ReferenceNo is too long';
-			const error = createResponse({
-				body: {
-					errMsg,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		}
-
-		if (data.Value.penaltyType === 'IM') {
-
-			if (!data.Value.referenceNo.match(/^[0-9]{1,6}-[0-1]-[0-9]{1,6}-IM$/)) {
-				const errMsg = 'ReferenceNo should be 999999-9-999999-IM format';
-				const error = createResponse({
-					body: {
-						errMsg,
-					},
-					statusCode: 405,
-				});
-				return { valid: false, response: error };
-			}
-
-			const matches = data.Value.referenceNo.match(/^([0-9]{1,6})-([0-1])-([0-9]{1,6})-IM$/);
-
-			let initialSegment;
-			let lastSegment;
-			let middleSegment;
-
-			if (matches.length > 3) {
-				console.log(`matches found ${matches[1]}  ${matches[2]} ${matches[3]}`);
-				initialSegment = Number(matches[1]);
-				middleSegment = Number(matches[2]);
-				lastSegment = Number(matches[3]);
-				if (initialSegment === 0 || lastSegment === 0) {
-					const errMsg = 'Officer Id or Issued Count cannot be zero';
-					const error = createResponse({
-						body: {
-							errMsg,
-						},
-						statusCode: 405,
-					});
-					return { valid: false, response: error };
-				}
-			}
-			// match first and last segments
-			const idMatches = data.ID.match(/^([0-9]{6})([0-1])([0-9]{6})_IM$/);
-			if (idMatches.length > 3) {
-				console.log(`matches found ${idMatches[1]}  ${idMatches[2]} ${idMatches[3]}`);
-				const idInitialSegment = Number(idMatches[1]);
-				const idMiddleSegment = Number(idMatches[2]);
-				const idLastSegment = Number(idMatches[3]);
-
-				if (idInitialSegment !== initialSegment ||
-					idLastSegment !== lastSegment ||
-					idMiddleSegment !== middleSegment) {
-					const errMsg = 'ID does not match referenceNo and penaltyType';
-					const error = createResponse({
-						body: {
-							errMsg,
-						},
-						statusCode: 405,
-					});
-					return { valid: false, response: error };
-				}
-			}
-		}
-		return { valid: true, response: {} };
 	}
 }

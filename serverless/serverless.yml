@@ -1,0 +1,478 @@
+service: RSP-BackendApi
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+custom:
+  documentation:
+    models:
+      - name: ErrorResponse
+        description: This is an error
+        contentType: application/json
+        schema: ${file(models/ErrorResponse.json)}
+      - name: PutRequest
+        description: This is a put request
+        contentType: application/json
+        schema: ${file(models/PutRequest.json)}
+      - name: GetResponse
+        description: This is a getresponse
+        contentType: application/json
+        schema: ${file(models/GetResponse.json)}
+      - name: DocumentResponse
+        description: This is a user response
+        contentType: application/json
+        schema: ${file(models/DocumentResponse.json)}
+      - name: DocumentsResponse
+        description: This is a Documents response
+        contentType: application/json
+        schema: ${file(models/DocumentsResponse.json)}
+      - name: DocumentsRequest
+        description: This is a Documents request
+        contentType: application/json
+        schema: ${file(models/DocumentsRequest.json)}
+      - name: SitesResponse
+        description: This is a Sites response
+        contentType: application/json
+        schema: ${file(models/SitesResponse.json)}
+      - name: PutMultiResponse
+        description: This is a multi put response
+        contentType: application/json
+        schema: ${file(models/PutMultiresponse.json)}
+    version: '1'
+    title: 'RSP Backend API'
+    description: 'An API used by the Roadside payments mobile app'
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      seed: true
+    seed:
+      test:
+        sources:
+          -
+            table: penaltyDocuments
+            sources: [./mock-data/fake-penalty-notice.json]
+          -
+            table: penaltyGroups
+            sources: [./mock-data/fake-penalty-groups.json]
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-openapi-documentation
+provider:
+  name: aws
+  runtime: nodejs6.10
+  region: eu-west-1
+
+functions:
+  updateWithPayment:
+    handler: handler.updateWithPayment
+    memorySize: 128
+  updatePenaltyGroupWithPayment:
+    handler: handler.updatePenaltyGroupWithPayment
+    memorySize: 128  
+  updateUponPaymentDelete:
+    handler: handler.updateUponPaymentDelete
+    memorySize: 128
+  sites:
+    handler: handler.sites
+    memorySize: 128
+    events:
+      -
+        http:
+          path: sites
+          method: get
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Get list of sites"
+            description: "Fetches the details of enforcement sites"
+            requestBody:
+              description: "Nothing"
+            requestModels:
+              application/json: "Nothing"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the enforcement sites"
+                responseModels:
+                  application/json: "SitesResponse"
+              - statusCode: 404
+                responseBody:
+                  description: "Not found error"
+                responseModels:
+                  application/json: "ErrorResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  list:
+    handler: handler.list
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents
+          method: get
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+          documentation:
+            summary: "List of penalty documents"
+            description: "Lists of penalty documents"
+            requestBody:
+              description: "None"
+            requestModels:
+              application/json: "GetRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "A list of penalty documents"
+                responseModels:
+                  application/json: "DocumentsResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "An error message when listing penalty documents"
+                responseModels:
+  listGroups:
+    handler: handler.listGroups
+    memorySize: 128
+    events:
+      -
+        http:
+          path: penaltyGroup
+          method: get
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+          documentation:
+            summary: "List of penalty groups"
+            description: "List of penalty groups"
+  get:
+    handler: handler.get
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents/{id}
+          method: get
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+          documentation:
+            summary: "Get penalty document"
+            description: "Fetches the details of the specified penalty document"
+            pathParams:
+              - name: "id"
+                description: "The id of the penalty document to fetch"
+                schema:
+                  type: "number"
+                  pattern: "^[0-9]+$"
+            requestBody:
+              description: "Nothing"
+            requestModels:
+              application/json: "GetRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the Penalty Document"
+                responseModels:
+                  application/json: "DocumentResponse"
+              - statusCode: 404
+                responseBody:
+                  description: "Not found error"
+                responseModels:
+                  application/json: "ErrorResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  getByToken:
+    handler: handler.getDocumentByToken
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents/tokens/{token}
+          method: get
+          authorizer: aws_iam
+          timeout: 18
+          cors: true
+  create:
+    handler: handler.create
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents
+          method: post
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Penalty document creation"
+            description: "Create a penalty document"
+            requestBody:
+              description: "Penalty document items"
+            requestModels:
+              application/json: "DocumentResponse"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the penalty document created"
+                responseModels:
+                  application/json: "DocumentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  createPenaltyGroup:
+    handler: handler.createPenaltyGroup
+    memorySize: 128
+    events:
+      -
+        http:
+          path: penaltyGroup
+          method: post
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Create a group containing multiple penalties"
+  getPenaltyGroup:
+    handler: handler.getPenaltyGroup
+    events:
+      -
+        http:
+          path: penaltyGroup/{id}
+          method: get
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: Retrieve a penalty group by ID
+  delete:
+    handler: handler.remove
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents/{id}
+          method: delete
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Penalty document deletion"
+            description: "Delete a penalty document with the provided id"
+            pathParams:
+              - name: "id"
+                description: "The id of the penalty document"
+                schema:
+                  type: "number"
+                  pattern: "^[0-9]+$"
+            requestBody:
+              description: "Penalty document items"
+            requestModels:
+              application/json: "DocumentResponse"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the penalty document deleted"
+                responseModels:
+                  application/json: "DocumentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  deleteGroup:
+    handler: handler.deleteGroup
+    memorySize: 128
+    events:
+      -
+        http:
+          path: penaltyGroup/{id}
+          method: delete
+          authorizer: aws_iam
+          cors: true
+  updateMulti:
+    handler: handler.updateMulti
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents
+          method: put
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+          documentation:
+            summary: "Update multiple penalty documents"
+            description: "Update a number of penalty documents"
+            requestBody:
+              description: "TBD"
+            requestModels:
+              application/json: "DocumentsRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the penalty documents updated, along with success and failure"
+                responseModels:
+                  application/json: "PutMultiResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  searchByVehicleRegistration:
+    handler: handler.searchByVehicleRegistration
+    memorySize: 128
+    events:
+      -
+        http:
+          path: vehicle-reg/{vehicleReg}
+          method: GET
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+          documentation:
+            summary: "Search for penalties by vehicle registrations"
+            description: "Search for penalties by vehicle registrations"
+resources:
+  Resources:
+    penaltyDocuments:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: penaltyDocuments
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+    penaltyGroups:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: penaltyGroups
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+          - AttributeName: Origin
+            AttributeType: S
+          - AttributeName: Offset
+            AttributeType: N
+          - AttributeName: VehicleRegistration
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+        GlobalSecondaryIndexes:
+          - IndexName: ByOffset
+            KeySchema:
+              - AttributeName: Origin
+                KeyType: HASH
+              - AttributeName: Offset
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - IndexName: VehicleRegistration
+            KeySchema:
+              - AttributeName: VehicleRegistration
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+    DynamoDBIamPolicy:
+      Type: AWS::IAM::Policy
+      DependsOn: penaltyDocuments
+      Properties:
+        PolicyName: lambda-dynamodb
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: arn:aws:dynamodb:*:*:table/penaltyDocuments
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: arn:aws:dynamodb:*:*:table/penaltyDocuments/index/ByOffset
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: arn:aws:dynamodb:*:*:table/penaltyGroups
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: arn:aws:dynamodb:*:*:table/penaltyGroups/index/ByOffset
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: arn:aws:dynamodb:*:*:table/penaltyGroups/index/VehicleRegistration
+        Roles:
+          - Ref: IamRoleLambdaExecution

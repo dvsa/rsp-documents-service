@@ -1,12 +1,16 @@
 [
 {
-    "ID": "820500000877_FP",
+    "ID": "820500000877_FPN",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true,
-    "Offset": 1317219245.963,
+    "Offset": 1521311200.345,
+    "Origin": "APP",
+    "penaltyGroupId": "46xu68x7o6b",
+    "VehicleRegistration": "OK08OK",
     "Value": {
-        "penaltyType": "FP",
+        "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
+        "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
         "referenceNo": "820500000877",
@@ -16,7 +20,7 @@
             "licenceNumber": "MORIA801127JA09900"
         },
         "vehicleDetails": {
-            "regNo": "XXXXXXX",
+            "regNo": "OK08OK",
             "make": "Rolls Royce",
             "nationality": "UK"
         },
@@ -27,7 +31,7 @@
         "nonEndorsableOffence": [
             "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
         ],
-        "penaltyAmount": "50.00",
+        "penaltyAmount": 50,
         "paymentDueDate": 479945600,
         "officerName": "Sherlock Holmes",
         "officerID": "Blah111",
@@ -36,13 +40,17 @@
     }
 },
 {
-    "ID": "820500000878_FP",
+    "ID": "820500000878_FPN",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true,
-    "Offset": 1417219245.963,
+    "Offset": 1521331200.345,
+    "Origin": "APP",
+    "penaltyGroupId": "46xu68x7o6b",
+    "VehicleRegistration": "QM05 VH",
     "Value": { 
-        "penaltyType" : "FP",
-        "paymentStatus": "UNPAID",  
+        "penaltyType" : "FPN",
+        "paymentStatus": "UNPAID",
+        "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
         "referenceNo": "820500000878",
@@ -52,7 +60,7 @@
             "licenceNumber": "JDOE801127JA09901"
         },
         "vehicleDetails": {
-            "regNo": "YYYYYYY",
+            "regNo": "QM05 VH",
             "make": "Robin Reliant",
             "nationality": "UK"
         },
@@ -63,7 +71,7 @@
         "nonEndorsableOffence": [
             "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
         ],
-        "penaltyAmount": "50",
+        "penaltyAmount": 80,
         "paymentDueDate": 479945700,
         "officerName": "Jack Reacher",
         "dateTime": 1476180720,
@@ -73,23 +81,25 @@
     }
 },
 {
-    "ID": "820500000879_FP",
+    "ID": "820500000871_FPN",
     "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
     "Enabled": true, 
-    "Offset": 1517219245.963,
+    "Offset": 1521331200,
+    "Origin": "APP",
+    "VehicleRegistration": "OK08OK",
     "Value": {
-        "penaltyType": "FP",
+        "penaltyType": "FPN",
         "paymentStatus": "UNPAID",
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
-        "referenceNo": "820500000879",
+        "referenceNo": "820500000871",
         "driverDetails": {
             "name": "Jane Doe",
             "address": "999 Baker Street, NW1 5LA, LONDON",
             "licenceNumber": "JDOE801127JA09902"
         },
         "vehicleDetails": {
-            "regNo": "YYYYYYY",
+            "regNo": "OK08OK",
             "make": "Toyota MR2",
             "nationality": "UK"
         },
@@ -100,13 +110,171 @@
         "nonEndorsableOffence": [
             "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
         ],
-        "penaltyAmount": "50.00",
+        "penaltyAmount": 50,
         "paymentDueDate": 479945700,
         "officerName": "Jack Reacher",
         "officerID": "blah111",
         "dateTime": 1476180780,
         "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
         "siteCode": 0
+    }
+},
+{
+    "ID": "820500000879_FPN",
+    "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
+    "Enabled": true, 
+    "Offset": 1521331200,
+    "Origin": "APP",
+    "VehicleRegistration": "FD17 LKD",
+    "Value": {
+        "penaltyType": "FPN",
+        "paymentStatus": "UNPAID",
+        "paymentToken": "XXX generated paymentToken XXX",
+        "formNo": "FPN 11/08",
+        "referenceNo": "820500000879",
+        "driverDetails": {
+            "name": "Jane Doe",
+            "address": "999 Baker Street, NW1 5LA, LONDON",
+            "licenceNumber": "JDOE801127JA09902"
+        },
+        "vehicleDetails": {
+            "regNo": "FD17 LKD",
+            "make": "Toyota MR2",
+            "nationality": "UK"
+        },
+        "trailerDetails": {
+            "number1": "5",
+            "number2": "6"
+        },
+        "nonEndorsableOffence": [
+            "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
+        ],
+        "penaltyAmount": 50,
+        "paymentDueDate": 479945700,
+        "officerName": "Jack Reacher",
+        "officerID": "blah111",
+        "dateTime": 1476180780,
+        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
+        "siteCode": 0
+    }
+},
+{
+    "ID": "820500000880_IM",
+    "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
+    "Enabled": true, 
+    "Offset": 1521331200,
+    "Origin": "APP",
+    "VehicleRegistration": "XL 07 PLS",
+    "Value": {
+        "penaltyType": "IM",
+        "paymentStatus": "UNPAID",
+        "paymentToken": "XXX generated paymentToken XXX",
+        "formNo": "IM 11/08",
+        "referenceNo": "820500000880",
+        "driverDetails": {
+            "name": "Jane Doe",
+            "address": "999 Baker Street, NW1 5LA, LONDON",
+            "licenceNumber": "JDOE801127JA09902"
+        },
+        "vehicleDetails": {
+            "regNo": "XL 07 PLS",
+            "make": "Toyota MR2",
+            "nationality": "UK"
+        },
+        "trailerDetails": {
+            "number1": "5",
+            "number2": "6"
+        },
+        "nonEndorsableOffence": [
+            "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
+        ],
+        "penaltyAmount": 80,
+        "paymentDueDate": 479945700,
+        "officerName": "Jack Reacher",
+        "officerID": "blah111",
+        "dateTime": 1476180780,
+        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
+        "siteCode": 0
+    }
+},
+{
+    "ID": "820500000812_FPN",
+    "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fdasdfsd50da821c359d74d",
+    "Enabled": true,
+    "Offset": 1521311200.345,
+    "Origin": "APP",
+    "penaltyGroupId": "46xu68x7o6c",
+    "VehicleRegistration": "OK08OK",
+    "Value": {
+        "penaltyType": "FPN",
+        "paymentStatus": "UNPAID",
+        "inPenaltyGroup": true,
+        "paymentToken": "XXX generated paymentToken XXX",
+        "formNo": "FPN 11/08",
+        "referenceNo": "820500000812",
+        "driverDetails": {
+            "name": "James Moriarty",
+            "address": "1000 Baker Street, NW1 5LA, LONDON",
+            "licenceNumber": "MORIA801127JA09900"
+        },
+        "vehicleDetails": {
+            "regNo": "OK08OK",
+            "make": "Rolls Royce",
+            "nationality": "UK"
+        },
+        "trailerDetails": {
+            "number1": "1",
+            "number2": "2"
+        },
+        "nonEndorsableOffence": [
+            "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
+        ],
+        "penaltyAmount": 50,
+        "paymentDueDate": 479945600,
+        "officerName": "Sherlock Holmes",
+        "officerID": "Blah111",
+        "dateTime": 1476180720,
+        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN"
+    }
+},
+{
+    "ID": "820500000822_FPN",
+    "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fdasdfsd50da821c359d74d",
+    "Enabled": true,
+    "Offset": 1521311200.345,
+    "Origin": "APP",
+    "penaltyGroupId": "46xu68x7o6c",
+    "VehicleRegistration": "OK08OK",
+    "Value": {
+        "penaltyType": "FPN",
+        "paymentStatus": "UNPAID",
+        "inPenaltyGroup": true,
+        "paymentToken": "XXX generated paymentToken XXX",
+        "formNo": "FPN 11/08",
+        "referenceNo": "820500000822",
+        "driverDetails": {
+            "name": "James Moriarty",
+            "address": "1000 Baker Street, NW1 5LA, LONDON",
+            "licenceNumber": "MORIA801127JA09900"
+        },
+        "vehicleDetails": {
+            "regNo": "OK08OK",
+            "make": "Rolls Royce",
+            "nationality": "UK"
+        },
+        "trailerDetails": {
+            "number1": "1",
+            "number2": "2"
+        },
+        "nonEndorsableOffence": [
+            "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
+        ],
+        "penaltyAmount": 50,
+        "paymentDueDate": 479945600,
+        "officerName": "Sherlock Holmes",
+        "officerID": "Blah111",
+        "dateTime": 1476180720,
+        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN"
     }
 }
 ]
