@@ -64,9 +64,6 @@ provider:
   region: eu-west-1
 
 functions:
-  authorizer:
-    handler: handler.auth
-    memorySize: 128  
   updateWithPayment:
     handler: handler.updateWithPayment
     memorySize: 128
@@ -75,9 +72,7 @@ functions:
     memorySize: 128  
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
-    memorySize: 128  
-  streamDocuments:
-    handler: handler.stream 
+    memorySize: 128
   sites:
     handler: handler.sites
     memorySize: 128

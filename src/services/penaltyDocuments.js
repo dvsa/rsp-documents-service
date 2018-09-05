@@ -1,8 +1,7 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import { DynamoDB, SNS, S3, Lambda } from 'aws-sdk';
+import { SNS, S3, Lambda } from 'aws-sdk';
 import Validation from 'rsp-validation';
-import request from 'request-promise';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import createResponse from '../utils/createResponse';
@@ -13,7 +12,6 @@ import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
 
-const parse = DynamoDB.Converter.unmarshall;
 const sns = new SNS();
 const s3 = new S3({ apiVersion: '2006-03-01' });
 const lambda = new Lambda({ region: 'eu-west-1' });
@@ -268,23 +266,6 @@ export default class PenaltyDocument {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
 				callback(null, returnResponse);
 			});
-	}
-
-	getPaymentInformation(idList) {
-		// TODO remove this if before deploying... only for running local
-		if (typeof this.paymentURL === 'undefined') {
-			this.paymentURL = 'https://0yqui7ctd2.execute-api.eu-west-1.amazonaws.com/dev';
-		}
-		const url = `${this.paymentURL}/payments/batches`;
-		const options = {
-			method: 'POST',
-			url,
-			body: { ids: idList },
-			headers: { Authorization: 'allow' },
-			json: true,
-		};
-
-		return request(options);
 	}
 
 	getPaymentInformationViaInvocation(idList) {
@@ -757,30 +738,6 @@ export default class PenaltyDocument {
 			MessageStructure: 'json',
 		};
 		return params;
-	}
-
-	streamDocuments(event, context, callback) {
-
-		let minOffset = 9999999999.999;
-		let count = 0;
-
-		event.Records.forEach((record) => {
-			const item = parse(record.dynamodb.NewImage);
-			if (item.Offset < minOffset) {
-				minOffset = item.Offset;
-			}
-			count += 1;
-		});
-
-		const params = this.apnsMessageParams(minOffset, count);
-		sns.publish(params, (err, data) => {
-			if (err) {
-				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
-			} else {
-				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
-			}
-		});
-		callback(null, `Successfully processed ${event.Records.length} records.`);
 	}
 
 	getSites(event, context, callback) {
