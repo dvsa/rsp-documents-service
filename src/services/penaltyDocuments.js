@@ -487,7 +487,7 @@ export default class PenaltyDocument {
 									callback(null, createResponse({ statusCode: 200, body: minimalDocument }));
 								})
 								.catch((e) => {
-									console.log(JSON.stringify(e, null, 2));
+									console.log(`Error getting payment info: ${e}`);
 									callback(null, createErrorResponse({ statusCode: 400, e }));
 								});
 						} else if (res.statusCode === 200) {
@@ -503,7 +503,7 @@ export default class PenaltyDocument {
 						}
 					});
 				} catch (e) {
-					console.log(JSON.stringify(e, null, 2));
+					console.log(`top level catch getting doc by token: ${e}`);
 					callback(null, createErrorResponse({ statusCode: 400, e }));
 				}
 				return;
