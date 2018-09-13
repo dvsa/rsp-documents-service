@@ -445,13 +445,13 @@ export default class PenaltyDocument {
 		}, (error, data) => {
 			if (error) {
 				console.log('Token service returned an error');
-				console.log(JSON.stringify(error, null, 2));
+				console.log(error.message);
 				callback(null, createErrorResponse({ statusCode: 400, error }));
 			} else if (data.Payload) {
 				try {
 					const parsedPayload = JSON.parse(data.Payload);
 					if (parsedPayload.statusCode === 400) {
-						console.log('Token service returned an error');
+						console.log('Token service returned bad request (status 400)');
 						const parsedBody = JSON.parse(parsedPayload.body);
 						callback(null, createErrorResponse({ statusCode: 400, err: { name: 'Token Error', message: parsedBody.message } }));
 						return;
