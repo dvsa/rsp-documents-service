@@ -51,7 +51,9 @@ export default class PenaltyGroup {
 		const existingDocsWithIds = await this._getPenaltyDocumentsWithIds(newDocIds);
 		if (existingDocsWithIds.length !== 0) {
 			const clashingIds = existingDocsWithIds.map(doc => doc.ID);
-			return { valid: false, message: `There were clashing IDs (${clashingIds.join(',')})` };
+			const errMsg = `There were clashing IDs (${clashingIds.join(',')})`;
+			console.log(errMsg);
+			return { valid: false, message: errMsg };
 		}
 
 		return { valid: true };
