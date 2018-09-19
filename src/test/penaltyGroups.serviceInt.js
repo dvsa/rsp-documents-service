@@ -35,7 +35,7 @@ describe('penaltyGroups', () => {
 						if (err) throw err;
 						expect(res.body.ID).toEqual(groupId);
 						expect(res.body.Timestamp).toBe(15329454.234729);
-						expect(res.body.VehicleRegistration).toBe('11 ABC');
+						expect(res.body.VehicleRegistration).toBe('11 ABC, PL09 XMN');
 						expect(res.body.Location).toBe('Trowell Services');
 						expect(res.body.Payments).toHaveLength(1);
 						expect(res.body.Payments[0].PaymentCategory).toBe('FPN');
@@ -177,6 +177,9 @@ describe('penaltyGroups', () => {
 						done();
 					});
 			});
+		});
+		context('a new penalty group containing an already existing reference', () => {
+
 		});
 	});
 
