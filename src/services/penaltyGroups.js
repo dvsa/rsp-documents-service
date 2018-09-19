@@ -22,12 +22,9 @@ export default class PenaltyGroup {
 	}
 
 	async createPenaltyGroup(body, callback) {
-		const validationResult = Validation.penaltyGroupValidation(body);
+		const validationResult = await this.validatePenaltyGroupCreationPayload(body);
 		if (!validationResult.valid) {
-			const errMsg = validationResult.error.message;
-			console.log(errMsg);
-			console.log(`Got payload: ${JSON.stringify(body)}`);
-			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${validationResult.message}` }));
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
@@ -39,6 +36,25 @@ export default class PenaltyGroup {
 		} catch (err) {
 			return callback(null, createResponse({ statusCode: 503, body: `Problem writing to DB: ${err}` }));
 		}
+	}
+
+	async validatePenaltyGroupCreationPayload(payload) {
+		const schemaValidationResult = Validation.penaltyGroupValidation(payload);
+		if (!schemaValidationResult.valid) {
+			const errMsg = schemaValidationResult.error.message;
+			console.log(errMsg);
+			console.log(`Got payload: ${JSON.stringify(payload)}`);
+			return { valid: false, message: `Schema validation failed - ${errMsg}` };
+		}
+
+		const newDocIds = payload.Penalties.map(p => p.ID);
+		const existingDocsWithIds = await this._getPenaltyDocumentsWithIds(newDocIds);
+		if (existingDocsWithIds.length !== 0) {
+			const clashingIds = existingDocsWithIds.map(doc => doc.ID);
+			return { valid: false, message: `There were clashing IDs (${clashingIds.join(',')})` };
+		}
+
+		return { valid: true };
 	}
 
 	async getPenaltyGroup(penaltyGroupId, callback) {
