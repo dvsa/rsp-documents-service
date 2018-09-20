@@ -655,10 +655,12 @@ export default class PenaltyDocument {
 					};
 					callback(null, createResponse({ statusCode: 200, body: result }));
 				}).catch((err) => {
+					console.log(`error updating documents in async loop: ${err}`);
 					callback(null, createResponse({ statusCode: 400, body: err }));
 				});
 			})
 			.catch((err) => {
+				console.log(`error updating documents in outer loop: ${err}`);
 				callback(null, createErrorResponse({ statusCode: 400, err }));
 			});
 	}
