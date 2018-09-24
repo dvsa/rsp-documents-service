@@ -53,12 +53,12 @@ describe('penaltyGroups', () => {
 						done();
 					});
 			});
-			it('should respond 404 if the penalty group is disabled', (done) => {
+			it('should respond 200 even when the penalty group is disabled', (done) => {
 				request
 					.get(`/${disabledGroupId}`)
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
-					.expect(404)
+					.expect(200)
 					.expect('Content-Type', 'application/json')
 					.end((err) => {
 						if (err) throw err;

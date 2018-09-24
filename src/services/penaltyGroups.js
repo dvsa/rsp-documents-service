@@ -63,7 +63,7 @@ export default class PenaltyGroup {
 		try {
 			const penaltyGroup = await this._getPenaltyGroupById(penaltyGroupId);
 
-			if (!penaltyGroup || penaltyGroup.Enabled === false) {
+			if (!penaltyGroup) {
 				const msg = `Penalty Group ${penaltyGroupId} not found`;
 				return callback(null, createResponse({ statusCode: 404, body: { error: msg } }));
 			}
