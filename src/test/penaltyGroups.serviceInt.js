@@ -158,6 +158,29 @@ describe('penaltyGroups', () => {
 				await assertPenaltyDocumentDoesntExist(nonClashingId);
 			});
 		});
+		context('a new penalty group with containing an already existing cancelled reference', () => {
+			const clashingId = '987654321012_FPN';
+			const nonClashingId = '987654321555_FPN';
+			let penaltyGroupId;
+			beforeEach(async () => {
+				await insertSinglePenaltyWithId(clashingId, false);
+			});
+			afterEach(async () => {
+				await removeSinglePenaltyWithId(clashingId);
+				await removeSinglePenaltyWithId(nonClashingId);
+				await removePenaltyGroupsById([penaltyGroupId]);
+			});
+			it('should respond 201 and overwrite the cancelled penalties', async () => {
+				const response = await request
+					.post('/')
+					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect('Content-Type', 'application/json')
+					.expect(201);
+				penaltyGroupId = response.body.ID;
+			});
+		});
 	});
 
 	context('DELETE', () => {
@@ -318,12 +341,12 @@ async function assertPenaltyDocumentsDisabled(documentIds) {
 	});
 }
 
-async function insertSinglePenaltyWithId(id) {
+async function insertSinglePenaltyWithId(id, enabled) {
 	const putRequest = {
 		TableName: 'penaltyDocuments',
 		Item: {
 			ID: id,
-			Enabled: true,
+			Enabled: enabled !== undefined ? enabled : true,
 			Hash: 'original-hash',
 			Value: {},
 		},
