@@ -22,12 +22,9 @@ export default class PenaltyGroup {
 	}
 
 	async createPenaltyGroup(body, callback) {
-		const validationResult = Validation.penaltyGroupValidation(body);
+		const validationResult = await this.validatePenaltyGroupCreationPayload(body);
 		if (!validationResult.valid) {
-			const errMsg = validationResult.error.message;
-			console.log(errMsg);
-			console.log(`Got payload: ${JSON.stringify(body)}`);
-			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${errMsg}` }));
+			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${validationResult.message}` }));
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
@@ -41,11 +38,33 @@ export default class PenaltyGroup {
 		}
 	}
 
+	async validatePenaltyGroupCreationPayload(payload) {
+		const schemaValidationResult = Validation.penaltyGroupValidation(payload);
+		if (!schemaValidationResult.valid) {
+			const errMsg = schemaValidationResult.error.message;
+			console.log(errMsg);
+			console.log(`Got payload: ${JSON.stringify(payload)}`);
+			return { valid: false, message: `Schema validation failed - ${errMsg}` };
+		}
+
+		const newDocIds = payload.Penalties.map(p => p.ID);
+		const existingDocsWithIds = await this._getPenaltyDocumentsWithIds(newDocIds);
+		const allExistingDocsDisabled = existingDocsWithIds.every(p => p.Enabled === false);
+		if (existingDocsWithIds.length !== 0 && !allExistingDocsDisabled) {
+			const clashingIds = existingDocsWithIds.map(doc => doc.ID);
+			const errMsg = `There were clashing IDs (${clashingIds.join(',')})`;
+			console.log(errMsg);
+			return { valid: false, message: errMsg };
+		}
+
+		return { valid: true };
+	}
+
 	async getPenaltyGroup(penaltyGroupId, callback) {
 		try {
 			const penaltyGroup = await this._getPenaltyGroupById(penaltyGroupId);
 
-			if (!penaltyGroup || penaltyGroup.Enabled === false) {
+			if (!penaltyGroup) {
 				const msg = `Penalty Group ${penaltyGroupId} not found`;
 				return callback(null, createResponse({ statusCode: 404, body: { error: msg } }));
 			}

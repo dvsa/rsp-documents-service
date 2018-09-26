@@ -4,6 +4,7 @@ import supertest from 'supertest';
 import expect from 'expect';
 import AWS from 'aws-sdk';
 import _ from 'lodash';
+import testPenaltyGroupCreationPayload from './data/testPenaltyGroupCreationPayload';
 
 const url = 'http://localhost:3000/penaltyGroup';
 const request = supertest(url);
@@ -35,7 +36,7 @@ describe('penaltyGroups', () => {
 						if (err) throw err;
 						expect(res.body.ID).toEqual(groupId);
 						expect(res.body.Timestamp).toBe(15329454.234729);
-						expect(res.body.VehicleRegistration).toBe('11 ABC');
+						expect(res.body.VehicleRegistration).toBe('11 ABC, PL09 XMN');
 						expect(res.body.Location).toBe('Trowell Services');
 						expect(res.body.Payments).toHaveLength(1);
 						expect(res.body.Payments[0].PaymentCategory).toBe('FPN');
@@ -52,12 +53,12 @@ describe('penaltyGroups', () => {
 						done();
 					});
 			});
-			it('should respond 404 if the penalty group is disabled', (done) => {
+			it('should respond 200 even when the penalty group is disabled', (done) => {
 				request
 					.get(`/${disabledGroupId}`)
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
-					.expect(404)
+					.expect(200)
 					.expect('Content-Type', 'application/json')
 					.end((err) => {
 						if (err) throw err;
@@ -102,58 +103,11 @@ describe('penaltyGroups', () => {
 	context('POST', () => {
 		context('a new penalty group', () => {
 			it('should return created penalty group with generated ID', (done) => {
-				const fakePenaltyGroupPayload = {
-					Timestamp: 1532945465.234729,
-					SiteCode: -72,
-					Location: 'Trowell Services',
-					VehicleRegistration: '11 abc',
-					Offset: 123,
-					Penalties: [
-						{
-							ID: 'p1',
-							Hash: 'somehash',
-							Enabled: true,
-							Value: {
-								penaltyType: 'FPN',
-								inPenaltyGroup: true,
-								penaltyAmount: 150,
-								paymentToken: '1234abcdef',
-								referenceNo: '12345678',
-								vehicleDetails: {
-									regNo: 'AA123',
-								},
-								officerName: 'Joe Bloggs',
-								officerID: 'XYZ',
-								dateTime: 1532000305,
-								siteCode: 3,
-							},
-						},
-						{
-							ID: 'p2',
-							Hash: 'somehash',
-							Enabled: true,
-							Value: {
-								penaltyType: 'IM',
-								inPenaltyGroup: true,
-								penaltyAmount: 80,
-								paymentToken: '1234abcdef',
-								referenceNo: '87654321',
-								vehicleDetails: {
-									regNo: 'BB123',
-								},
-								officerName: 'Joe Bloggs',
-								officerID: 'XYZ',
-								dateTime: 1532000305,
-								siteCode: 3,
-							},
-						},
-					],
-				};
 				request
 					.post('/')
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
-					.send(fakePenaltyGroupPayload)
+					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.expect(201)
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
@@ -176,6 +130,55 @@ describe('penaltyGroups', () => {
 						expect(res.body.Hash).toBeDefined();
 						done();
 					});
+			});
+			after(() => {
+				removePenaltyGroupsById(['46xu68x7wps']);
+				removePenaltyDocumentsById(['987654321012_FPN', '987654321555_FPN']);
+			});
+		});
+		context('a new penalty group containing an already existing reference', () => {
+			const clashingId = '987654321012_FPN';
+			const nonClashingId = '987654321123_FPN';
+			beforeEach(async () => {
+				await insertSinglePenaltyWithId(clashingId);
+			});
+			afterEach(async () => {
+				await removeSinglePenaltyWithId(clashingId);
+			});
+			it('should respond 400 indicating that there was a clash', async () => {
+				const response = await request
+					.post('/')
+					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect('Content-Type', 'application/json')
+					.expect(400);
+
+				expect(JSON.parse(response.text)).toBe('Bad request: There were clashing IDs (987654321012_FPN)');
+				await assertPenaltyDocumentDoesntExist(nonClashingId);
+			});
+		});
+		context('a new penalty group with containing an already existing cancelled reference', () => {
+			const clashingId = '987654321012_FPN';
+			const nonClashingId = '987654321555_FPN';
+			let penaltyGroupId;
+			beforeEach(async () => {
+				await insertSinglePenaltyWithId(clashingId, false);
+			});
+			afterEach(async () => {
+				await removeSinglePenaltyWithId(clashingId);
+				await removeSinglePenaltyWithId(nonClashingId);
+				await removePenaltyGroupsById([penaltyGroupId]);
+			});
+			it('should respond 201 and overwrite the cancelled penalties', async () => {
+				const response = await request
+					.post('/')
+					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect('Content-Type', 'application/json')
+					.expect(201);
+				penaltyGroupId = response.body.ID;
 			});
 		});
 	});
@@ -336,6 +339,40 @@ async function assertPenaltyDocumentsDisabled(documentIds) {
 		expect(document.Item.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
 		expect(document.Item.Hash).not.toBe('original-hash');
 	});
+}
+
+async function insertSinglePenaltyWithId(id, enabled) {
+	const putRequest = {
+		TableName: 'penaltyDocuments',
+		Item: {
+			ID: id,
+			Enabled: enabled !== undefined ? enabled : true,
+			Hash: 'original-hash',
+			Value: {},
+		},
+	};
+	return docClient.put(putRequest).promise();
+}
+
+async function removeSinglePenaltyWithId(id) {
+	const deleteRequest = {
+		TableName: 'penaltyDocuments',
+		Key: {
+			ID: id,
+		},
+	};
+	return docClient.delete(deleteRequest).promise();
+}
+
+async function assertPenaltyDocumentDoesntExist(id) {
+	const getRequest = {
+		TableName: 'penaltyDocuments',
+		Key: {
+			ID: id,
+		},
+	};
+	const getResult = await docClient.get(getRequest).promise();
+	expect(getResult).toMatchObject({});
 }
 
 function extendJestWithUnixSeconds() {

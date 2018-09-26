@@ -38,12 +38,14 @@ export default class VehicleRegistrationSearch {
 						}));
 					})
 					.catch((err) => {
+						console.log(err);
 						return callback(null, createErrorResponse({ statusCode: 400, body: err }));
 					});
 			}
 			// Return 404 not found
 			return callback(null, createErrorResponse({ statusCode: 404, body: 'No penalties found' }));
 		} catch (err) {
+			console.log(err);
 			return callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		}
 	}

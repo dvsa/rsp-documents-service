@@ -437,6 +437,7 @@ resources:
                 - dynamodb:Scan
                 - dynamodb:Query
                 - dynamodb:GetItem
+                - dynamodb:BatchGetItem
                 - dynamodb:PutItem
                 - dynamodb:BatchWriteItem
                 - dynamodb:UpdateItem
@@ -448,9 +449,14 @@ resources:
               Resource: arn:aws:dynamodb:*:*:table/penaltyGroups
             - Effect: Allow
               Action:
+                - dynamodb:Query
+              Resource: arn:aws:dynamodb:*:*:table/penaltyDocuments/index/ByVehicleRegistration
+            - Effect: Allow
+              Action:
                 - dynamodb:Scan
                 - dynamodb:Query
                 - dynamodb:GetItem
+                - dynamodb:BatchGetItem
                 - dynamodb:PutItem
                 - dynamodb:BatchWriteItem
                 - dynamodb:UpdateItem
@@ -460,19 +466,5 @@ resources:
                 - dynamodb:GetShardIterator
                 - dynamodb:ListStreams
               Resource: arn:aws:dynamodb:*:*:table/penaltyGroups/index/ByOffset
-            - Effect: Allow
-              Action:
-                - dynamodb:Scan
-                - dynamodb:Query
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-                - dynamodb:BatchWriteItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-                - dynamodb:DescribeStream
-                - dynamodb:GetRecords
-                - dynamodb:GetShardIterator
-                - dynamodb:ListStreams
-              Resource: arn:aws:dynamodb:*:*:table/penaltyGroups/index/VehicleRegistration
         Roles:
           - Ref: IamRoleLambdaExecution
