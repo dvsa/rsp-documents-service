@@ -49,7 +49,8 @@ export default class PenaltyGroup {
 
 		const newDocIds = payload.Penalties.map(p => p.ID);
 		const existingDocsWithIds = await this._getPenaltyDocumentsWithIds(newDocIds);
-		if (existingDocsWithIds.length !== 0) {
+		const allExistingDocsDisabled = existingDocsWithIds.every(p => p.Enabled === false);
+		if (existingDocsWithIds.length !== 0 && !allExistingDocsDisabled) {
 			const clashingIds = existingDocsWithIds.map(doc => doc.ID);
 			return { valid: false, message: `There were clashing IDs (${clashingIds.join(',')})` };
 		}
