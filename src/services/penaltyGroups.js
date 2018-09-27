@@ -329,6 +329,7 @@ export default class PenaltyGroup {
 	_createUpdatePenaltiesPutParameters(penalties, tableName, paymentStatus) {
 		const putRequests = penalties.map((p) => {
 			p.Value.paymentStatus = paymentStatus;
+			p.Offset = Date.now() / 1000;
 			return {
 				PutRequest: { Item: p },
 			};
