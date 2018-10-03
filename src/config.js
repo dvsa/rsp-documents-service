@@ -49,7 +49,7 @@ const daysToHold = () => {
 };
 
 const dynamodbMaxBatchSize = () => {
-	return configuration[configMetadata.dynamodbMaxBatchSize];
+	return configuration[configMetadata.dynamodbMaxBatchSize] || 75;
 };
 
 const dynamodbPenaltyDocTable = () => {
