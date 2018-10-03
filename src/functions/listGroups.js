@@ -1,15 +1,20 @@
+import 'babel-polyfill';
 import { doc } from 'serverless-dynamodb-client';
-
+import config from '../config';
 import PenaltyGroupService from '../services/penaltyGroups';
 
-const penaltyGroupService = new PenaltyGroupService(
-	doc,
-	process.env.DYNAMODB_PENALTY_DOC_TABLE,
-	process.env.DYNAMODB_PENALTY_GROUP_TABLE,
-	process.env.SNSTOPICARN,
-);
+let penaltyGroupService;
 
-export default (event, context, callback) => {
+export default async (event, context, callback) => {
+	if (!penaltyGroupService) {
+		await config.bootstrap();
+		penaltyGroupService = new PenaltyGroupService(
+			doc,
+			config.dynamodbPenaltyDocTable(),
+			config.dynamodbPenaltyGroupTable(),
+			config.snsTopicArn(),
+		);
+	}
 	const { Offset } = event.queryStringParameters;
 	const numericOffset = Number(Offset);
 

@@ -1,15 +1,20 @@
 /* eslint-env es6 */
+import 'babel-polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroupService from '../services/penaltyGroups';
+import config from '../config';
 
-const penaltyGroupService = new PenaltyGroupService(
-	doc,
-	process.env.DYNAMODB_PENALTY_DOC_TABLE,
-	process.env.DYNAMODB_PENALTY_GROUP_TABLE,
-	process.env.SNSTOPICARN,
-);
-
-export default (event, context, callback) => {
+let penaltyGroupService;
+export default async (event, context, callback) => {
+	if (!penaltyGroupService) {
+		await config.bootstrap();
+		penaltyGroupService = new PenaltyGroupService(
+			doc,
+			config.dynamodbPenaltyDocTable(),
+			config.dynamodbPenaltyGroupTable(),
+			config.snsTopicArn(),
+		);
+	}
 
 	let paymentInfo = event.body;
 	if (typeof paymentInfo === 'string') {
