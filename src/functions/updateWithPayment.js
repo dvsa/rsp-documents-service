@@ -1,20 +1,25 @@
 /* eslint-env es6 */
+import 'babel-polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
+import config from '../config';
 
-const penaltyDocuments = new PenaltyDocument(
-	doc,
-	process.env.DYNAMODB_PENALTY_DOC_TABLE,
-	process.env.BUCKETNAME,
-	process.env.SNSTOPICARN,
-	process.env.SITERESOURCE,
-	process.env.PAYMENTURL,
-	process.env.TOKEN_SERVICE_ARN,
-	process.env.DAYS_TO_HOLD || 3,
-	process.env.PAYMENTS_BATCH_FETCH_ARN,
-);
-
-export default (event, context, callback) => {
+let penaltyDocuments;
+export default async (event, context, callback) => {
+	if (!penaltyDocuments) {
+		await config.bootstrap();
+		penaltyDocuments = new PenaltyDocument(
+			doc,
+			config.dynamodbPenaltyDocTable(),
+			config.bucketName(),
+			config.snsTopicArn(),
+			config.siteResource(),
+			config.paymentUrl(),
+			config.tokenServiceArn(),
+			config.daysToHold(),
+			config.paymentsBatchFetchArn(),
+		);
+	}
 
 	const paymentInfo = {
 		id: event.body.id,
