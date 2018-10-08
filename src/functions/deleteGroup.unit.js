@@ -19,8 +19,8 @@ describe('Delete group function', () => {
 		PenaltyGroupService.prototype.delete.restore();
 		callbackSpy.resetHistory();
 	});
-	it('should return the result of calling the penalty group service delete method', () => {
-		DeleteGroup(event, null, callbackSpy);
+	it('should return the result of calling the penalty group service delete method', async () => {
+		await DeleteGroup(event, null, callbackSpy);
 		sinon.assert.calledWith(penaltyGroupSvc, 'abcdefghij1', callbackSpy);
 	});
 });

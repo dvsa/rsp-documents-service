@@ -1,5 +1,4 @@
 import createResponse from '../utils/createResponse';
-import createErrorResponse from '../utils/createErrorResponse';
 import onlyUnique from '../utils/onlyUnique';
 
 export default class VehicleRegistrationSearch {
@@ -39,14 +38,15 @@ export default class VehicleRegistrationSearch {
 					})
 					.catch((err) => {
 						console.log(err);
-						return callback(null, createErrorResponse({ statusCode: 400, body: err }));
+						return callback(null, createResponse({ statusCode: 400, body: err }));
 					});
 			}
 			// Return 404 not found
-			return callback(null, createErrorResponse({ statusCode: 404, body: 'No penalties found' }));
+			console.log(`No penalties found for registration ${vehicleReg}`);
+			return callback(null, createResponse({ statusCode: 404, body: 'No penalties found' }));
 		} catch (err) {
 			console.log(err);
-			return callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			return callback(null, createResponse({ statusCode: 400, body: err }));
 		}
 	}
 	_batchGetPenaltyGroups(ids) {

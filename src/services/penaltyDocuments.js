@@ -2,6 +2,7 @@
 /* eslint-env es6 */
 import { SNS, S3, Lambda } from 'aws-sdk';
 import Validation from 'rsp-validation';
+import config from '../config';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import createResponse from '../utils/createResponse';
@@ -19,8 +20,6 @@ const docTypeMapping = ['FPN', 'IM', 'CDN'];
 const portalOrigin = 'PORTAL';
 const appOrigin = 'APP';
 
-const maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
-
 export default class PenaltyDocument {
 
 	constructor(
@@ -37,6 +36,7 @@ export default class PenaltyDocument {
 		this.tokenServiceARN = tokenServiceARN;
 		this.daysToHold = daysToHold;
 		this.paymentsBatchFetchArn = paymentsBatchFetchArn;
+		this.maxBatchSize = config.dynamodbMaxBatchSize();
 	}
 
 	getDocument(id, callback) {
@@ -375,7 +375,7 @@ export default class PenaltyDocument {
 		const params = {
 			TableName: this.penaltyDocTableName,
 			IndexName: 'ByOffset',
-			Limit: maxBatchSize,
+			Limit: this.maxBatchSize,
 		};
 		let localOffset = offset;
 		const date = new Date();
