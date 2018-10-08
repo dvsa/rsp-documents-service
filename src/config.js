@@ -40,62 +40,25 @@ async function bootstrap() {
 	});
 }
 
-const bucketName = () => {
-	return configuration[configMetadata.bucketName];
+const fromConfiguration = configKey => () => {
+	return configuration[configKey];
 };
 
-const daysToHold = () => {
-	return configuration[configMetadata.daysToHold] || 3;
+const fromConfigurationWithDefault = (configKey, defaultValue) => () => {
+	return fromConfiguration(configKey) || defaultValue;
 };
-
-const dynamodbMaxBatchSize = () => {
-	return configuration[configMetadata.dynamodbMaxBatchSize] || 75;
-};
-
-const dynamodbPenaltyDocTable = () => {
-	return configuration[configMetadata.dynamodbPenaltyDocTable];
-};
-
-const dynamodbPenaltyGroupTable = () => {
-	return configuration[configMetadata.dynamodbPenaltyGroupTable];
-};
-
-const env = () => {
-	return configuration[configMetadata.env];
-};
-
-const paymentsBatchFetchArn = () => {
-	return configuration[configMetadata.paymentsBatchFetchArn];
-};
-
-const paymentUrl = () => {
-	return configuration[configMetadata.paymentUrl];
-};
-
-const siteResource = () => {
-	return configuration[configMetadata.siteResource];
-};
-
-const snsTopicArn = () => {
-	return configuration[configMetadata.snsTopicArn];
-};
-
-const tokenServiceArn = () => {
-	return configuration[configMetadata.tokenServiceArn];
-};
-
 
 export default {
 	bootstrap,
-	bucketName,
-	daysToHold,
-	dynamodbMaxBatchSize,
-	dynamodbPenaltyDocTable,
-	dynamodbPenaltyGroupTable,
-	env,
-	paymentsBatchFetchArn,
-	paymentUrl,
-	siteResource,
-	snsTopicArn,
-	tokenServiceArn,
+	bucketName: fromConfiguration(configMetadata.bucketName),
+	daysToHold: fromConfigurationWithDefault(configMetadata.daysToHold, 3),
+	dynamodbMaxBatchSize: fromConfigurationWithDefault(configMetadata.dynamodbMaxBatchSize, 75),
+	dynamodbPenaltyDocTable: fromConfiguration(configMetadata.dynamodbPenaltyDocTable),
+	dynamodbPenaltyGroupTable: fromConfiguration(configMetadata.dynamodbPenaltyGroupTable),
+	env: fromConfiguration(configMetadata.env),
+	paymentsBatchFetchArn: fromConfiguration(configMetadata.paymentsBatchFetchArn),
+	paymentUrl: fromConfiguration(configMetadata.paymentUrl),
+	siteResource: fromConfiguration(configMetadata.siteResource),
+	snsTopicArn: fromConfiguration(configMetadata.snsTopicArn),
+	tokenServiceArn: fromConfiguration(configMetadata.tokenServiceArn),
 };
