@@ -3,6 +3,7 @@
 import { SNS } from 'aws-sdk';
 import Validation from 'rsp-validation';
 
+import config from '../config';
 import createResponse from '../utils/createResponse';
 import createErrorResponse from '../utils/createErrorResponse';
 import getUnixTime from '../utils/time';
@@ -17,7 +18,7 @@ export default class PenaltyGroup {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
-		this.maxBatchSize = process.env.DYNAMODB_MAX_BATCH_SIZE || 75;
+		this.maxBatchSize = config.dynamodbMaxBatchSize();
 		this.snsTopicARN = snsTopicARN;
 	}
 

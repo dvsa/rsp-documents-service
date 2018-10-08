@@ -1,12 +1,17 @@
+import 'babel-polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import VehicleRegistrationSearch from '../services/vehicleRegistrationSearch';
+import config from '../config';
 
-const vehicleRegistrationSearch = new VehicleRegistrationSearch(
-	doc,
-	process.env.DYNAMODB_PENALTY_DOC_TABLE,
-	process.env.DYNAMODB_PENALTY_GROUP_TABLE,
-);
-
-export default (event, context, callback) => {
+let vehicleRegistrationSearch;
+export default async (event, context, callback) => {
+	if (!vehicleRegistrationSearch) {
+		await config.bootstrap();
+		vehicleRegistrationSearch = new VehicleRegistrationSearch(
+			doc,
+			config.dynamodbPenaltyDocTable(),
+			config.dynamodbPenaltyGroupTable(),
+		);
+	}
 	vehicleRegistrationSearch.search(decodeURI(event.pathParameters.vehicleReg), callback);
 };
