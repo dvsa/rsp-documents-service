@@ -609,11 +609,7 @@ export default class PenaltyDocument {
 					}
 					resolve(createSimpleResponse({ statusCode: 200, body: updatedItem }));
 				}).catch((err) => {
-					updatedItem.Value.paymentStatus = savedPaymentStatus;
-					if (savedPaymentStatus === 'PAID') {
-						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
-						updatedItem.Value.paymentDate = savedPaymentDate;
-					}
+					updatedItem.Value.paymentStatus = 'UNPAID';
 					resolve(createSimpleResponse({ statusCode: 400, body: updatedItem, error: err }));
 				});
 			} else {
