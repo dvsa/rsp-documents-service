@@ -27,19 +27,12 @@ export default class VehicleRegistrationSearch {
 				}
 				// Otherwise, get the penalty groups
 				const penaltyGroupIds = penaltiesInGroups.map(p => p.penaltyGroupId);
-				this._batchGetPenaltyGroups(penaltyGroupIds)
-					.then((data) => {
-						const { Responses } = data;
-						const PenaltyGroups = Responses[this.penaltyGroupTableName];
-						return callback(null, createResponse({
-							statusCode: 200,
-							body: { Penalties, PenaltyGroups },
-						}));
-					})
-					.catch((err) => {
-						console.log(err);
-						return callback(null, createResponse({ statusCode: 400, body: err }));
-					});
+				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
+				const PenaltyGroups = Responses[this.penaltyGroupTableName];
+				return callback(null, createResponse({
+					statusCode: 200,
+					body: { Penalties, PenaltyGroups },
+				}));
 			}
 			// Return 404 not found
 			console.log(`No penalties found for registration ${vehicleReg}`);
