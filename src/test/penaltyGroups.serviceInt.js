@@ -385,7 +385,7 @@ async function insertDeletionTestPartPaidPenaltyGroup() {
 	const groupVehicleReg = '11AAA,11AAB,11AAC';
 	const allDocIds = [paidIm.id, ...unpaidFpns.map(fpn => fpn.id)];
 	const documentPutRequests = [
-		documentPutRequest(paidIm.id, 'PAID', paidIm.reg),
+		documentPutRequest(paidIm.id, 'PAID', paidIm.reg, paidIm.amount),
 		...unpaidFpns.map(fpn => documentPutRequest(fpn.id, 'UNPAID', fpn.reg, fpn.amount)),
 	];
 	const params = {

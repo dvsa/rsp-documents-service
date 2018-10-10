@@ -100,30 +100,103 @@ export default class PenaltyGroup {
 
 	async delete(penaltyGroupId, callback) {
 		try {
-			const { PenaltyDocumentIds } = await this._getPenaltyGroupById(penaltyGroupId);
-			const groupParams = this._disableIdInTableParams(this.penaltyGroupTableName, penaltyGroupId);
-			await this.db.update(groupParams).promise();
+			const group = await this._getPenaltyGroupById(penaltyGroupId);
+			const penaltyDocuments = await this._getPenaltyDocumentsWithIds(group.PenaltyDocumentIds);
 
-			const penaltyDocuments = await this._getPenaltyDocumentsWithIds(PenaltyDocumentIds);
-			const docIdsToHashes = penaltyDocuments.map(doc => ({
-				id: doc.ID,
-				hash: hashToken(doc.ID, doc.Value, false),
-			}));
-
-			const documentUpdatePromises = docIdsToHashes.map((idToHash) => {
-				const updateParams = this._disableIdInTableParams(
-					this.penaltyDocTableName,
-					idToHash.id,
-					idToHash.hash,
-				);
-				return this.db.update(updateParams).promise();
-			});
-			await Promise.all(documentUpdatePromises);
+			if (this._documentsIndicateGroupWhollyUnpaid(penaltyDocuments)) {
+				await this._disableGroupAndPenalties(penaltyGroupId, penaltyDocuments);
+			} else {
+				await this._spliceUnpaidPenaltiesFromGroup(group, penaltyDocuments);
+			}
 
 			return callback(null, createResponse({ statusCode: 204 }));
 		} catch (error) {
+			console.log(error);
 			return callback(null, createResponse({ statusCode: 400, body: error.message }));
 		}
+	}
+
+	_documentsIndicateGroupWhollyUnpaid(penaltyDocuments) {
+		return !penaltyDocuments.some(doc => doc.Value.paymentStatus === 'PAID');
+	}
+
+	async _disableGroupAndPenalties(penaltyGroupId, penaltyDocuments) {
+		const groupParams = this._disableIdInTableParams(this.penaltyGroupTableName, penaltyGroupId);
+		await this.db.update(groupParams).promise();
+
+		const docIdsToHashes = penaltyDocuments.map(doc => ({
+			id: doc.ID,
+			hash: hashToken(doc.ID, doc.Value, false),
+		}));
+
+		const documentUpdatePromises = docIdsToHashes.map((idToHash) => {
+			const updateParams = this._disableIdInTableParams(
+				this.penaltyDocTableName,
+				idToHash.id,
+				idToHash.hash,
+			);
+			return this.db.update(updateParams).promise();
+		});
+		await Promise.all(documentUpdatePromises);
+	}
+
+	async _spliceUnpaidPenaltiesFromGroup(group, penaltyDocs) {
+		const { paidIds, unpaidIds } = this._groupPenaltyIdsByPaymentStatus(penaltyDocs);
+		const amendedGroup = this._amendGroupRemovingUnpaidPenalties(group, penaltyDocs, paidIds);
+		await this._persistPenaltyGroup(amendedGroup);
+		await this._destroyPenaltiesWithIds(unpaidIds);
+	}
+
+	_amendGroupRemovingUnpaidPenalties(penaltyGroup, penaltyDocuments, paidIds) {
+		const amendedGroup = { ...penaltyGroup };
+		const paidPenaltyDocuments = penaltyDocuments
+			.filter(doc => paidIds.includes(doc.ID));
+		amendedGroup.Offset = getUnixTime();
+		amendedGroup.PaymentStatus = 'PAID';
+		amendedGroup.TotalAmount = 	paidPenaltyDocuments
+			.reduce((sum, doc) => sum + doc.Value.penaltyAmount, 0);
+		amendedGroup.VehicleRegistration = paidPenaltyDocuments
+			.map(doc => doc.Value.vehicleDetails.regNo)
+			.join(',');
+		amendedGroup.Enabled = false;
+		amendedGroup.PenaltyDocumentIds = paidIds;
+		amendedGroup.Hash = hashToken(amendedGroup.ID, amendedGroup, amendedGroup.Enabled);
+		return amendedGroup;
+	}
+
+	_groupPenaltyIdsByPaymentStatus(penaltyDocuments) {
+		return penaltyDocuments
+			.reduce(
+				(idPaidSplit, document) => {
+					const docPaymentStatus = document.Value.paymentStatus;
+					const docId = document.ID;
+					if (docPaymentStatus === 'PAID') {
+						return { paidIds: [docId, ...idPaidSplit.paidIds], unpaidIds: idPaidSplit.unpaidIds };
+					}
+					return { paidIds: idPaidSplit.paidIds, unpaidIds: [docId, ...idPaidSplit.unpaidIds] };
+				},
+				{ paidIds: [], unpaidIds: [] },
+			);
+	}
+
+	_persistPenaltyGroup(penaltyGroup) {
+		const putParams = {
+			TableName: this.penaltyGroupTableName,
+			Item: penaltyGroup,
+		};
+		return this.db.put(putParams).promise();
+	}
+
+	async _destroyPenaltiesWithIds(documentIds) {
+		const deletePromises = documentIds.map((docId) => {
+			return this.db.delete({
+				TableName: this.penaltyDocTableName,
+				Key: {
+					ID: docId,
+				},
+			}).promise();
+		});
+		return Promise.all(deletePromises);
 	}
 
 	async updatePenaltyGroupWithPayment(paymentInfo, callback) {
