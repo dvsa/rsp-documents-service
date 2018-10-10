@@ -231,6 +231,10 @@ describe('penaltyGroups', () => {
 				await assertPenaltyGroupDisabled(testPenaltyGroupId);
 				await assertPenaltyGroupStrictlyContainsDocIds(testPenaltyGroupId, paidDocIds);
 				await assertPenaltyDocumentsDontExist(unpaidDocIds);
+				const groupAfterCancel = await getPenaltyGroup(testPenaltyGroupId);
+				expect(groupAfterCancel.VehicleRegistration).toBe('11AAA');
+				expect(groupAfterCancel.TotalAmount).toBe(80);
+				expect(groupAfterCancel.PaymentStatus).toBe('PAID');
 			});
 		});
 	});
@@ -300,26 +304,35 @@ async function removePenaltyDocumentsById(ids) {
 	}
 }
 
-function groupPutRequest(docIds) {
+function groupPutRequest(docIds, amount, vehicleReg) {
+	const Item = {
+		ID: 'deleteinteg',
+		Offset: Date.now(),
+		Origin: 'APP',
+		PenaltyDocumentIds: docIds,
+		PaymentStatus: 'UNPAID',
+		Enabled: true,
+	};
+	if (amount) {
+		Item.TotalAmount = amount;
+	}
+	if (vehicleReg) {
+		Item.VehicleRegistration = vehicleReg;
+	}
 	return {
 		PutRequest: {
-			Item: {
-				ID: 'deleteinteg',
-				Offset: Date.now(),
-				Origin: 'APP',
-				PenaltyDocumentIds: docIds,
-				Enabled: true,
-			},
+			Item,
 		},
 	};
 }
 
-function documentPutRequest(docId, paymentStatus = 'UNPAID', reg = 'TESTREG') {
+function documentPutRequest(docId, paymentStatus = 'UNPAID', reg = 'TESTREG', penaltyAmount = 100) {
 	const Value = {
 		vehicleDetails: {
 			regNo: reg,
 		},
 		VehicleRegistration: reg,
+		penaltyAmount,
 	};
 	if (paymentStatus === 'PAID') {
 		Value.paymentStatus = 'PAID';
@@ -355,30 +368,44 @@ async function insertDeletionTestPartPaidPenaltyGroup() {
 	const paidIm = {
 		id: 'deleteintegdoc01_IM',
 		reg: '11AAA',
+		amount: 80,
 	};
 	const unpaidFpns = [
 		{
 			id: 'deleteintegdoc02_FPN',
 			reg: '11AAB',
+			amount: 100,
 		},
 		{
 			id: 'deleteintegdoc03_FPN',
 			reg: '11AAC',
+			amount: 200,
 		},
 	];
+	const groupVehicleReg = '11AAA,11AAB,11AAC';
 	const allDocIds = [paidIm.id, ...unpaidFpns.map(fpn => fpn.id)];
 	const documentPutRequests = [
 		documentPutRequest(paidIm.id, 'PAID', paidIm.reg),
-		...unpaidFpns.map(fpn => documentPutRequest(fpn.id, 'UNPAID', fpn.reg)),
+		...unpaidFpns.map(fpn => documentPutRequest(fpn.id, 'UNPAID', fpn.reg, fpn.amount)),
 	];
 	const params = {
 		RequestItems: {
-			penaltyGroups: [groupPutRequest(allDocIds)],
+			penaltyGroups: [groupPutRequest(allDocIds, 380, groupVehicleReg)],
 			penaltyDocuments: documentPutRequests,
 		},
 	};
 	await docClient.batchWrite(params).promise();
 	return { id: 'deleteinteg', docIds: allDocIds };
+}
+
+async function getPenaltyGroup(id) {
+	const response = await docClient.get({
+		TableName: 'penaltyGroups',
+		Key: {
+			ID: id,
+		},
+	}).promise();
+	return response.Item;
 }
 
 async function removeDeleteTestPenaltyGroup(penaltyGroupId, penaltyDocumentIds) {
@@ -387,15 +414,9 @@ async function removeDeleteTestPenaltyGroup(penaltyGroupId, penaltyDocumentIds) 
 }
 
 async function assertPenaltyGroupDisabled(penaltyGroupId) {
-	const penaltyGroup = await docClient.get({
-		TableName: 'penaltyGroups',
-		Key: {
-			ID: penaltyGroupId,
-		},
-	}).promise();
-
-	expect(penaltyGroup.Item.Enabled).toBe(false);
-	expect(penaltyGroup.Item.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
+	const penaltyGroup = await getPenaltyGroup(penaltyGroupId);
+	expect(penaltyGroup.Enabled).toBe(false);
+	expect(penaltyGroup.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
 }
 
 async function assertPenaltyDocumentsDisabled(documentIds) {
