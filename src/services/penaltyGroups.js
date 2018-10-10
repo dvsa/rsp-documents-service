@@ -143,8 +143,9 @@ export default class PenaltyGroup {
 	async _spliceUnpaidPenaltiesFromGroup(group, penaltyDocs) {
 		const { paidIds, unpaidIds } = this._groupPenaltyIdsByPaymentStatus(penaltyDocs);
 		const amendedGroup = this._amendGroupRemovingUnpaidPenalties(group, penaltyDocs, paidIds);
-		await this._persistPenaltyGroup(amendedGroup);
-		await this._destroyPenaltiesWithIds(unpaidIds);
+		const groupAmendmentPromise = this._persistPenaltyGroup(amendedGroup);
+		const documentDestroyPromise = this._destroyPenaltiesWithIds(unpaidIds);
+		await Promise.all([groupAmendmentPromise, documentDestroyPromise]);
 	}
 
 	_amendGroupRemovingUnpaidPenalties(penaltyGroup, penaltyDocuments, paidIds) {
