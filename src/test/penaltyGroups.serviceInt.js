@@ -184,11 +184,11 @@ describe('penaltyGroups', () => {
 	});
 
 	context('DELETE', () => {
-		context('when DELETE called against penalty group of ID', () => {
+		context('when DELETE called against penalty group of ID where all types are unpaid', () => {
 			let testPenaltyGroupId;
 			let testDocIds;
 			beforeEach(async () => {
-				const { id, docIds } = await insertDeletionTestPenaltyGroup();
+				const { id, docIds } = await insertDeletionTestUnpaidPenaltyGroup();
 				testPenaltyGroupId = id;
 				testDocIds = docIds;
 			});
@@ -206,6 +206,35 @@ describe('penaltyGroups', () => {
 
 				await assertPenaltyGroupDisabled(testPenaltyGroupId);
 				await assertPenaltyDocumentsDisabled(testDocIds);
+			});
+		});
+		context('when DELETE called against penalty group of ID where one of the types is already paid', () => {
+			let testPenaltyGroupId;
+			let paidDocIds;
+			let unpaidDocIds;
+			beforeEach(async () => {
+				const { id, docIds } = await insertDeletionTestPartPaidPenaltyGroup();
+				testPenaltyGroupId = id;
+				paidDocIds = docIds.filter(docId => docId.includes('IM'));
+				unpaidDocIds = docIds.filter(docId => docId.includes('FPN'));
+			});
+			afterEach(async () => {
+				await removeDeleteTestPenaltyGroup(testPenaltyGroupId, [...paidDocIds, ...unpaidDocIds]);
+			});
+			it('should delete any unpaid penalties and update the penalty group accordingly', async () => {
+				await request
+					.delete(`/${testPenaltyGroupId}`)
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect('Content-Type', 'application/json')
+					.expect(204);
+				await assertPenaltyGroupDisabled(testPenaltyGroupId);
+				await assertPenaltyGroupStrictlyContainsDocIds(testPenaltyGroupId, paidDocIds);
+				await assertPenaltyDocumentsDontExist(unpaidDocIds);
+				const groupAfterCancel = await getPenaltyGroup(testPenaltyGroupId);
+				expect(groupAfterCancel.VehicleRegistration).toBe('11AAA');
+				expect(groupAfterCancel.TotalAmount).toBe(80);
+				expect(groupAfterCancel.PaymentStatus).toBe('PAID');
 			});
 		});
 	});
@@ -275,32 +304,57 @@ async function removePenaltyDocumentsById(ids) {
 	}
 }
 
-async function insertDeletionTestPenaltyGroup() {
-	const docIds = ['deleteintegdoc01', 'deleteintegdoc02', 'deleteintegdoc03'];
-	const groupPutRequest = {
+function groupPutRequest(docIds, amount, vehicleReg) {
+	const Item = {
+		ID: 'deleteinteg',
+		Offset: Date.now(),
+		Origin: 'APP',
+		PenaltyDocumentIds: docIds,
+		PaymentStatus: 'UNPAID',
+		Enabled: true,
+	};
+	if (amount) {
+		Item.TotalAmount = amount;
+	}
+	if (vehicleReg) {
+		Item.VehicleRegistration = vehicleReg;
+	}
+	return {
+		PutRequest: {
+			Item,
+		},
+	};
+}
+
+function documentPutRequest(docId, paymentStatus = 'UNPAID', reg = 'TESTREG', penaltyAmount = 100) {
+	const Value = {
+		vehicleDetails: {
+			regNo: reg,
+		},
+		VehicleRegistration: reg,
+		penaltyAmount,
+	};
+	if (paymentStatus === 'PAID') {
+		Value.paymentStatus = 'PAID';
+	}
+	return {
 		PutRequest: {
 			Item: {
-				ID: 'deleteinteg',
-				Offset: Date.now(),
-				Origin: 'APP',
-				PenaltyDocumentIds: docIds,
+				ID: docId,
 				Enabled: true,
+				Hash: 'original-hash',
+				Value,
 			},
 		},
 	};
-	const documentPutRequests = docIds.map(id => ({
-		PutRequest: {
-			Item: {
-				ID: id,
-				Enabled: true,
-				Hash: 'original-hash',
-				Value: {},
-			},
-		},
-	}));
+}
+
+async function insertDeletionTestUnpaidPenaltyGroup() {
+	const docIds = ['deleteintegdoc01_FPN', 'deleteintegdoc02_FPN', 'deleteintegdoc03_FPN'];
+	const documentPutRequests = docIds.map(id => documentPutRequest(id));
 	const params = {
 		RequestItems: {
-			penaltyGroups: [groupPutRequest],
+			penaltyGroups: [groupPutRequest(docIds)],
 			penaltyDocuments: documentPutRequests,
 		},
 	};
@@ -310,21 +364,59 @@ async function insertDeletionTestPenaltyGroup() {
 	return { id: 'deleteinteg', docIds };
 }
 
+async function insertDeletionTestPartPaidPenaltyGroup() {
+	const paidIm = {
+		id: 'deleteintegdoc01_IM',
+		reg: '11AAA',
+		amount: 80,
+	};
+	const unpaidFpns = [
+		{
+			id: 'deleteintegdoc02_FPN',
+			reg: '11AAB',
+			amount: 100,
+		},
+		{
+			id: 'deleteintegdoc03_FPN',
+			reg: '11AAC',
+			amount: 200,
+		},
+	];
+	const groupVehicleReg = '11AAA,11AAB,11AAC';
+	const allDocIds = [paidIm.id, ...unpaidFpns.map(fpn => fpn.id)];
+	const documentPutRequests = [
+		documentPutRequest(paidIm.id, 'PAID', paidIm.reg, paidIm.amount),
+		...unpaidFpns.map(fpn => documentPutRequest(fpn.id, 'UNPAID', fpn.reg, fpn.amount)),
+	];
+	const params = {
+		RequestItems: {
+			penaltyGroups: [groupPutRequest(allDocIds, 380, groupVehicleReg)],
+			penaltyDocuments: documentPutRequests,
+		},
+	};
+	await docClient.batchWrite(params).promise();
+	return { id: 'deleteinteg', docIds: allDocIds };
+}
+
+async function getPenaltyGroup(id) {
+	const response = await docClient.get({
+		TableName: 'penaltyGroups',
+		Key: {
+			ID: id,
+		},
+	}).promise();
+	return response.Item;
+}
+
 async function removeDeleteTestPenaltyGroup(penaltyGroupId, penaltyDocumentIds) {
 	await removePenaltyGroupsById([penaltyGroupId]);
 	await removePenaltyDocumentsById(penaltyDocumentIds);
 }
 
 async function assertPenaltyGroupDisabled(penaltyGroupId) {
-	const penaltyGroup = await docClient.get({
-		TableName: 'penaltyGroups',
-		Key: {
-			ID: penaltyGroupId,
-		},
-	}).promise();
-
-	expect(penaltyGroup.Item.Enabled).toBe(false);
-	expect(penaltyGroup.Item.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
+	const penaltyGroup = await getPenaltyGroup(penaltyGroupId);
+	expect(penaltyGroup.Enabled).toBe(false);
+	expect(penaltyGroup.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
 }
 
 async function assertPenaltyDocumentsDisabled(documentIds) {
@@ -339,6 +431,16 @@ async function assertPenaltyDocumentsDisabled(documentIds) {
 		expect(document.Item.Offset).toBeWithinNUnixSeconds(Date.now() / 1000, 1);
 		expect(document.Item.Hash).not.toBe('original-hash');
 	});
+}
+
+async function assertPenaltyGroupStrictlyContainsDocIds(penaltyGroupId, docIds) {
+	const penaltyGroup = await docClient.get({
+		TableName: 'penaltyGroups',
+		Key: {
+			ID: penaltyGroupId,
+		},
+	}).promise();
+	expect(penaltyGroup.Item.PenaltyDocumentIds).toEqual(docIds);
 }
 
 async function insertSinglePenaltyWithId(id, enabled) {
@@ -372,7 +474,15 @@ async function assertPenaltyDocumentDoesntExist(id) {
 		},
 	};
 	const getResult = await docClient.get(getRequest).promise();
-	expect(getResult).toMatchObject({});
+	expect(getResult).toEqual({});
+}
+
+async function assertPenaltyDocumentsDontExist(ids) {
+	const assertionPromises = ids.map(id => new Promise(async (resolve) => {
+		await assertPenaltyDocumentDoesntExist(id);
+		resolve();
+	}));
+	await Promise.all(assertionPromises);
 }
 
 function extendJestWithUnixSeconds() {
