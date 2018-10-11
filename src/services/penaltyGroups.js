@@ -154,7 +154,7 @@ export default class PenaltyGroup {
 			.filter(doc => paidIds.includes(doc.ID));
 		amendedGroup.Offset = getUnixTime();
 		amendedGroup.PaymentStatus = 'PAID';
-		amendedGroup.TotalAmount = 	paidPenaltyDocuments
+		amendedGroup.TotalAmount = paidPenaltyDocuments
 			.reduce((sum, doc) => sum + doc.Value.penaltyAmount, 0);
 		amendedGroup.VehicleRegistration = paidPenaltyDocuments
 			.map(doc => doc.Value.vehicleDetails.regNo)
