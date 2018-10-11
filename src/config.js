@@ -45,7 +45,7 @@ const fromConfiguration = configKey => () => {
 };
 
 const fromConfigurationWithDefault = (configKey, defaultValue) => () => {
-	return fromConfiguration(configKey) || defaultValue;
+	return fromConfiguration(configKey)() || defaultValue;
 };
 
 export default {
