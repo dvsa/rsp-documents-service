@@ -106,9 +106,9 @@ export default class PenaltyDocument {
 			};
 
 			const docPutPromise = this.db.put(docPutParams).promise();
-			const tryUpdatePenaltyGroupPromise = this._tryUpdatePenaltyGroupPaymentStatus(doc, newStatus);
+			const penGrpUpdatePromise = this._tryUpdatePenaltyGroupToUnpaidStatus(doc, newStatus);
 
-			Promise.all([docPutPromise, tryUpdatePenaltyGroupPromise]).then(() => {
+			Promise.all([docPutPromise, penGrpUpdatePromise]).then(() => {
 				callback(null, createResponse({ statusCode: 200, body: doc }));
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
@@ -120,8 +120,11 @@ export default class PenaltyDocument {
 		});
 	}
 
-	async _tryUpdatePenaltyGroupPaymentStatus(doc, paymentStatus) {
-		if ((!doc.inPenaltyGroup && !doc.Value.inPenaltyGroup) || !doc.penaltyGroupId) {
+	async _tryUpdatePenaltyGroupToUnpaidStatus(doc, paymentStatus) {
+		if (
+			(!doc.inPenaltyGroup && !doc.Value.inPenaltyGroup)
+			|| !doc.penaltyGroupId
+			|| paymentStatus !== 'UNPAID') {
 			return Promise.resolve();
 		}
 
