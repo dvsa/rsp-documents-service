@@ -88,31 +88,63 @@ export default class PenaltyDocument {
 				ID: paymentInfo.id,
 			},
 		};
-		const dbGet = this.db.get(getParams).promise();
+		const docGet = this.db.get(getParams).promise();
 
-		dbGet.then((data) => {
-			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
-			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
-			data.Item.Offset = getUnixTime();
-			const putParams = {
+		docGet.then((docContainer) => {
+			const doc = docContainer.Item;
+			const newStatus = paymentInfo.paymentStatus;
+			doc.Value.paymentStatus = newStatus;
+			doc.Hash = hashToken(paymentInfo.id, doc.Value, doc.Enabled);
+			doc.Offset = getUnixTime();
+			const docPutParams = {
 				TableName: this.penaltyDocTableName,
-				Item: data.Item,
+				Item: doc,
 				ConditionExpression: 'attribute_exists(#ID)',
 				ExpressionAttributeNames: {
 					'#ID': 'ID',
 				},
 			};
 
-			const dbPut = this.db.put(putParams).promise();
-			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+			const docPutPromise = this.db.put(docPutParams).promise();
+			const penGrpUpdatePromise = this._tryUpdatePenaltyGroupToUnpaidStatus(doc, newStatus);
+
+			Promise.all([docPutPromise, penGrpUpdatePromise]).then(() => {
+				callback(null, createResponse({ statusCode: 200, body: doc }));
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: 400, err });
 				callback(null, returnResponse);
 			});
 		}).catch((err) => {
+			console.log(err);
 			callback(null, createErrorResponse({ statusCode: 400, body: err }));
 		});
+	}
+
+	async _tryUpdatePenaltyGroupToUnpaidStatus(doc, paymentStatus) {
+		if (
+			(!doc.inPenaltyGroup && !doc.Value.inPenaltyGroup)
+			|| !doc.penaltyGroupId
+			|| paymentStatus !== 'UNPAID') {
+			return Promise.resolve();
+		}
+
+		const penaltyGroupTable = config.dynamodbPenaltyGroupTable();
+		const getGroupParams = {
+			TableName: penaltyGroupTable,
+			Key: { ID: doc.penaltyGroupId },
+		};
+		const penaltyGroupContainer = await this.db.get(getGroupParams).promise();
+		const penaltyGroup = penaltyGroupContainer.Item;
+		if (penaltyGroup.PaymentStatus !== paymentStatus) {
+			penaltyGroup.PaymentStatus = paymentStatus;
+			penaltyGroup.Offset = getUnixTime();
+			const putGroupParams = {
+				TableName: penaltyGroupTable,
+				Item: penaltyGroup,
+			};
+			return this.db.put(putGroupParams).promise();
+		}
+		return Promise.resolve();
 	}
 
 	// put
