@@ -54,25 +54,35 @@ describe('PenaltyDocuments service', () => {
 	});
 
 	describe('_tryUpdatePenaltyGroupToUnpaidStatus', () => {
-		it("doesn't update when the payment status is paid", async () => {
-			// return mock penalty group container from db.get.
-			const mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
-			const mockPenaltyDocument = mockPenaltiesData.find((penalty) => {
-				return penalty.penaltyGroupId === mockPenaltyGroup.ID;
-			});
+		let mockPenaltyGroup;
+		let mockPenaltyDocument;
+
+		beforeEach(() => {
+			mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
+			mockPenaltyGroup.PaymentStatus = 'PAID';
 			sinon.stub(doc, 'get').returns({
 				promise: () => Promise.resolve({
 					Item: mockPenaltyGroup,
 				}),
 			});
 
-			mockPenaltyDocument.Value.paymentStatus = 'UNPAID';
+			mockPenaltyDocument = mockPenaltiesData.find((penalty) => {
+				return penalty.penaltyGroupId === mockPenaltyGroup.ID;
+			});
 			mockPenaltyDocument.Hash = hashToken('46xu68x7o6b', mockPenaltyDocument.Value, mockPenaltyDocument.Enabled);
 			mockPenaltyDocument.Offset = getUnixTime();
+		});
 
+		it("doesn't update when the new payment status is paid", async () => {
 			// eslint-disable-next-line no-underscore-dangle
 			const promiseResponse = await penaltyDocumentsService._tryUpdatePenaltyGroupToUnpaidStatus(mockPenaltyDocument, 'PAID');
 			expect(promiseResponse).toBeUndefined();
+		});
+
+		it('updates group with unpaid status when initial status is paid', async () => {
+			// eslint-disable-next-line no-underscore-dangle
+			const promiseResponse = await penaltyDocumentsService._tryUpdatePenaltyGroupToUnpaidStatus(mockPenaltyDocument, 'UNPAID');
+			expect(promiseResponse).toBeDefined();
 		});
 	});
 });
