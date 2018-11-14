@@ -81,6 +81,12 @@ export default class PenaltyDocument {
 		return JSON.stringify(obj) === JSON.stringify({});
 	}
 
+	/**
+	 * Update the penalty document and its parent group with paymentInfo.
+	 * @param {*} paymentInfo The new payment info.
+	 * @param {(_, response) => void} callback Callback returning a status code
+	 * and the new document or an error.
+	 */
 	async updateDocumentUponPaymentDelete(paymentInfo, callback) {
 		const getParams = {
 			TableName: this.penaltyDocTableName,
@@ -122,6 +128,12 @@ export default class PenaltyDocument {
 		}
 	}
 
+	/**
+	 * Sets the group status to UNPAID and updates its timestamp if currently set to PAID.
+	 * @param {*} doc The penalty document for which the corresponding group is updated.
+	 * @param {*} paymentStatus The new payment status. If set to anything other than 'UNPAID',
+	 * the method will resolve immediately.
+	 */
 	async _tryUpdatePenaltyGroupToUnpaidStatus(doc, paymentStatus) {
 		if (
 			(!doc.inPenaltyGroup && !doc.Value.inPenaltyGroup)
