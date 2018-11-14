@@ -110,8 +110,7 @@ export default class PenaltyDocument {
 			const penGrpUpdatePromise = this._tryUpdatePenaltyGroupToUnpaidStatus(doc, newStatus);
 
 			try {
-				await docPutPromise;
-				await penGrpUpdatePromise;
+				await Promise.all([docPutPromise, penGrpUpdatePromise]);
 			} catch (innerError) {
 				const returnResponse = createErrorResponse({ statusCode: 400, innerError });
 				callback(null, returnResponse);
