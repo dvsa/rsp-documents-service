@@ -23,6 +23,19 @@ const appOrigin = 'APP';
 
 export default class PenaltyDocument {
 
+	/**
+	 * Instantiate the penalty document service.
+	 * @param {AWS.DynamoDB.DocumentClient} db Dynamodb interface for penalty documents.
+	 * @param {string} penaltyDocTableName Table name of penalty documents.
+	 * @param {string} bucketName S3 bucket name where RSP DVSA sites are stored.
+	 * @param {string} snsTopicARN ARN for payment notification SNS service.
+	 * @param {string} siteResource Resource file path for sites within the bucket
+	 * specified with `bucketName`
+	 * @param {string} paymentURL URL of payment service.
+	 * @param {string} tokenServiceARN ARN of token service.
+	 * @param {number} daysToHold Number of days to keep penalty documents.
+	 * @param {string} paymentsBatchFetchArn The payment service batch fetch ARN.
+	 */
 	constructor(
 		db,	penaltyDocTableName, bucketName,
 		snsTopicARN, siteResource, paymentURL,
@@ -84,69 +97,87 @@ export default class PenaltyDocument {
 
 	/**
 	 * Update the penalty document and its parent group with paymentInfo.
-	 * @param {{id: string, paymentStatus: string}} paymentInfo The new payment info.
+	 * @param {{penaltyDocumentIds: Array<string>}} paymentInfo The new
+	 * payment info. (e.g. {penaltyDocuments: [890700000823_FPN, 912900000182_IM]}).
 	 * @param {(_, response) => void} callback Callback returning a status code
 	 * and the new document or an error.
 	 */
-	async updateDocumentUponPaymentDelete(paymentInfo, callback) {
-		const getParams = {
-			TableName: this.penaltyDocTableName,
-			Key: {
-				ID: paymentInfo.id,
-			},
-		};
-		const docGet = this.db.get(getParams).promise();
-
+	async updateDocumentsUponPaymentDelete(paymentInfo, callback) {
 		try {
-			const docContainer = await docGet;
-			const doc = docContainer.Item;
-			const newStatus = paymentInfo.paymentStatus;
-			doc.Value.paymentStatus = newStatus;
-			doc.Hash = hashToken(paymentInfo.id, doc.Value, doc.Enabled);
-			doc.Offset = getUnixTime();
-			const docPutParams = {
-				TableName: this.penaltyDocTableName,
-				Item: doc,
-				ConditionExpression: 'attribute_exists(#ID)',
-				ExpressionAttributeNames: {
-					'#ID': 'ID',
-				},
-			};
+			const docUpdates = paymentInfo.penaltyDocumentIds.map((penaltyDocumentId) => {
+				return this._updateDocumentToUnpaidStatus(penaltyDocumentId);
+			});
+			const updatedDocs = await Promise.all(docUpdates);
 
-			const docPutPromise = this.db.put(docPutParams).promise();
-			const penGrpUpdatePromise = this._tryUpdatePenaltyGroupToUnpaidStatus(doc, newStatus);
-
-			try {
-				await Promise.all([docPutPromise, penGrpUpdatePromise]);
-			} catch (innerError) {
-				const returnResponse = createErrorResponse({ statusCode: 400, err: innerError });
-				callback(null, returnResponse);
+			if (updatedDocs.length !== 0) {
+				// Only support reversal of payments within the same penalty group.
+				// @ts-ignore
+				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].$response.data.penaltyGroupId, 'UNPAID');
 			}
 
-			callback(null, createResponse({ statusCode: 200, body: doc }));
+			callback(null, createResponse({ statusCode: 200 }));
 		} catch (err) {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
 		}
 	}
 
+	async _updateDocumentToUnpaidStatus(penaltyDocumentId) {
+		// get all documents with penalty ID. Set them to be UNPAID
+		const getParams = {
+			TableName: this.penaltyDocTableName,
+			Key: penaltyDocumentId,
+		};
+		const docQuery = this.db.get(getParams).promise();
+
+		const docContainer = await docQuery;
+		const doc = docContainer.Item;
+		return this._tryUpdatePenaltyDocToUnpaidStatus(doc);
+	}
+
+	/**
+	 * Update each penaltyDocument to be unpaid if it's not already.
+	 * Also update offset and hash.
+	 * @param {AWS.DynamoDB.DocumentClient.AttributeMap} penaltyDocument The penalty document
+	 * to be updated.
+	 */
+	_tryUpdatePenaltyDocToUnpaidStatus(penaltyDocument) {
+		penaltyDocument.Value.paymentStatus = 'UNPAID';
+		penaltyDocument.Hash = hashToken(
+			penaltyDocument.ID,
+			penaltyDocument.Value,
+			penaltyDocument.Enabled,
+		);
+		penaltyDocument.Offset = getUnixTime();
+		const docPutParams = {
+			TableName: this.penaltyDocTableName,
+			Item: penaltyDocument,
+			ConditionExpression: 'attribute_exists(#ID)',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+			},
+		};
+
+		return this.db.put(docPutParams).promise();
+	}
+
 	/**
 	 * Sets the group status to UNPAID and updates its timestamp if currently set to PAID.
-	 * @param {*} doc The penalty document for which the corresponding group is updated.
-	 * @param {*} paymentStatus The new payment status. If set to anything other than 'UNPAID',
+	 * @param {string} penaltyGroupId The penalty group id to update.
+	 * @param {string} paymentStatus The new payment status. If set to anything other than 'UNPAID',
 	 * the method will resolve immediately.
 	 */
-	async _tryUpdatePenaltyGroupToUnpaidStatus(doc, paymentStatus) {
-		if (
-			(!doc.inPenaltyGroup && !doc.Value.inPenaltyGroup)
-			|| !doc.penaltyGroupId
-			|| paymentStatus !== 'UNPAID') {
-			return Promise.resolve();
-		}
+	async _tryUpdatePenaltyGroupToUnpaidStatus(penaltyGroupId, paymentStatus) {
+		// if (
+		// 	(!doc.inPenaltyGroup && !doc.Value.inPenaltyGroup)
+		// 	|| !doc.penaltyGroupId
+		// 	|| paymentStatus !== 'UNPAID') {
+		// 	return Promise.resolve();
+		// }
 
 		const penaltyGroupTable = config.dynamodbPenaltyGroupTable();
 		const getGroupParams = {
 			TableName: penaltyGroupTable,
-			Key: { ID: doc.penaltyGroupId },
+			Key: { ID: penaltyGroupId },
 		};
 		const penaltyGroupContainer = await this.db.get(getGroupParams).promise();
 		const penaltyGroup = penaltyGroupContainer.Item;
