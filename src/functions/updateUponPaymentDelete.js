@@ -1,9 +1,14 @@
+// @ts-check
 /* eslint-env es6 */
 import 'babel-polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
 
+/**
+ * Penalty documents service
+ * @type PenaltyDocument
+ */
 let penaltyDocuments;
 export default async (event, context, callback) => {
 	if (!penaltyDocuments) {
@@ -21,12 +26,13 @@ export default async (event, context, callback) => {
 		);
 	}
 
+	console.log(event);
+
 	const paymentInfo = {
-		id: event.body.id,
-		paymentStatus: event.body.paymentStatus,
+		penaltyDocuments: event.body.penaltyDocuments,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
 	// id body document
-	penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo, callback);
+	penaltyDocuments.updateDocumentsUponPaymentDelete(paymentInfo, callback);
 };
