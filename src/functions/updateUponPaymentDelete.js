@@ -29,7 +29,7 @@ export default async (event, context, callback) => {
 	console.log(event);
 
 	const paymentInfo = {
-		penaltyDocuments: event.body.penaltyDocuments,
+		penaltyDocumentIds: event.body.penaltyDocuments,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
