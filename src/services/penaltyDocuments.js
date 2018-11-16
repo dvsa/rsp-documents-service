@@ -1,3 +1,4 @@
+// @ts-check
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import { SNS, S3, Lambda } from 'aws-sdk';
@@ -70,10 +71,10 @@ export default class PenaltyDocument {
 					}
 					callback(null, createResponse({ statusCode: 200, body: data.Item }));
 				}).catch((err) => {
-					callback(null, createErrorResponse({ statusCode: 400, body: err }));
+					callback(null, createErrorResponse({ statusCode: 400, err }));
 				});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
 	}
 
@@ -83,7 +84,7 @@ export default class PenaltyDocument {
 
 	/**
 	 * Update the penalty document and its parent group with paymentInfo.
-	 * @param {*} paymentInfo The new payment info.
+	 * @param {{id: string, paymentStatus: string}} paymentInfo The new payment info.
 	 * @param {(_, response) => void} callback Callback returning a status code
 	 * and the new document or an error.
 	 */
@@ -118,13 +119,13 @@ export default class PenaltyDocument {
 			try {
 				await Promise.all([docPutPromise, penGrpUpdatePromise]);
 			} catch (innerError) {
-				const returnResponse = createErrorResponse({ statusCode: 400, innerError });
+				const returnResponse = createErrorResponse({ statusCode: 400, err: innerError });
 				callback(null, returnResponse);
 			}
 
 			callback(null, createResponse({ statusCode: 200, body: doc }));
 		} catch (err) {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			callback(null, createErrorResponse({ statusCode: 400, err }));
 		}
 	}
 
@@ -225,7 +226,7 @@ export default class PenaltyDocument {
 				callback(null, returnResponse);
 			});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
 	}
 
@@ -406,13 +407,13 @@ export default class PenaltyDocument {
 						dbUpdate.then(() => {
 							callback(null, createResponse({ statusCode: 200, body: deletedItem }));
 						}).catch((err) => {
-							const errResponse = createErrorResponse({ statusCode: 400, body: err });
+							const errResponse = createErrorResponse({ statusCode: 400, err });
 							callback(null, errResponse);
 						});
 					}
 				}
 			}).catch((err) => {
-				callback(null, createErrorResponse({ statusCode: 400, body: err }));
+				callback(null, createErrorResponse({ statusCode: 400, err }));
 			});
 	}
 
@@ -492,7 +493,7 @@ export default class PenaltyDocument {
 			if (error) {
 				console.log('Token service returned an error');
 				console.log(error.message);
-				callback(null, createErrorResponse({ statusCode: 400, error }));
+				callback(null, createErrorResponse({ statusCode: 400, err: error }));
 			} else if (data.Payload) {
 				try {
 					const parsedPayload = JSON.parse(data.Payload);
@@ -534,7 +535,7 @@ export default class PenaltyDocument {
 								})
 								.catch((e) => {
 									console.log(`Error getting payment info: ${e}`);
-									callback(null, createErrorResponse({ statusCode: 400, e }));
+									callback(null, createErrorResponse({ statusCode: 400, err: e }));
 								});
 						} else if (res.statusCode === 200) {
 							callback(null, createResponse({ statusCode: 200, body: JSON.parse(res.body) }));
@@ -550,7 +551,7 @@ export default class PenaltyDocument {
 					});
 				} catch (e) {
 					console.log(`top level catch getting doc by token: ${e}`);
-					callback(null, createErrorResponse({ statusCode: 400, e }));
+					callback(null, createErrorResponse({ statusCode: 400, err: e }));
 				}
 				return;
 			}
