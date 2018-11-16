@@ -104,21 +104,35 @@ export default class PenaltyDocument {
 	 */
 	async updateDocumentsUponPaymentDelete(paymentInfo, callback) {
 		try {
-			const docUpdates = paymentInfo.penaltyDocumentIds.map((penaltyDocumentId) => {
-				return this._updateDocumentToUnpaidStatus(penaltyDocumentId);
-			});
-			const updatedDocs = await Promise.all(docUpdates);
+			const updatedDocs = await this._updateDocumentsToUnpaidStatus(paymentInfo.penaltyDocumentIds);
 
 			if (updatedDocs.length !== 0) {
 				// Only support reversal of payments within the same penalty group.
-				// @ts-ignore
-				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].$response.data.penaltyGroupId, 'UNPAID');
+				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0], 'UNPAID');
 			}
 
 			callback(null, createResponse({ statusCode: 200 }));
 		} catch (err) {
 			callback(null, createErrorResponse({ statusCode: 400, err }));
 		}
+	}
+
+	/**
+	 * Update docs
+	 * @param {Array<string>} penaltyDocumentIds
+	 * @returns {Promise<Array<string>>} The group penalty document group ids.
+	 */
+	async _updateDocumentsToUnpaidStatus(penaltyDocumentIds) {
+		const putRequests = penaltyDocumentIds.map((penaltyDocumentId) => {
+			return this._updateDocumentToUnpaidStatus(penaltyDocumentId);
+		});
+
+		const updatedDocs = await Promise.all(putRequests);
+
+		return updatedDocs.map((updatedDoc) => {
+			// @ts-ignore
+			return updatedDoc.$response.data.penaltyGroupId;
+		});
 	}
 
 	async _updateDocumentToUnpaidStatus(penaltyDocumentId) {
