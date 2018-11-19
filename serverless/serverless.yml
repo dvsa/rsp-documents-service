@@ -73,6 +73,9 @@ functions:
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128
+  updateMultipleUponPaymentDelete:
+    handler: handler.updateMultipleUponPaymentDelete
+    memorySize: 128
   sites:
     handler: handler.sites
     memorySize: 128

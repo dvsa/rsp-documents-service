@@ -29,11 +29,10 @@ export default async (event, context, callback) => {
 	console.log(event);
 
 	const paymentInfo = {
-		id: event.body.id,
-		paymentStatus: event.body.paymentStatus,
+		penaltyDocumentIds: event.body.penaltyDocuments,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
 	// id body document
-	penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo, callback);
+	penaltyDocuments.updateDocumentsUponPaymentDelete(paymentInfo, callback);
 };

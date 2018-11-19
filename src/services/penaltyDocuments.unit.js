@@ -34,7 +34,7 @@ describe('PenaltyDocuments service', () => {
 		callbackSpy.resetHistory();
 	});
 
-	describe('updateDocumentUponPaymentDelete', () => {
+	describe('updateDocumentsUponPaymentDelete', () => {
 		it('calls back with OK status', async () => {
 			/**
 			 * Mock for db.get in updateDocumentUponPaymentDelete.
