@@ -73,9 +73,25 @@ functions:
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updateUponPaymentDelete
+          method: put
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
   updateMultipleUponPaymentDelete:
     handler: handler.updateMultipleUponPaymentDelete
     memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updateMultipleUponPaymentDelete
+          method: put
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
   sites:
     handler: handler.sites
     memorySize: 128

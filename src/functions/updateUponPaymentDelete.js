@@ -26,11 +26,16 @@ export default async (event, context, callback) => {
 		);
 	}
 
-	console.log(event);
+	let { body } = event;
+
+	if (typeof body === 'string') {
+		// body is a string if invoked via http request rather than directly.
+		body = JSON.parse(event.body);
+	}
 
 	const paymentInfo = {
-		id: event.body.id,
-		paymentStatus: event.body.paymentStatus,
+		id: body.id,
+		paymentStatus: body.paymentStatus,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));

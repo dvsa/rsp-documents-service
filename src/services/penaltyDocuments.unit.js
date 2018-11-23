@@ -1,13 +1,10 @@
-// @ts-check
 import expect from 'expect';
 import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
 import PenaltyDocumentsService from './penaltyDocuments';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
-// @ts-ignore
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
-// @ts-ignore
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
 
 

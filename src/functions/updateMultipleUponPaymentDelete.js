@@ -26,13 +26,18 @@ export default async (event, context, callback) => {
 		);
 	}
 
-	console.log(event);
+	let { body } = event;
+
+	if (typeof body === 'string') {
+		// body is a string if invoked via http request rather than directly.
+		body = JSON.parse(event.body);
+	}
 
 	const paymentInfo = {
-		penaltyDocumentIds: event.body.penaltyDocuments,
+		penaltyDocumentIds: body.penaltyDocumentIds,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
-	// id body document
-	penaltyDocuments.updateDocumentsUponPaymentDelete(paymentInfo, callback);
+
+	penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo, callback);
 };
