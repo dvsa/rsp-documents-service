@@ -147,17 +147,18 @@ export default class PenaltyDocument {
 	 * @param {(_, response) => void} callback Callback returning a status code
 	 * and the new document or an error.
 	 */
-	async updateDocumentsUponPaymentDelete(paymentInfo, callback) {
+	async updateMultipleUponPaymentDelete(paymentInfo, callback) {
 		try {
 			const updatedDocs = await this._updateDocumentsToUnpaidStatus(paymentInfo.penaltyDocumentIds);
 
 			if (updatedDocs.length !== 0) {
 				// Only support reversal of payments within the same penalty group.
-				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0], 'UNPAID');
+				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].penaltyGroupId, 'UNPAID');
 			}
 
 			callback(null, createResponse({ statusCode: 200 }));
 		} catch (err) {
+			console.log(`Error updating multiple docs upon payment delete ${err}`);
 			callback(null, createErrorResponse({ statusCode: 400, err }));
 		}
 	}
@@ -165,32 +166,28 @@ export default class PenaltyDocument {
 	/**
 	 * Update docs
 	 * @param {Array<string>} penaltyDocumentIds
-	 * @returns {Promise<Array<string>>} The group penalty document group ids.
+	 * @returns {Promise<Array<any>>} The group penalty document group ids.
 	 */
 	async _updateDocumentsToUnpaidStatus(penaltyDocumentIds) {
-		const putRequests = penaltyDocumentIds.map((penaltyDocumentId) => {
-			return this._updateDocumentToUnpaidStatus(penaltyDocumentId);
+		const penaltyDocumentRequests = penaltyDocumentIds.map((penaltyDocumentId) => {
+			const getParams = {
+				TableName: this.penaltyDocTableName,
+				Key: {
+					ID: penaltyDocumentId,
+				},
+			};
+			return this.db.get(getParams).promise();
 		});
 
-		const updatedDocs = await Promise.all(putRequests);
+		const penaltyDocuments = (await Promise.all(penaltyDocumentRequests)).map(doc => doc.Item);
 
-		return updatedDocs.map((updatedDoc) => {
-			// @ts-ignore
-			return updatedDoc.$response.data.penaltyGroupId;
+		const putRequests = penaltyDocuments.map((penaltyDocument) => {
+			return this._tryUpdatePenaltyDocToUnpaidStatus(penaltyDocument);
 		});
-	}
 
-	async _updateDocumentToUnpaidStatus(penaltyDocumentId) {
-		// get all documents with penalty ID. Set them to be UNPAID
-		const getParams = {
-			TableName: this.penaltyDocTableName,
-			Key: penaltyDocumentId,
-		};
-		const docQuery = this.db.get(getParams).promise();
+		await Promise.all(putRequests);
 
-		const docContainer = await docQuery;
-		const doc = docContainer.Item;
-		return this._tryUpdatePenaltyDocToUnpaidStatus(doc);
+		return penaltyDocuments;
 	}
 
 	/**
@@ -239,6 +236,10 @@ export default class PenaltyDocument {
 			const putGroupParams = {
 				TableName: penaltyGroupTable,
 				Item: penaltyGroup,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
 			};
 			return this.db.put(putGroupParams).promise();
 		}
@@ -411,6 +412,7 @@ export default class PenaltyDocument {
 				Payload: payloadStr,
 			})
 				.promise()
+				// @ts-ignore
 				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
 				.catch(err => reject(err));
 		});
@@ -579,6 +581,7 @@ export default class PenaltyDocument {
 				callback(null, createErrorResponse({ statusCode: 400, err: error }));
 			} else if (data.Payload) {
 				try {
+					// @ts-ignore
 					const parsedPayload = JSON.parse(data.Payload);
 					if (parsedPayload.statusCode === 400) {
 						console.log('Token service returned bad request (status 400)');
@@ -874,6 +877,7 @@ export default class PenaltyDocument {
 			if (err) {
 				callback(null, createResponse({ statusCode: 400, body: err }));
 			} else {
+				// @ts-ignore
 				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
 			}
 		});
