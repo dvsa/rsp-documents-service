@@ -51,7 +51,7 @@ describe('PenaltyDocuments service', () => {
 			const mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
 			sinon.stub(penaltyDocumentsService, '_tryUpdatePenaltyGroupToUnpaidStatus').callsFake(() => mockPenaltyGroup);
 			sinon.stub(penaltyDocumentsService, '_updateDocumentsToUnpaidStatus').callsFake(() => ['abcdefg123']);
-			await penaltyDocumentsService.updateDocumentsUponPaymentDelete({ penaltyDocumentIds: ['abcdefg123'] }, callbackSpy);
+			await penaltyDocumentsService.updateMultipleUponPaymentDelete({ penaltyDocumentIds: ['abcdefg123'] }, callbackSpy);
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({
 				statusCode: 200,
 			}));
