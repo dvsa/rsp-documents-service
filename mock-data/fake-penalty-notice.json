@@ -9,7 +9,7 @@
     "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
-        "paymentStatus": "UNPAID",
+        "paymentStatus": "PAID",
         "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
@@ -49,7 +49,7 @@
     "VehicleRegistration": "QM05 VH",
     "Value": { 
         "penaltyType" : "FPN",
-        "paymentStatus": "UNPAID",
+        "paymentStatus": "PAID",
         "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
