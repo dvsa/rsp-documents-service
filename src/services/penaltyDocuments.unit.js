@@ -39,19 +39,13 @@ describe('PenaltyDocuments service', () => {
 			 */
 			sinon.stub(doc, 'get').returns({
 				promise: () => Promise.resolve({
-					Item: {
-						Value: {},
-						ID: 'abc123def45',
-						Enabled: true,
-						penaltyGroupId: 'groupIdPen',
-						inPenaltyGroup: true,
-					},
+					Item: mockPenaltiesData.find(pen => pen.id === '820500000877_FPN'),
 				}),
 			});
 			const mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
 			sinon.stub(penaltyDocumentsService, '_tryUpdatePenaltyGroupToUnpaidStatus').callsFake(() => mockPenaltyGroup);
-			sinon.stub(penaltyDocumentsService, '_updateDocumentsToUnpaidStatus').callsFake(() => ['abcdefg123']);
-			await penaltyDocumentsService.updateMultipleUponPaymentDelete({ penaltyDocumentIds: ['abcdefg123'] }, callbackSpy);
+			sinon.stub(penaltyDocumentsService, '_updateDocumentsToUnpaidStatus').callsFake(() => ['820500000877_FPN']);
+			await penaltyDocumentsService.updateMultipleUponPaymentDelete({ penaltyDocumentIds: ['820500000877_FPN'] }, callbackSpy);
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({
 				statusCode: 200,
 			}));
