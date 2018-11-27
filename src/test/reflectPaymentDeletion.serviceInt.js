@@ -1,7 +1,7 @@
 import supertest from 'supertest';
 
 
-const url = 'http://localhost:3001/documents';
+const url = 'http://localhost:3000/documents';
 const request = supertest(url);
 
 describe('payment deletion reflection', () => {
