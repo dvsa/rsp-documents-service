@@ -1,3 +1,4 @@
+// @ts-check
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import { SNS, S3, Lambda } from 'aws-sdk';
@@ -22,6 +23,19 @@ const appOrigin = 'APP';
 
 export default class PenaltyDocument {
 
+	/**
+	 * Instantiate the penalty document service.
+	 * @param {AWS.DynamoDB.DocumentClient} db Dynamodb interface for penalty documents.
+	 * @param {string} penaltyDocTableName Table name of penalty documents.
+	 * @param {string} bucketName S3 bucket name where RSP DVSA sites are stored.
+	 * @param {string} snsTopicARN ARN for payment notification SNS service.
+	 * @param {string} siteResource Resource file path for sites within the bucket
+	 * specified with `bucketName`
+	 * @param {string} paymentURL URL of payment service.
+	 * @param {string} tokenServiceARN ARN of token service.
+	 * @param {number} daysToHold Number of days to keep penalty documents.
+	 * @param {string} paymentsBatchFetchArn The payment service batch fetch ARN.
+	 */
 	constructor(
 		db,	penaltyDocTableName, bucketName,
 		snsTopicARN, siteResource, paymentURL,
@@ -70,10 +84,10 @@ export default class PenaltyDocument {
 					}
 					callback(null, createResponse({ statusCode: 200, body: data.Item }));
 				}).catch((err) => {
-					callback(null, createErrorResponse({ statusCode: 400, body: err }));
+					callback(null, createErrorResponse({ statusCode: 400, err }));
 				});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
 	}
 
@@ -111,8 +125,114 @@ export default class PenaltyDocument {
 				callback(null, returnResponse);
 			});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
+	}
+
+	/**
+	 * Update the penalty document and its parent group with paymentInfo.
+	 * @param {{penaltyDocumentIds: Array<string>}} paymentInfo The new
+	 * payment info. (e.g. {penaltyDocuments: [890700000823_FPN, 912900000182_IM]}).
+	 * @param {(_, response) => void} callback Callback returning a status code
+	 * and the new document or an error.
+	 */
+	async updateMultipleUponPaymentDelete(paymentInfo, callback) {
+		try {
+			const updatedDocs = await this._updateDocumentsToUnpaidStatus(paymentInfo.penaltyDocumentIds);
+
+			if (updatedDocs.length !== 0) {
+				// Only support reversal of payments within the same penalty group.
+				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].penaltyGroupId, 'UNPAID');
+			}
+
+			callback(null, createResponse({ statusCode: 200 }));
+		} catch (err) {
+			console.log(`Error updating multiple docs upon payment delete ${err}`);
+			callback(null, createErrorResponse({ statusCode: 400, err }));
+		}
+	}
+
+	/**
+	 * Update docs
+	 * @param {Array<string>} penaltyDocumentIds
+	 * @returns {Promise<Array<any>>} The group penalty document group ids.
+	 */
+	async _updateDocumentsToUnpaidStatus(penaltyDocumentIds) {
+		const penaltyDocumentRequests = penaltyDocumentIds.map((penaltyDocumentId) => {
+			const getParams = {
+				TableName: this.penaltyDocTableName,
+				Key: {
+					ID: penaltyDocumentId,
+				},
+			};
+			return this.db.get(getParams).promise();
+		});
+
+		const penaltyDocuments = (await Promise.all(penaltyDocumentRequests)).map(doc => doc.Item);
+
+		const putRequests = penaltyDocuments.map((penaltyDocument) => {
+			return this._tryUpdatePenaltyDocToUnpaidStatus(penaltyDocument);
+		});
+
+		await Promise.all(putRequests);
+
+		return penaltyDocuments;
+	}
+
+	/**
+	 * Update each penaltyDocument to be unpaid if it's not already.
+	 * Also update offset and hash.
+	 * @param {AWS.DynamoDB.DocumentClient.AttributeMap} penaltyDocument The penalty document
+	 * to be updated.
+	 */
+	_tryUpdatePenaltyDocToUnpaidStatus(penaltyDocument) {
+		penaltyDocument.Value.paymentStatus = 'UNPAID';
+		penaltyDocument.Hash = hashToken(
+			penaltyDocument.ID,
+			penaltyDocument.Value,
+			penaltyDocument.Enabled,
+		);
+		penaltyDocument.Offset = getUnixTime();
+		const docPutParams = {
+			TableName: this.penaltyDocTableName,
+			Item: penaltyDocument,
+			ConditionExpression: 'attribute_exists(#ID)',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+			},
+		};
+
+		return this.db.put(docPutParams).promise();
+	}
+
+	/**
+	 * Sets the group status to UNPAID and updates its timestamp if currently set to PAID.
+	 * @param {string} penaltyGroupId The penalty group id to update.
+	 * @param {string} paymentStatus The new payment status. If set to anything other than 'UNPAID',
+	 * the method will resolve immediately.
+	 */
+	async _tryUpdatePenaltyGroupToUnpaidStatus(penaltyGroupId, paymentStatus) {
+		const penaltyGroupTable = config.dynamodbPenaltyGroupTable();
+		const getGroupParams = {
+			TableName: penaltyGroupTable,
+			Key: { ID: penaltyGroupId },
+		};
+		const penaltyGroupContainer = await this.db.get(getGroupParams).promise();
+		const penaltyGroup = penaltyGroupContainer.Item;
+		if (penaltyGroup.PaymentStatus !== paymentStatus) {
+			penaltyGroup.PaymentStatus = paymentStatus;
+			penaltyGroup.Offset = getUnixTime();
+			const putGroupParams = {
+				TableName: penaltyGroupTable,
+				Item: penaltyGroup,
+				ConditionExpression: 'attribute_exists(#ID)',
+				ExpressionAttributeNames: {
+					'#ID': 'ID',
+				},
+			};
+			return this.db.put(putGroupParams).promise();
+		}
+		return Promise.resolve();
 	}
 
 	// put
@@ -179,7 +299,7 @@ export default class PenaltyDocument {
 				callback(null, returnResponse);
 			});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, body: err }));
+			callback(null, createErrorResponse({ statusCode: 400, err }));
 		});
 	}
 
@@ -281,6 +401,7 @@ export default class PenaltyDocument {
 				Payload: payloadStr,
 			})
 				.promise()
+				// @ts-ignore
 				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
 				.catch(err => reject(err));
 		});
@@ -360,13 +481,13 @@ export default class PenaltyDocument {
 						dbUpdate.then(() => {
 							callback(null, createResponse({ statusCode: 200, body: deletedItem }));
 						}).catch((err) => {
-							const errResponse = createErrorResponse({ statusCode: 400, body: err });
+							const errResponse = createErrorResponse({ statusCode: 400, err });
 							callback(null, errResponse);
 						});
 					}
 				}
 			}).catch((err) => {
-				callback(null, createErrorResponse({ statusCode: 400, body: err }));
+				callback(null, createErrorResponse({ statusCode: 400, err }));
 			});
 	}
 
@@ -446,9 +567,10 @@ export default class PenaltyDocument {
 			if (error) {
 				console.log('Token service returned an error');
 				console.log(error.message);
-				callback(null, createErrorResponse({ statusCode: 400, error }));
+				callback(null, createErrorResponse({ statusCode: 400, err: error }));
 			} else if (data.Payload) {
 				try {
+					// @ts-ignore
 					const parsedPayload = JSON.parse(data.Payload);
 					if (parsedPayload.statusCode === 400) {
 						console.log('Token service returned bad request (status 400)');
@@ -488,7 +610,7 @@ export default class PenaltyDocument {
 								})
 								.catch((e) => {
 									console.log(`Error getting payment info: ${e}`);
-									callback(null, createErrorResponse({ statusCode: 400, e }));
+									callback(null, createErrorResponse({ statusCode: 400, err: e }));
 								});
 						} else if (res.statusCode === 200) {
 							callback(null, createResponse({ statusCode: 200, body: JSON.parse(res.body) }));
@@ -504,7 +626,7 @@ export default class PenaltyDocument {
 					});
 				} catch (e) {
 					console.log(`top level catch getting doc by token: ${e}`);
-					callback(null, createErrorResponse({ statusCode: 400, e }));
+					callback(null, createErrorResponse({ statusCode: 400, err: e }));
 				}
 				return;
 			}
@@ -744,6 +866,7 @@ export default class PenaltyDocument {
 			if (err) {
 				callback(null, createResponse({ statusCode: 400, body: err }));
 			} else {
+				// @ts-ignore
 				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
 			}
 		});

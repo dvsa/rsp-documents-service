@@ -1,3 +1,4 @@
+// @ts-check
 import 'babel-polyfill';
 
 import list from './functions/list';
@@ -12,6 +13,7 @@ import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import updateWithPayment from './functions/updateWithPayment';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
+import updateMultipleUponPaymentDelete from './functions/updateMultipleUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
@@ -28,6 +30,7 @@ const handler = {
 	deleteGroup,
 	updateMulti,
 	sites,
+	updateMultipleUponPaymentDelete,
 	updateWithPayment,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
