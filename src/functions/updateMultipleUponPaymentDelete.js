@@ -34,11 +34,10 @@ export default async (event, context, callback) => {
 	}
 
 	const paymentInfo = {
-		id: body.id,
-		paymentStatus: body.paymentStatus,
+		penaltyDocumentIds: body.penaltyDocumentIds,
 	};
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
-	// id body document
-	penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo, callback);
+
+	penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo, callback);
 };
