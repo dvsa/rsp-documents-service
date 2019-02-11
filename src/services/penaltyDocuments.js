@@ -1,7 +1,7 @@
 // @ts-check
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import { SNS, S3, Lambda } from 'aws-sdk';
+import { SNS, S3, Lambda, DynamoDB } from 'aws-sdk';
 import Validation from 'rsp-validation';
 import config from '../config';
 import hashToken from '../utils/hash';
@@ -15,6 +15,7 @@ import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
 
 const sns = new SNS();
+const parse = DynamoDB.Converter.unmarshall;
 const s3 = new S3({ apiVersion: '2006-03-01' });
 const lambda = new Lambda({ region: 'eu-west-1' });
 const docTypeMapping = ['FPN', 'IM', 'CDN'];
@@ -870,5 +871,29 @@ export default class PenaltyDocument {
 				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
 			}
 		});
+	}
+
+	streamDocuments(event, context, callback) {
+
+		let minOffset = 9999999999.999;
+		let count = 0;
+
+		event.Records.forEach((record) => {
+			const item = parse(record.dynamodb.NewImage);
+			if (item.Offset < minOffset) {
+				minOffset = item.Offset;
+			}
+			count += 1;
+		});
+
+		const params = this.apnsMessageParams(minOffset, count);
+		sns.publish(params, (err, data) => {
+			if (err) {
+				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+			} else {
+				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
+			}
+		});
+		callback(null, `Successfully processed ${event.Records.length} records.`);
 	}
 }
