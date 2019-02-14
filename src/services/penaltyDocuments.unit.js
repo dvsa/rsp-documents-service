@@ -24,14 +24,15 @@ describe('PenaltyDocuments service', () => {
 			});
 	});
 	afterEach(() => {
-		// @ts-ignore
-		doc.get.restore();
-		// @ts-ignore
 		doc.put.restore();
 		callbackSpy.resetHistory();
 	});
 
 	describe('updateDocumentsUponPaymentDelete', () => {
+		after(() => {
+			doc.get.restore();
+		});
+
 		it('calls back with OK status', async () => {
 			/**
 			 * Mock for db.get in updateDocumentUponPaymentDelete.
@@ -72,6 +73,10 @@ describe('PenaltyDocuments service', () => {
 			mockPenaltyDocument.Offset = getUnixTime();
 		});
 
+		afterEach(() => {
+			doc.get.restore();
+		});
+
 		it("doesn't update when the new payment status is paid", async () => {
 			// eslint-disable-next-line no-underscore-dangle
 			const promiseResponse = await penaltyDocumentsService._tryUpdatePenaltyGroupToUnpaidStatus(mockPenaltyDocument, 'PAID');
@@ -82,6 +87,62 @@ describe('PenaltyDocuments service', () => {
 			// eslint-disable-next-line no-underscore-dangle
 			const promiseResponse = await penaltyDocumentsService._tryUpdatePenaltyGroupToUnpaidStatus(mockPenaltyDocument, 'UNPAID');
 			expect(promiseResponse).toBeDefined();
+		});
+	});
+
+	describe('streamDocuments', () => {
+		let event;
+
+		beforeEach(() => {
+			event = {
+				Records: [
+					{
+						dynamodb: {
+							newImage: mockPenaltiesData[0],
+						},
+					},
+					{
+						dynamodb: {
+							newImage: mockPenaltiesData[1],
+						},
+					},
+				],
+			};
+		});
+
+		context('when streamDocuments is called with multiple documents', () => {
+			let snsStub;
+			beforeEach(() => {
+				snsStub = sinon.stub(penaltyDocumentsService, 'sendSnsMessage').callsFake(() => Promise.resolve());
+			});
+
+			afterEach(() => {
+				snsStub.restore();
+			});
+
+			it('calls back with the number of records processed', async () => {
+				await penaltyDocumentsService.streamDocuments(event, null, callbackSpy);
+				sinon.assert.calledWith(callbackSpy, null, sinon.match('Successfully processed 2 records.'));
+			});
+		});
+
+		context('when SNS throws an error', () => {
+			let snsStub;
+			const snsError = 'SNS error message';
+
+			beforeEach(() => {
+				snsStub = sinon.stub(penaltyDocumentsService, 'sendSnsMessage').callsFake(() => Promise.reject(snsError));
+			});
+
+			afterEach(() => {
+				snsStub.restore();
+			});
+
+			it('calls back with an error message', async () => {
+				await penaltyDocumentsService.streamDocuments(event, null, callbackSpy);
+				const errorMessage = `Unable to send message. Error JSON: ${JSON.stringify(snsError, null, 2)}`;
+				sinon.assert.calledWith(callbackSpy, sinon.match(errorMessage));
+			});
 		});
 	});
 });

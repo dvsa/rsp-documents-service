@@ -81,6 +81,9 @@ functions:
           authorizer: aws_iam
           timeout: 12
           cors: true
+  streamDocuments:
+    handler: handler.streamDocuments
+    memorySize: 128
   updateMultipleUponPaymentDelete:
     handler: handler.updateMultipleUponPaymentDelete
     memorySize: 128
