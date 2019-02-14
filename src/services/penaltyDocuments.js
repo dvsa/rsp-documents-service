@@ -896,7 +896,7 @@ export default class PenaltyDocument {
 		}
 	}
 
-	async sendSnsMessage(params) {
+	sendSnsMessage(params) {
 		return sns.publish(params).promise();
 	}
 }
