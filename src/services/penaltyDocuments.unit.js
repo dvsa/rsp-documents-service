@@ -91,26 +91,29 @@ describe('PenaltyDocuments service', () => {
 	});
 
 	describe('streamDocuments', () => {
+		let event;
+
+		beforeEach(() => {
+			event = {
+				Records: [
+					{
+						dynamodb: {
+							newImage: mockPenaltiesData[0],
+						},
+					},
+					{
+						dynamodb: {
+							newImage: mockPenaltiesData[1],
+						},
+					},
+				],
+			};
+		});
 
 		context('when streamDocuments is called with multiple documents', () => {
-			let event;
 			let snsStub;
 			beforeEach(() => {
 				snsStub = sinon.stub(penaltyDocumentsService, 'sendSnsMessage').callsFake(() => Promise.resolve());
-				event = {
-					Records: [
-						{
-							dynamodb: {
-								newImage: mockPenaltiesData[0],
-							},
-						},
-						{
-							dynamodb: {
-								newImage: mockPenaltiesData[1],
-							},
-						},
-					],
-				};
 			});
 
 			afterEach(() => {
@@ -120,6 +123,25 @@ describe('PenaltyDocuments service', () => {
 			it('calls back with the number of records processed', async () => {
 				await penaltyDocumentsService.streamDocuments(event, null, callbackSpy);
 				sinon.assert.calledWith(callbackSpy, null, sinon.match('Successfully processed 2 records.'));
+			});
+		});
+
+		context('when SNS throws an error', () => {
+			let snsStub;
+			const snsError = 'SNS error message';
+
+			beforeEach(() => {
+				snsStub = sinon.stub(penaltyDocumentsService, 'sendSnsMessage').callsFake(() => Promise.reject(snsError));
+			});
+
+			afterEach(() => {
+				snsStub.restore();
+			});
+
+			it('calls back with an error message', async () => {
+				await penaltyDocumentsService.streamDocuments(event, null, callbackSpy);
+				const errorMessage = `Unable to send message. Error JSON: ${JSON.stringify(snsError, null, 2)}`;
+				sinon.assert.calledWith(callbackSpy, sinon.match(errorMessage));
 			});
 		});
 	});

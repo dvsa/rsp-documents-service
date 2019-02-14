@@ -874,7 +874,6 @@ export default class PenaltyDocument {
 	}
 
 	async streamDocuments(event, context, callback) {
-
 		let minOffset = 9999999999.999;
 		let count = 0;
 
@@ -888,18 +887,16 @@ export default class PenaltyDocument {
 
 		const params = this.apnsMessageParams(minOffset, count);
 
-		await this.sendSnsMessage(params);
-
-		callback(null, `Successfully processed ${event.Records.length} records.`);
+		try {
+			await this.sendSnsMessage(params);
+			console.log('Results from sending message: ', JSON.stringify(params, null, 2));
+			callback(null, `Successfully processed ${event.Records.length} records.`);
+		} catch (err) {
+			callback(`Unable to send message. Error JSON: ${JSON.stringify(err, null, 2)}`);
+		}
 	}
 
-	sendSnsMessage(params) {
-		return sns.publish(params, (err, data) => {
-			if (err) {
-				console.error('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
-			} else {
-				console.log('Results from sending message: ', JSON.stringify(data, null, 2));
-			}
-		}).promise();
+	async sendSnsMessage(params) {
+		return sns.publish(params).promise();
 	}
 }
