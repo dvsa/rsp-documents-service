@@ -787,7 +787,6 @@ export default class PenaltyDocument {
 	paymentMessageParams(paymentInfo, documentInfo) {
 		const text = 'Payment has been made!';
 		const aps = {
-			'content-available': 1,
 			badge: 0,
 		};
 
