@@ -306,6 +306,7 @@ export default class PenaltyDocument {
 
 	sendPaymentNotification(paymentInfo, documentInfo) {
 		const params = this.paymentMessageParams(paymentInfo, documentInfo);
+		console.log(JSON.stringify(params));
 		sns.publish(params, (err, data) => {
 			if (err) {
 				console.log('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
@@ -795,8 +796,8 @@ export default class PenaltyDocument {
 			default: text,
 			APNS: JSON.stringify({
 				aps,
-				site: documentInfo.Value.siteCode,
 				offset: documentInfo.Offset,
+				site: documentInfo.Value.siteCode,
 				refNo: documentInfo.Value.referenceNo,
 				regNo: documentInfo.Value.vehicleDetails.regNo,
 				type: paymentInfo.penaltyType,
@@ -834,7 +835,7 @@ export default class PenaltyDocument {
 			// 	body: text,
 			// },
 			'content-available': 1,
-			badge: 2,
+			badge: 1,
 		};
 
 		const message = {
@@ -884,6 +885,8 @@ export default class PenaltyDocument {
 		});
 
 		const params = this.apnsMessageParams(minOffset);
+
+		console.log(JSON.stringify(params));
 
 		try {
 			await this.sendSnsMessage(params);
