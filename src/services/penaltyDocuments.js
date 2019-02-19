@@ -834,7 +834,7 @@ export default class PenaltyDocument {
 			// 	body: text,
 			// },
 			'content-available': 1,
-			badge: 0,
+			badge: 2,
 		};
 
 		const message = {
