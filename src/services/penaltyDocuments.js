@@ -788,7 +788,6 @@ export default class PenaltyDocument {
 		const text = 'Payment has been made!';
 		const aps = {
 			'content-available': 1,
-			badge: 0,
 		};
 
 		const message = {
@@ -823,18 +822,13 @@ export default class PenaltyDocument {
 		return params;
 	}
 
-	apnsMessageParams(offset, count) {
+	apnsMessageParams(offset) {
 
 		const text = 'New documents are available!';
 		const site = 0;
 
 		const aps = {
-			// alert: {
-			// 	title: 'DVSA Officer FPNs',
-			// 	body: text,
-			// },
 			'content-available': 1,
-			badge: count,
 		};
 
 		const message = {
@@ -875,17 +869,15 @@ export default class PenaltyDocument {
 
 	async streamDocuments(event, context, callback) {
 		let minOffset = 9999999999.999;
-		let count = 0;
 
 		event.Records.forEach((record) => {
 			const item = parse(record.dynamodb.NewImage);
 			if (item.Offset < minOffset) {
 				minOffset = item.Offset;
 			}
-			count += 1;
 		});
 
-		const params = this.apnsMessageParams(minOffset, count);
+		const params = this.apnsMessageParams(minOffset);
 
 		try {
 			await this.sendSnsMessage(params);
