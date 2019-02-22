@@ -81,8 +81,8 @@ export default class PenaltyGroup {
 		return createErrorCodedResponse(
 			HttpStatus.BAD_REQUEST,
 			ErrorCode.GROUP_VALIDATION,
+			'Schema validation failed',
 			{
-				errorMessage: 'Schema validation failed',
 				validationError: validationResponse,
 			},
 		);
@@ -95,8 +95,8 @@ export default class PenaltyGroup {
 		return createErrorCodedResponse(
 			HttpStatus.BAD_REQUEST,
 			ErrorCode.GROUP_DUPLICATE_REFERENCE,
+			'One or more penalties already exist with the supplied reference codes',
 			{
-				errorMessage: 'One or more penalties already exist with the supplied reference codes',
 				clashingIds,
 			},
 		);

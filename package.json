@@ -31,7 +31,7 @@
     "prepush": "npm run check-js-types && npm test && npm run lint && npm run check-security && npm run check-security-log",
     "check-security": "git secrets --scan",
     "check-security-log": "git log -p | scanrepo",
-    "check-js-types": "tsc --noEmit -p jsconfig.json"
+    "check-js-types": "tsc --noEmit -p ."
   },
   "devDependencies": {
     "@types/mocha": "^5.2.6",
