@@ -13,6 +13,8 @@ import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
 import HttpStatus from '../utils/httpStatusCode';
+import createErrorCodedResponse from '../utils/createErrorCodedResponse';
+import ErrorCode from '../utils/errorCode';
 
 const sns = new SNS();
 const parse = DynamoDB.Converter.unmarshall;
@@ -66,7 +68,11 @@ export default class PenaltyDocument {
 
 		dbGet.then((data) => {
 			if (!data.Item || this.isEmpty(data)) {
-				callback(null, createResponse({ statusCode: HttpStatus.NOT_FOUND, body: { error: 'ITEM NOT FOUND' } }));
+				callback(null, createErrorCodedResponse(
+					HttpStatus.NOT_FOUND,
+					ErrorCode.PENALTY_DOC_NOT_FOUND,
+					'ITEM NOT FOUND',
+				));
 				return;
 			}
 			const idList = [];
