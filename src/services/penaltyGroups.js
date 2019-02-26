@@ -327,7 +327,7 @@ export default class PenaltyGroup {
 		const updateParams = {
 			TableName: this.penaltyGroupTableName,
 			Key: { ID: penaltyGroupId },
-			UpdateExpression: 'SET ReceiptReferences = list_append(if_not_exists(ReceiptReferences, :empty_list), :receipt)',
+			UpdateExpression: 'SET PendingTransactions = list_append(if_not_exists(PendingTransactions, :empty_list), :receipt)',
 			ExpressionAttributeValues: {
 				receipt: {
 					ReceiptReference: receiptReference,

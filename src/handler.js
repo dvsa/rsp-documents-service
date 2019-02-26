@@ -13,6 +13,7 @@ import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import streamDocuments from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
+import updateWithReceipt from './functions/updateWithReceipt';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import updateMultipleUponPaymentDelete from './functions/updateMultipleUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
@@ -35,6 +36,7 @@ const handler = {
 	streamDocuments,
 	updateMultipleUponPaymentDelete,
 	updateWithPayment,
+	updateWithReceipt,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
 	updatePenaltyGroupWithReceipt,

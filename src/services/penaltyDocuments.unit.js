@@ -53,6 +53,38 @@ describe('PenaltyDocuments service', () => {
 		});
 	});
 
+	describe('updateDocumentWithReceipt', () => {
+		const receiptReference = 'ECMS-1456231-AC13512';
+		let mockPenalty;
+		before(() => {
+			mockPenalty = Object.assign({}, mockPenaltiesData[0]);
+			mockPenalty.PendingTransactions = [{
+				ReceiptReference: receiptReference,
+				PenaltyType: 'IM',
+				ReceiptTimestamp: 13959881123.123,
+			}];
+			sinon.stub(doc, 'update').returns({
+				promise: () => Promise.resolve(mockPenalty),
+			});
+		});
+
+		after(() => {
+			doc.update.restore();
+		});
+
+		it('calls the correct methods when invoked and returns a success', async () => {
+			await penaltyDocumentsService.updateDocumentWithReceipt(
+				mockPenalty.ID,
+				receiptReference,
+				callbackSpy,
+			);
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 200,
+				body: JSON.stringify(mockPenalty),
+			}));
+		});
+	});
+
 	describe('_tryUpdatePenaltyGroupToUnpaidStatus', () => {
 		let mockPenaltyGroup;
 		let mockPenaltyDocument;

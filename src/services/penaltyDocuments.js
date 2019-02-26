@@ -136,6 +136,32 @@ export default class PenaltyDocument {
 		});
 	}
 
+	async updateDocumentWithReceipt(penaltyId, receiptReference, callback) {
+		/** @type DynamoDB.DocumentClient.UpdateItemInput */
+		const updateParams = {
+			TableName: this.penaltyDocTableName,
+			Key: { ID: penaltyId },
+			UpdateExpression: 'SET PendingTransactions = list_append(if_not_exists(PendingTransactions, :empty_list), :receipt)',
+			ExpressionAttributeValues: {
+				receipt: {
+					ReceiptReference: receiptReference,
+					ReceiptTimestamp: Date.now() / 1000,
+				},
+				empty_list: [],
+			},
+		};
+
+		try {
+			const response = await this.db.update(updateParams).promise();
+			callback(null, createResponse({
+				statusCode: HttpStatus.OK,
+				body: response,
+			}));
+		} catch (err) {
+			callback(null, createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err }));
+		}
+	}
+
 	/**
 	 * Update the penalty document and its parent group with paymentInfo.
 	 * @param {{penaltyDocumentIds: Array<string>}} paymentInfo The new
