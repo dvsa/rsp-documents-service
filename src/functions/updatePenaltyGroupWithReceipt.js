@@ -9,7 +9,7 @@ import config from '../config';
 
 /** @type {PenaltyGroupService} */
 let penaltyGroupService;
-export default async (event, context, callback) => {
+const updatePenaltyGroupWithReceipt = async (event, context, callback) => {
 	if (!penaltyGroupService) {
 		await config.bootstrap();
 		penaltyGroupService = new PenaltyGroupService(
@@ -34,3 +34,5 @@ export default async (event, context, callback) => {
 		callback,
 	);
 };
+
+export default updatePenaltyGroupWithReceipt;

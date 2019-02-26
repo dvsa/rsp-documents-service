@@ -17,6 +17,7 @@ import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import updateMultipleUponPaymentDelete from './functions/updateMultipleUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
+import updatePenaltyGroupWithReceipt from './functions/updatePenaltyGroupWithReceipt';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
 
 const handler = {
@@ -36,6 +37,7 @@ const handler = {
 	updateWithPayment,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
+	updatePenaltyGroupWithReceipt,
 	searchByVehicleRegistration,
 };
 
