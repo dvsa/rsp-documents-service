@@ -70,6 +70,12 @@ functions:
   updatePenaltyGroupWithPayment:
     handler: handler.updatePenaltyGroupWithPayment
     memorySize: 128  
+  updateWithReceipt:
+    handler: handler.updateWithReceipt
+    memorySize: 128
+  updatePenaltyGroupWithReceipt:
+    handler: handler.updatePenaltyGroupWithReceipt
+    memorySize: 128
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128
