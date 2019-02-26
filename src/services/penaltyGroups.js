@@ -1,6 +1,7 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import { SNS } from 'aws-sdk';
+// eslint-disable-next-line no-unused-vars
+import { SNS, DynamoDB } from 'aws-sdk';
 import Validation from 'rsp-validation';
 
 import config from '../config';
@@ -23,6 +24,12 @@ const appOrigin = 'APP';
 
 export default class PenaltyGroup {
 
+	/**
+	 * @param {DynamoDB.DocumentClient} db
+	 * @param {string} penaltyDocTableName
+	 * @param {string} penaltyGroupTableName
+	 * @param {string} snsTopicARN
+	 */
 	constructor(db, penaltyDocTableName, penaltyGroupTableName, snsTopicARN) {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
@@ -307,6 +314,41 @@ export default class PenaltyGroup {
 		}
 	}
 
+	/**
+	 * Appends a receipt reference and status of 'PENDING' to the penalty group's receipt list.
+	 * @param {string} penaltyGroupId
+	 * @param {'FPN'|'IM'|'CDN'} penaltyType
+	 * @param {string} receiptReference
+	 * @param {(error: any, response: any) => void} callback Callback with a response containing
+	 * the *new* penalty group
+	 */
+	async updatePenaltyGroupWithReceipt(penaltyGroupId, penaltyType, receiptReference, callback) {
+		/** @type DynamoDB.DocumentClient.UpdateItemInput */
+		const updateParams = {
+			TableName: this.penaltyGroupTableName,
+			Key: { ID: penaltyGroupId },
+			UpdateExpression: 'SET ReceiptReferences = list_append(if_not_exists(ReceiptReferences, :empty_list), :receipt)',
+			ExpressionAttributeValues: {
+				receipt: {
+					ReceiptReference: receiptReference,
+					ReceiptTimestamp: Date.now() / 1000,
+					PenaltyType: penaltyType,
+				},
+				empty_list: [],
+			},
+		};
+
+		try {
+			const response = await this.db.update(updateParams).promise();
+			callback(null, createResponse({
+				statusCode: HttpStatus.OK,
+				body: response,
+			}));
+		} catch (err) {
+			callback(null, createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err }));
+		}
+	}
+
 	_enrichPenaltyGroupRequest(body) {
 		const penGrp = { ...body };
 		const { Timestamp, SiteCode, Penalties } = penGrp;
@@ -367,9 +409,10 @@ export default class PenaltyGroup {
 			},
 		}));
 
-		const requestItems = {};
-		requestItems[this.penaltyDocTableName] = penaltyPutRequests;
-		requestItems[this.penaltyGroupTableName] = [groupPutRequest];
+		const requestItems = {
+			[this.penaltyDocTableName]: penaltyPutRequests,
+			[this.penaltyGroupTableName]: groupPutRequest,
+		};
 
 		const batchParams = {
 			RequestItems: requestItems,
@@ -521,7 +564,6 @@ export default class PenaltyGroup {
 
 	/**
 	 * @param {String[]} ids
-	 * @returns {Promise<PenaltyDocument[]>}
 	 */
 	async _getPenaltyDocumentsWithIds(ids) {
 		const batchGetParams = {

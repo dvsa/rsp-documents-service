@@ -10,6 +10,7 @@ import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
 
 describe('PenaltyGroupService', () => {
+	/** @type PenaltyGroupService */
 	let penaltyGroupSvc;
 	let mockDbQuery;
 	let callbackSpy;
@@ -199,6 +200,39 @@ describe('PenaltyGroupService', () => {
 			expect(mockGetPenaltiesWithIds.called).toBe(true);
 			expect(mockPut.getCall(0).args[0]).toEqual(expectedPutParams);
 			expect(mockBatchWrite.getCall(0).args[0]).toEqual(expectedBatchWriteParams);
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 200,
+				body: JSON.stringify(mockPenaltyGroup),
+			}));
+		});
+	});
+
+	describe('updatePenaltyGroupWithReceipt', () => {
+		let mockUpdate;
+		const penaltyGroupId = '46xu68x7o6b';
+		const receiptReference = 'ECMS-1456231-ac13512';
+		let mockPenaltyGroup = mockPenaltyGroupsData.find(group => (group.ID === penaltyGroupId));
+		mockPenaltyGroup = Object.assign({}, mockPenaltyGroup);
+		mockPenaltyGroup.PendingTransactions = [{
+			ReceiptReference: receiptReference,
+			PenaltyType: 'FPN',
+			ReceiptTimestamp: 12599881123.123,
+		}];
+
+		beforeEach(() => {
+			callbackSpy = sinon.spy(() => {});
+			mockUpdate = sinon.stub(doc, 'update').returns({
+				promise: () => Promise.resolve(mockPenaltyGroup),
+			});
+		});
+
+		afterEach(() => {
+			mockUpdate.restore();
+		});
+
+		it('calls the correct methods when invoked and returns a success', async () => {
+			await penaltyGroupSvc.updatePenaltyGroupWithReceipt(penaltyGroupId, 'IM', receiptReference, callbackSpy);
+			expect(mockUpdate.called).toBe(true);
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({
 				statusCode: 200,
 				body: JSON.stringify(mockPenaltyGroup),
