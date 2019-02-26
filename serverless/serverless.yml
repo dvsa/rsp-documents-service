@@ -69,13 +69,27 @@ functions:
     memorySize: 128
   updatePenaltyGroupWithPayment:
     handler: handler.updatePenaltyGroupWithPayment
-    memorySize: 128  
+    memorySize: 128
   updateWithReceipt:
     handler: handler.updateWithReceipt
     memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updateWithReceipt
+          method: put
+          authorizer: aws_iam
+          cors: true
   updatePenaltyGroupWithReceipt:
     handler: handler.updatePenaltyGroupWithReceipt
     memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updatePenaltyGroupWithReceipt
+          method: put
+          authorizer: aws_iam
+          cors: true
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128
