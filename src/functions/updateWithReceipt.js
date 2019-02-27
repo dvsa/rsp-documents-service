@@ -22,11 +22,18 @@ const updateWithReceipt = async (event, context, callback) => {
 		);
 	}
 
-	const { penaltyId, receiptReference } = event.body;
+	let { body } = event;
 
-	console.log(event.body);
+	if (typeof body === 'string') {
+		// body is a string if invoked via http request rather than directly.
+		body = JSON.parse(event.body);
+	}
 
-	penaltyDocuments.updateDocumentWithReceipt(penaltyId, receiptReference, callback);
+	const { penaltyReference, receiptReference } = body;
+
+	console.log(body);
+
+	penaltyDocuments.updateDocumentWithReceipt(penaltyReference, receiptReference, callback);
 };
 
 export default updateWithReceipt;

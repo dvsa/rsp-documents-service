@@ -1,3 +1,5 @@
+import HttpStatus from './httpStatusCode';
+
 export default ({ statusCode, err }) => {
 	const response = {
 		statusCode,
@@ -7,5 +9,8 @@ export default ({ statusCode, err }) => {
 		},
 		body: JSON.stringify({ name: err.name, message: err.message }),
 	};
+	if (statusCode === HttpStatus.INTERNAL_SERVER_ERROR) {
+		console.log({ statusCode, errorMessage: err.message });
+	}
 	return response;
 };
