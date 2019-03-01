@@ -431,6 +431,7 @@ export default class PenaltyGroup {
 		const text = 'Payment has been made!';
 		const aps = {
 			'content-available': 1,
+			badge: 0,
 		};
 
 		const message = {
