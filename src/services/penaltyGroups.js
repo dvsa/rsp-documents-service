@@ -329,11 +329,11 @@ export default class PenaltyGroup {
 			Key: { ID: penaltyGroupId },
 			UpdateExpression: 'SET PendingTransactions = list_append(if_not_exists(PendingTransactions, :empty_list), :receipt)',
 			ExpressionAttributeValues: {
-				':receipt': {
+				':receipt': [{
 					ReceiptReference: receiptReference,
 					ReceiptTimestamp: Date.now() / 1000,
 					PenaltyType: penaltyType,
-				},
+				}],
 				':empty_list': [],
 			},
 		};
