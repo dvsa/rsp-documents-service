@@ -20,6 +20,8 @@ import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
 import updatePenaltyGroupWithReceipt from './functions/updatePenaltyGroupWithReceipt';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
+import removeReceipts from './functions/removeReceipts';
+// import removeReceiptsFromGroup from './functions/removeReceiptsFromGroup';
 
 const handler = {
 	list,
@@ -37,6 +39,8 @@ const handler = {
 	updateMultipleUponPaymentDelete,
 	updateWithPayment,
 	updateWithReceipt,
+	removeReceipts,
+	// removeReceiptsFromGroup,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
 	updatePenaltyGroupWithReceipt,

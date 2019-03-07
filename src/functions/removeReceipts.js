@@ -6,7 +6,7 @@ import config from '../config';
 
 /** @type PenaltyDocument */
 let penaltyDocuments;
-const updateWithReceipt = async (event, context, callback) => {
+const removeReceipts = async (event, context, callback) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -29,14 +29,11 @@ const updateWithReceipt = async (event, context, callback) => {
 		body = JSON.parse(event.body);
 	}
 
-	const { penaltyReference, receiptReference, pendingTransactions } = body;
+	const { receiptReferences } = body;
 
 	console.log(body);
 
-	penaltyDocuments.updateDocumentWithReceipt(
-		penaltyReference, receiptReference,
-		pendingTransactions, callback,
-	);
+	penaltyDocuments.removeReceipts(event.pathParameters.id, receiptReferences, callback);
 };
 
-export default updateWithReceipt;
+export default removeReceipts;

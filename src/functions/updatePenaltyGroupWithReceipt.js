@@ -4,9 +4,6 @@ import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroupService from '../services/penaltyGroups';
 import config from '../config';
 
-/** @typedef {{ penaltyId: string, receiptReference: string, penaltyType: 'FPN'|'CDN'|'IM' }}
- * UpdatePenaltyGroupResponse */
-
 /** @type {PenaltyGroupService} */
 let penaltyGroupService;
 const updatePenaltyGroupWithReceipt = async (event, context, callback) => {
@@ -20,17 +17,19 @@ const updatePenaltyGroupWithReceipt = async (event, context, callback) => {
 		);
 	}
 
-	/** @type UpdatePenaltyGroupResponse */
 	let paymentInfo = event.body;
 	if (typeof paymentInfo === 'string') {
 		paymentInfo = JSON.parse(event.body);
 	}
-	const { penaltyId, receiptReference, penaltyType } = paymentInfo;
-	// id body document
+	const {
+		penaltyId, receiptReference, penaltyType, receiptReferences,
+	} = paymentInfo;
+
 	penaltyGroupService.updatePenaltyGroupWithReceipt(
 		penaltyId,
 		penaltyType,
 		receiptReference,
+		receiptReferences,
 		callback,
 	);
 };

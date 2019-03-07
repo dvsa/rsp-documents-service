@@ -15,6 +15,7 @@ import subtractDays from '../utils/subtractDays';
 import HttpStatus from '../utils/httpStatusCode';
 import createErrorCodedResponse from '../utils/createErrorCodedResponse';
 import ErrorCode from '../utils/errorCode';
+import removeReceipts from '../utils/removeReceipts';
 
 const sns = new SNS();
 const parse = DynamoDB.Converter.unmarshall;
@@ -136,24 +137,44 @@ export default class PenaltyDocument {
 		});
 	}
 
-	async updateDocumentWithReceipt(penaltyReference, receiptReference, callback) {
+	updateDocumentWithEmptyPendingTransactions(penaltyReference) {
 		/** @type DynamoDB.DocumentClient.UpdateItemInput */
 		const updateParams = {
 			TableName: this.penaltyDocTableName,
 			Key: { ID: penaltyReference },
-			UpdateExpression: 'SET PendingTransactions = list_append(if_not_exists(PendingTransactions, :empty_list), :receipt)',
+			UpdateExpression: 'SET PendingTransactions = if_not_exists(PendingTransactions, :em)',
 			ExpressionAttributeValues: {
-				':receipt': [{
-					ReceiptReference: receiptReference,
-					ReceiptTimestamp: Date.now() / 1000,
-				}],
-				':empty_list': [],
+				':em': {},
 			},
 		};
 
-		console.log(updateParams);
+		return this.db.update(updateParams).promise();
+	}
+
+	async updateDocumentWithReceipt(
+		penaltyReference, receiptReference, pendingTransactions,
+		callback,
+	) {
+		/** @type DynamoDB.DocumentClient.UpdateItemInput */
+		const updateParams = {
+			TableName: this.penaltyDocTableName,
+			Key: { ID: penaltyReference },
+			UpdateExpression: 'SET PendingTransactions.#k = :receipt',
+			ExpressionAttributeValues: {
+				':receipt': {
+					ReceiptTimestamp: Date.now() / 1000,
+				},
+			},
+			ExpressionAttributeNames: {
+				'#k': receiptReference,
+			},
+		};
 
 		try {
+			if (pendingTransactions === undefined) {
+				await this.updateDocumentWithEmptyPendingTransactions(penaltyReference);
+			}
+
 			const response = await this.db.update(updateParams).promise();
 			callback(null, createResponse({
 				statusCode: HttpStatus.OK,
@@ -162,6 +183,10 @@ export default class PenaltyDocument {
 		} catch (err) {
 			callback(null, createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err }));
 		}
+	}
+
+	async removeReceipts(penaltyReference, receiptReferences, callback) {
+		removeReceipts(this.penaltyDocTableName, penaltyReference, receiptReferences, callback);
 	}
 
 	/**

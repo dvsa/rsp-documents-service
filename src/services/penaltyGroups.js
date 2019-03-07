@@ -12,6 +12,7 @@ import hashToken from '../utils/hash';
 import ErrorCode from '../utils/errorCode';
 import createErrorCodedResponse from '../utils/createErrorCodedResponse';
 import HttpStatus from '../utils/httpStatusCode';
+import removeReceipts from '../utils/removeReceipts';
 
 const sns = new SNS();
 const appOrigin = 'APP';
@@ -314,6 +315,20 @@ export default class PenaltyGroup {
 		}
 	}
 
+	updateWithEmptyPendingTransactions(penaltyGroupId) {
+		/** @type DynamoDB.DocumentClient.UpdateItemInput */
+		const updateParams = {
+			TableName: this.penaltyGroupTableName,
+			Key: { ID: penaltyGroupId },
+			UpdateExpression: 'SET PendingTransactions = if_not_exists(PendingTransactions, :em)',
+			ExpressionAttributeValues: {
+				':em': {},
+			},
+		};
+
+		return this.db.update(updateParams).promise();
+	}
+
 	/**
 	 * Appends a receipt reference and status of 'PENDING' to the penalty group's receipt list.
 	 * @param {string} penaltyGroupId
@@ -322,23 +337,31 @@ export default class PenaltyGroup {
 	 * @param {(error: any, response: any) => void} callback Callback with a response containing
 	 * the *new* penalty group
 	 */
-	async updatePenaltyGroupWithReceipt(penaltyGroupId, penaltyType, receiptReference, callback) {
+	async updatePenaltyGroupWithReceipt(
+		penaltyGroupId, penaltyType, receiptReference,
+		receiptReferences, callback,
+	) {
+
 		/** @type DynamoDB.DocumentClient.UpdateItemInput */
 		const updateParams = {
 			TableName: this.penaltyGroupTableName,
 			Key: { ID: penaltyGroupId },
-			UpdateExpression: 'SET PendingTransactions = list_append(if_not_exists(PendingTransactions, :empty_list), :receipt)',
+			UpdateExpression: 'SET PendingTransactions.#ref = :receipt',
 			ExpressionAttributeValues: {
 				':receipt': [{
-					ReceiptReference: receiptReference,
 					ReceiptTimestamp: Date.now() / 1000,
 					PenaltyType: penaltyType,
 				}],
-				':empty_list': [],
+			},
+			ExpressionAttributeNames: {
+				'#ref': receiptReference,
 			},
 		};
 
 		try {
+			if (receiptReferences !== undefined) {
+				await this.updateWithEmptyPendingTransactions(penaltyGroupId);
+			}
 			const response = await this.db.update(updateParams).promise();
 			callback(null, createResponse({
 				statusCode: HttpStatus.OK,
@@ -347,6 +370,10 @@ export default class PenaltyGroup {
 		} catch (err) {
 			callback(null, createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err }));
 		}
+	}
+
+	async removeGroupReceipts(paymentCode, receiptReferences, callback) {
+		removeReceipts(this.penaltyGroupTableName, paymentCode, receiptReferences, callback);
 	}
 
 	_enrichPenaltyGroupRequest(body) {
