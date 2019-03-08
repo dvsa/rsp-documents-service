@@ -346,7 +346,7 @@ functions:
           method: put
           authorizer: aws_iam
           cors: true
-  removeReceipts:
+  removeGroupReceipts:
     handler: handler.removeGroupReceipts
     memorySize: 128
     events:
