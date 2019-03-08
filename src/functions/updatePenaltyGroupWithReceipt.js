@@ -22,11 +22,11 @@ const updatePenaltyGroupWithReceipt = async (event, context, callback) => {
 		paymentInfo = JSON.parse(event.body);
 	}
 	const {
-		penaltyId, receiptReference, penaltyType, receiptReferences,
+		receiptReference, penaltyType, receiptReferences,
 	} = paymentInfo;
 
 	penaltyGroupService.updatePenaltyGroupWithReceipt(
-		penaltyId,
+		event.pathParameters.id,
 		penaltyType,
 		receiptReference,
 		receiptReferences,

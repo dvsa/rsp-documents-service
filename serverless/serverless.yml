@@ -76,17 +76,17 @@ functions:
     events:
       -
         http:
-          path: documents/updateWithReceipt
+          path: documents/{id}/updateWithReceipt
           method: put
           authorizer: aws_iam
           cors: true
-  updatePenaltyGroupWithReceipt:
-    handler: handler.updatePenaltyGroupWithReceipt
+  removeReceipts:
+    handler: handler.removeReceipts
     memorySize: 128
     events:
       -
         http:
-          path: documents/updatePenaltyGroupWithReceipt
+          path: documents/{id}/removeReceipts
           method: put
           authorizer: aws_iam
           cors: true
@@ -334,6 +334,26 @@ functions:
         http:
           path: penaltyGroup/{id}
           method: delete
+          authorizer: aws_iam
+          cors: true
+  updatePenaltyGroupWithReceipt:
+    handler: handler.updatePenaltyGroupWithReceipt
+    memorySize: 128
+    events:
+      -
+        http:
+          path: penaltyGroup/{id}/updateWithReceipt
+          method: put
+          authorizer: aws_iam
+          cors: true
+  removeReceipts:
+    handler: handler.removeGroupReceipts
+    memorySize: 128
+    events:
+      -
+        http:
+          path: penaltyGroup/{id}/removeReceipts
+          method: put
           authorizer: aws_iam
           cors: true
   updateMulti:

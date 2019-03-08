@@ -29,12 +29,13 @@ const updateWithReceipt = async (event, context, callback) => {
 		body = JSON.parse(event.body);
 	}
 
-	const { penaltyReference, receiptReference, pendingTransactions } = body;
+	const { receiptReference, pendingTransactions } = body;
 
 	console.log(body);
 
 	penaltyDocuments.updateDocumentWithReceipt(
-		penaltyReference, receiptReference,
+		event.pathParameters.id,
+		receiptReference,
 		pendingTransactions, callback,
 	);
 };

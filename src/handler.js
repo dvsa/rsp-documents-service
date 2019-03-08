@@ -21,7 +21,7 @@ import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPay
 import updatePenaltyGroupWithReceipt from './functions/updatePenaltyGroupWithReceipt';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
 import removeReceipts from './functions/removeReceipts';
-// import removeReceiptsFromGroup from './functions/removeReceiptsFromGroup';
+import removeGroupReceipts from './functions/removeGroupReceipts';
 
 const handler = {
 	list,
@@ -40,7 +40,7 @@ const handler = {
 	updateWithPayment,
 	updateWithReceipt,
 	removeReceipts,
-	// removeReceiptsFromGroup,
+	removeGroupReceipts,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
 	updatePenaltyGroupWithReceipt,
