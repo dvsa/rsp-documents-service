@@ -633,7 +633,7 @@ export default class PenaltyDocument {
 					// @ts-ignore
 					const parsedPayload = JSON.parse(data.Payload);
 					if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
-						console.log('Token service returned bad request (status HttpStatus.BAD_REQUEST)');
+						console.log(`Token service returned bad request (status ${HttpStatus.BAD_REQUEST})`);
 						const parsedBody = JSON.parse(parsedPayload.body);
 						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { name: 'Token Error', message: parsedBody.message } }));
 						return;

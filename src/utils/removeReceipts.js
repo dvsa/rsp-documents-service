@@ -18,7 +18,7 @@ export default async function removeReceipts(
 	const updateParams = {
 		TableName: tableName,
 		Key: { ID: penaltyReference },
-		UpdateExpression: updateExpression,
+		UpdateExpression: `REMOVE ${updateExpression}`,
 		ExpressionAttributeNames: names,
 	};
 
