@@ -64,7 +64,7 @@
     "wait-on": "^2.1.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.104.0",
+    "aws-sdk": "^2.140.0",
     "babel-polyfill": "6.26.0",
     "js-sha256": "^0.7.1",
     "request": "^2.88.0",

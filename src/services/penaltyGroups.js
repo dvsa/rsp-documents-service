@@ -438,7 +438,7 @@ export default class PenaltyGroup {
 
 		const requestItems = {
 			[this.penaltyDocTableName]: penaltyPutRequests,
-			[this.penaltyGroupTableName]: groupPutRequest,
+			[this.penaltyGroupTableName]: [groupPutRequest],
 		};
 
 		const batchParams = {
