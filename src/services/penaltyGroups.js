@@ -25,6 +25,8 @@ export default class PenaltyGroup {
 	async createPenaltyGroup(body, callback) {
 		const validationResult = await this.validatePenaltyGroupCreationPayload(body);
 		if (!validationResult.valid) {
+			console.error(body);
+			console.error(validationResult.message);
 			return callback(null, createResponse({ statusCode: 400, body: `Bad request: ${validationResult.message}` }));
 		}
 
@@ -35,6 +37,8 @@ export default class PenaltyGroup {
 			await this.db.batchWrite(batchWriteParams).promise();
 			return callback(null, createResponse({ statusCode: 201, body: penaltyGroup }));
 		} catch (err) {
+			console.error(body);
+			console.error(err);
 			return callback(null, createResponse({ statusCode: 503, body: `Problem writing to DB: ${err}` }));
 		}
 	}
