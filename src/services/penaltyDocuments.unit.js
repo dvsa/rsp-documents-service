@@ -76,6 +76,7 @@ describe('PenaltyDocuments service', () => {
 			await penaltyDocumentsService.updateDocumentWithReceipt(
 				mockPenalty.ID,
 				receiptReference,
+				{},
 				callbackSpy,
 			);
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({

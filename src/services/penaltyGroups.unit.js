@@ -231,7 +231,7 @@ describe('PenaltyGroupService', () => {
 		});
 
 		it('calls the correct methods when invoked and returns a success', async () => {
-			await penaltyGroupSvc.updatePenaltyGroupWithReceipt(penaltyGroupId, 'IM', receiptReference, callbackSpy);
+			await penaltyGroupSvc.updatePenaltyGroupWithReceipt(penaltyGroupId, 'IM', receiptReference, {}, callbackSpy);
 			expect(mockUpdate.called).toBe(true);
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({
 				statusCode: 200,
