@@ -789,6 +789,7 @@ export default class PenaltyDocument {
 		const aps = {
 			'content-available': 1,
 			sound: '',
+			badge: 0,
 		};
 
 		const message = {
@@ -830,7 +831,6 @@ export default class PenaltyDocument {
 
 		const aps = {
 			'content-available': 1,
-			sound: '',
 		};
 
 		const message = {
