@@ -13,8 +13,6 @@ import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
 import HttpStatus from '../utils/httpStatusCode';
-import createErrorCodedResponse from '../utils/createErrorCodedResponse';
-import ErrorCode from '../utils/errorCode';
 
 const sns = new SNS();
 const parse = DynamoDB.Converter.unmarshall;
