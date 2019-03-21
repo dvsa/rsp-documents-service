@@ -68,11 +68,7 @@ export default class PenaltyDocument {
 
 		dbGet.then((data) => {
 			if (!data.Item || this.isEmpty(data)) {
-				callback(null, createErrorCodedResponse(
-					HttpStatus.NOT_FOUND,
-					ErrorCode.PENALTY_DOC_NOT_FOUND,
-					'ITEM NOT FOUND',
-				));
+				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
 				return;
 			}
 			const idList = [];
