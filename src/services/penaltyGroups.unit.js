@@ -250,15 +250,17 @@ describe('PenaltyGroupService', () => {
 			}));
 		});
 
-		it('responds with the correct error code when a reference already exists', async () => {
-			// Return all IDs as existing
-			sinon.stub(penaltyGroupSvc, '_getPenaltyDocumentsWithIds').callsFake(ids => ids);
+		it('responds with correct error response when a reference already exists', async () => {
+			sinon.stub(penaltyGroupSvc, '_getPenaltyDocumentsWithIds').callsFake(ids => ids.map(id => ({
+				ID: id,
+				Enabled: true,
+			})));
 			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({
 				statusCode: 400,
 				body: sinon.match((body) => {
 					const parsedBody = JSON.parse(body);
-					return parsedBody.errCode === 'GroupDuplicateReference';
+					return parsedBody.body.clashingIds[0] === '1033900003671_FPN' && parsedBody.errCode === 'GroupDuplicateReference';
 				}),
 			}));
 		});
