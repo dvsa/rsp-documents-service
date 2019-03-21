@@ -294,7 +294,9 @@ describe('PenaltyGroupService', () => {
 				statusCode: 400,
 				body: sinon.match((body) => {
 					const parsedBody = JSON.parse(body);
-					return parsedBody.body.clashingIds[0] === '1033900003671_FPN' && parsedBody.errCode === 'GroupDuplicateReference';
+					return parsedBody.errBody.clashingIds[0] === '1033900003671_FPN'
+						&& parsedBody.errCode === 'GroupDuplicateReference'
+						&& parsedBody.errMessage === 'One or more penalties already exist with the supplied reference codes';
 				}),
 			}));
 		});

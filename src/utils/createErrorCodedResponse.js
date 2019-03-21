@@ -12,7 +12,7 @@ const createErrorCodedResponse = (httpStatusCode, errCode, errMessage, errBody =
 			'Access-Control-Allow-Origin': '*',
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify({ errCode, message: errMessage, body: errBody }),
+		body: JSON.stringify({ errCode, errMessage, errBody }),
 	};
 	console.log(response);
 	return response;
