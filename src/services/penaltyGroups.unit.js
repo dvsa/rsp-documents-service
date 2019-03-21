@@ -8,6 +8,7 @@ import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroupService from './penaltyGroups';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
+import mockCreatePenaltyGroupData from '../../mock-data/fake-create-penalty-group.json';
 
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
@@ -190,6 +191,13 @@ describe('PenaltyGroupService', () => {
 			mockGetPenaltiesWithIds = sinon.stub(penaltyGroupSvc, '_getPenaltiesWithIds').callsFake(() => mockPenalties);
 		});
 
+		afterEach(() => {
+			mockBatchWrite.restore();
+			mockPut.restore();
+			mockGetPenaltyGroupById.restore();
+			mockGetPenaltiesWithIds.restore();
+		});
+
 		it('call the correct methods when invoked and returns a success', async () => {
 			await penaltyGroupSvc.updatePenaltyGroupWithPayment(
 				mockPaymentInfo,
@@ -202,6 +210,56 @@ describe('PenaltyGroupService', () => {
 			sinon.assert.calledWith(callbackSpy, null, sinon.match({
 				statusCode: 200,
 				body: JSON.stringify(mockPenaltyGroup),
+			}));
+		});
+	});
+
+	describe('createPenaltyGroup', () => {
+		let penaltyGroup;
+		let mockBatchWrite;
+
+		beforeEach(() => {
+			penaltyGroup = JSON.parse(JSON.stringify(mockCreatePenaltyGroupData));
+			mockBatchWrite = sinon.stub(doc, 'batchWrite')
+				.returns({
+					promise: () => Promise.resolve('batchWrite resolved'),
+				});
+		});
+
+		afterEach(() => {
+			mockBatchWrite.restore();
+		});
+
+		it('responds with correct response when group successfully created', async () => {
+			sinon.stub(penaltyGroupSvc, '_getPenaltyDocumentsWithIds').callsFake(() => []);
+			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 201,
+			}));
+		});
+
+		it('responds with error code when payload fails validation', async () => {
+			penaltyGroup.SiteCode = 'invalid';
+			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 400,
+				body: sinon.match((body) => {
+					const parsedBody = JSON.parse(body);
+					return parsedBody.errCode === 'GroupValidation';
+				}),
+			}));
+		});
+
+		it('responds with the correct error code when a reference already exists', async () => {
+			// Return all IDs as existing
+			sinon.stub(penaltyGroupSvc, '_getPenaltyDocumentsWithIds').callsFake(ids => ids);
+			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 400,
+				body: sinon.match((body) => {
+					const parsedBody = JSON.parse(body);
+					return parsedBody.errCode === 'GroupDuplicateReference';
+				}),
 			}));
 		});
 	});
