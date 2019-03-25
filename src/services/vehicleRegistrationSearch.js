@@ -1,5 +1,6 @@
 import createResponse from '../utils/createResponse';
 import onlyUnique from '../utils/onlyUnique';
+import HttpStatus from '../utils/httpStatusCode';
 
 export default class VehicleRegistrationSearch {
 	constructor(db, penaltyDocTableName, penaltyGroupTableName) {
@@ -21,7 +22,7 @@ export default class VehicleRegistrationSearch {
 				// If there are no penalties in groups, just return the penalties
 				if (penaltiesInGroups.length < 1) {
 					return callback(null, createResponse({
-						statusCode: 200,
+						statusCode: HttpStatus.OK,
 						body: { Penalties, PenaltyGroups: [] },
 					}));
 				}
@@ -30,16 +31,16 @@ export default class VehicleRegistrationSearch {
 				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
 				const PenaltyGroups = Responses[this.penaltyGroupTableName];
 				return callback(null, createResponse({
-					statusCode: 200,
+					statusCode: HttpStatus.OK,
 					body: { Penalties, PenaltyGroups },
 				}));
 			}
 			// Return 404 not found
 			console.log(`No penalties found for registration ${vehicleReg}`);
-			return callback(null, createResponse({ statusCode: 404, body: 'No penalties found' }));
+			return callback(null, createResponse({ statusCode: HttpStatus.NOT_FOUND, body: 'No penalties found' }));
 		} catch (err) {
 			console.log(err);
-			return callback(null, createResponse({ statusCode: 400, body: err }));
+			return callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
 		}
 	}
 	_batchGetPenaltyGroups(ids) {
