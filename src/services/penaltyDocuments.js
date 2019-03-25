@@ -1,4 +1,3 @@
-// @ts-check
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import { SNS, S3, Lambda, DynamoDB } from 'aws-sdk';
@@ -13,6 +12,7 @@ import createStringResponse from '../utils/createStringResponse';
 import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
+import HttpStatus from '../utils/httpStatusCode';
 
 const sns = new SNS();
 const parse = DynamoDB.Converter.unmarshall;
@@ -83,12 +83,12 @@ export default class PenaltyDocument {
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
 					}
-					callback(null, createResponse({ statusCode: 200, body: data.Item }));
+					callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
 				}).catch((err) => {
-					callback(null, createErrorResponse({ statusCode: 400, err }));
+					callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 				});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, err }));
+			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 		});
 	}
 
@@ -120,13 +120,13 @@ export default class PenaltyDocument {
 
 			const dbPut = this.db.put(putParams).promise();
 			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+				callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
 			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 				callback(null, returnResponse);
 			});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, err }));
+			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 		});
 	}
 
@@ -146,10 +146,10 @@ export default class PenaltyDocument {
 				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].penaltyGroupId, 'UNPAID');
 			}
 
-			callback(null, createResponse({ statusCode: 200 }));
+			callback(null, createResponse({ statusCode: HttpStatus.OK }));
 		} catch (err) {
 			console.log(`Error updating multiple docs upon payment delete ${err}`);
-			callback(null, createErrorResponse({ statusCode: 400, err }));
+			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 		}
 	}
 
@@ -272,7 +272,7 @@ export default class PenaltyDocument {
 				dummyPenaltyDoc.Offset = timeNow;
 				// TODO create dummy doc
 				this.createDocument(dummyPenaltyDoc, () => {});
-				callback(null, createResponse({ statusCode: 200, body: dummyPenaltyDoc }));
+				callback(null, createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc }));
 				return;
 			}
 
@@ -294,13 +294,13 @@ export default class PenaltyDocument {
 				if (data.Item.Origin === appOrigin) {
 					this.sendPaymentNotification(paymentInfo, data.Item);
 				}
-				callback(null, createResponse({ statusCode: 200, body: data.Item }));
+				callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
 			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 				callback(null, returnResponse);
 			});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, err }));
+			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 		});
 	}
 
@@ -360,7 +360,7 @@ export default class PenaltyDocument {
 						body: {
 							err,
 						},
-						statusCode: 405,
+						statusCode: HttpStatus.BAD_REQUEST,
 					});
 					callback(null, validationError);
 				} else {
@@ -377,14 +377,14 @@ export default class PenaltyDocument {
 							item.Value.paymentStatus = 'UNPAID';
 						}
 
-						callback(null, createResponse({ statusCode: 200, body: item }));
+						callback(null, createResponse({ statusCode: HttpStatus.OK, body: item }));
 					}).catch((err) => {
-						const returnResponse = createErrorResponse({ statusCode: 400, err });
+						const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 						callback(null, returnResponse);
 					});
 				}
 			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: 400, err });
+				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 				callback(null, returnResponse);
 			});
 	}
@@ -431,7 +431,7 @@ export default class PenaltyDocument {
 						body: {
 							err,
 						},
-						statusCode: 405,
+						statusCode: HttpStatus.BAD_REQUEST,
 					});
 					callback(null, validationError);
 				} else {
@@ -473,22 +473,22 @@ export default class PenaltyDocument {
 							body: {
 								err,
 							},
-							statusCode: 405,
+							statusCode: HttpStatus.BAD_REQUEST,
 						});
 						callback(null, validationError);
 					} else {
 						const dbUpdate = this.db.update(params).promise();
 
 						dbUpdate.then(() => {
-							callback(null, createResponse({ statusCode: 200, body: deletedItem }));
+							callback(null, createResponse({ statusCode: HttpStatus.OK, body: deletedItem }));
 						}).catch((err) => {
-							const errResponse = createErrorResponse({ statusCode: 400, err });
+							const errResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 							callback(null, errResponse);
 						});
 					}
 				}
 			}).catch((err) => {
-				callback(null, createErrorResponse({ statusCode: 400, err }));
+				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 			});
 	}
 
@@ -541,22 +541,22 @@ export default class PenaltyDocument {
 						let mergedList = [];
 						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
 						callback(null, createResponse({
-							statusCode: 200,
+							statusCode: HttpStatus.OK,
 							body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
 						}));
 					})
 					.catch((err) => {
-						callback(null, createErrorResponse({ statusCode: 400, err }));
+						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 					});
 			} else {
 				// no records found in scan so return empty
 				callback(null, createResponse({
-					statusCode: 200,
+					statusCode: HttpStatus.OK,
 					body: { Items: [] },
 				}));
 			}
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, err }));
+			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 		});
 	}
 
@@ -568,15 +568,15 @@ export default class PenaltyDocument {
 			if (error) {
 				console.log('Token service returned an error');
 				console.log(error.message);
-				callback(null, createErrorResponse({ statusCode: 400, err: error }));
+				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: error }));
 			} else if (data.Payload) {
 				try {
 					// @ts-ignore
 					const parsedPayload = JSON.parse(data.Payload);
-					if (parsedPayload.statusCode === 400) {
-						console.log('Token service returned bad request (status 400)');
+					if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
+						console.log('Token service returned bad request (status HttpStatus.BAD_REQUEST)');
 						const parsedBody = JSON.parse(parsedPayload.body);
-						callback(null, createErrorResponse({ statusCode: 400, err: { name: 'Token Error', message: parsedBody.message } }));
+						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { name: 'Token Error', message: parsedBody.message } }));
 						return;
 					}
 
@@ -584,7 +584,7 @@ export default class PenaltyDocument {
 					const docType = docTypeMapping[parsedBody.DocumentType];
 					const docID = `${parsedBody.Reference}_${docType}`;
 					this.getDocument(docID, (err, res) => {
-						if (res.statusCode === 404) {
+						if (res.statusCode === HttpStatus.NOT_FOUND) {
 							this.getPaymentInformationViaInvocation([docID])
 								.then((response) => {
 									const paymentInfo = {};
@@ -607,17 +607,26 @@ export default class PenaltyDocument {
 										paymentInfo,
 									);
 
-									callback(null, createResponse({ statusCode: 200, body: minimalDocument }));
+									callback(null, createResponse({
+										statusCode: HttpStatus.OK,
+										body: minimalDocument,
+									}));
 								})
 								.catch((e) => {
 									console.log(`Error getting payment info: ${e}`);
-									callback(null, createErrorResponse({ statusCode: 400, err: e }));
+									callback(null, createErrorResponse({
+										statusCode: HttpStatus.BAD_REQUEST,
+										err: e,
+									}));
 								});
-						} else if (res.statusCode === 200) {
-							callback(null, createResponse({ statusCode: 200, body: JSON.parse(res.body) }));
+						} else if (res.statusCode === HttpStatus.OK) {
+							callback(null, createResponse({
+								statusCode: HttpStatus.OK,
+								body: JSON.parse(res.body),
+							}));
 						} else {
 							callback(null, createErrorResponse({
-								statusCode: 400,
+								statusCode: HttpStatus.BAD_REQUEST,
 								err: {
 									name: 'Error from GetDocument',
 									message: 'The GetDocument method returned an unhandled error',
@@ -627,12 +636,12 @@ export default class PenaltyDocument {
 					});
 				} catch (e) {
 					console.log(`top level catch getting doc by token: ${e}`);
-					callback(null, createErrorResponse({ statusCode: 400, err: e }));
+					callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: e }));
 				}
 				return;
 			}
 			callback(null, createErrorResponse({
-				statusCode: 400,
+				statusCode: HttpStatus.BAD_REQUEST,
 				err: {
 					name: 'No data returned from Token Service',
 					message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
@@ -730,14 +739,18 @@ export default class PenaltyDocument {
 							this.sendPaymentNotification(paymentInfo, item);
 						}
 					}
-					resolve(createSimpleResponse({ statusCode: 200, body: updatedItem }));
+					resolve(createSimpleResponse({ statusCode: HttpStatus.OK, body: updatedItem }));
 				}).catch((err) => {
 					updatedItem.Value.paymentStatus = 'UNPAID';
-					resolve(createSimpleResponse({ statusCode: 400, body: updatedItem, error: err }));
+					resolve(createSimpleResponse({
+						statusCode: HttpStatus.BAD_REQUEST,
+						body: updatedItem,
+						error: err,
+					}));
 				});
 			} else {
 				resolve(createSimpleResponse({
-					statusCode: 400,
+					statusCode: HttpStatus.BAD_REQUEST,
 					body: updatedItem,
 					error: res.error.message,
 				}));
@@ -772,15 +785,15 @@ export default class PenaltyDocument {
 					const result = {
 						Items: outputValue,
 					};
-					callback(null, createResponse({ statusCode: 200, body: result }));
+					callback(null, createResponse({ statusCode: HttpStatus.OK, body: result }));
 				}).catch((err) => {
 					console.log(`error updating documents in async loop: ${err}`);
-					callback(null, createResponse({ statusCode: 400, body: err }));
+					callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
 				});
 			})
 			.catch((err) => {
 				console.log(`error updating documents in outer loop: ${err}`);
-				callback(null, createErrorResponse({ statusCode: 400, err }));
+				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
 			});
 	}
 
@@ -859,10 +872,10 @@ export default class PenaltyDocument {
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
 		s3.getObject(params, (err, data) => {
 			if (err) {
-				callback(null, createResponse({ statusCode: 400, body: err }));
+				callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
 			} else {
 				// @ts-ignore
-				callback(null, createStringResponse({ statusCode: 200, body: data.Body.toString('utf-8') }));
+				callback(null, createStringResponse({ statusCode: HttpStatus.OK, body: data.Body.toString('utf-8') }));
 			}
 		});
 	}
