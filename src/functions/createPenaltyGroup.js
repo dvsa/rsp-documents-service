@@ -1,4 +1,3 @@
-import 'babel-polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroup from '../services/penaltyGroups';
 import config from '../config';

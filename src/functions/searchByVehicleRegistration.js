@@ -1,4 +1,4 @@
-import 'babel-polyfill';
+import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import VehicleRegistrationSearch from '../services/vehicleRegistrationSearch';
 import config from '../config';

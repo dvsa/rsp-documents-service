@@ -1,5 +1,5 @@
 /* eslint-env es6 */
-import 'babel-polyfill';
+import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroupService from '../services/penaltyGroups';
 import config from '../config';

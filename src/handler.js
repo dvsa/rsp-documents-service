@@ -1,5 +1,5 @@
 // @ts-check
-import 'babel-polyfill';
+import '@babel/polyfill';
 
 import list from './functions/list';
 import listGroups from './functions/listGroups';
