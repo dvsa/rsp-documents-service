@@ -741,6 +741,7 @@ export default class PenaltyDocument {
 					}
 					resolve(createSimpleResponse({ statusCode: HttpStatus.OK, body: updatedItem }));
 				}).catch((err) => {
+					console.log('Setting payment status to unpaid');
 					console.log(err);
 					updatedItem.Value.paymentStatus = 'UNPAID';
 					resolve(createSimpleResponse({
