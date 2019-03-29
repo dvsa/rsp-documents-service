@@ -741,6 +741,7 @@ export default class PenaltyDocument {
 					}
 					resolve(createSimpleResponse({ statusCode: HttpStatus.OK, body: updatedItem }));
 				}).catch((err) => {
+					console.log(err);
 					updatedItem.Value.paymentStatus = 'UNPAID';
 					resolve(createSimpleResponse({
 						statusCode: HttpStatus.BAD_REQUEST,
@@ -749,6 +750,8 @@ export default class PenaltyDocument {
 					}));
 				});
 			} else {
+				console.log('Logging error from rsp-validation');
+				console.log(res);
 				resolve(createSimpleResponse({
 					statusCode: HttpStatus.BAD_REQUEST,
 					body: updatedItem,
