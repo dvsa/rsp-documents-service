@@ -729,7 +729,9 @@ export default class PenaltyDocument {
 						updatedItem.Value.paymentAuthCode = savedPaymentAuthCode;
 						updatedItem.Value.paymentDate = savedPaymentDate;
 					}
-					if (data.Attributes.Origin === portalOrigin && item.Origin === appOrigin && savedPaymentStatus === 'PAID') {
+					const nonExistingOrPortalOrigin = data.Attributes === undefined
+						|| data.Attributes.Origin === portalOrigin;
+					if (nonExistingOrPortalOrigin && item.Origin === appOrigin && savedPaymentStatus === 'PAID') {
 						const paymentInfo = {
 							penaltyType: item.Value.penaltyType,
 							paymentStatus: savedPaymentStatus,
