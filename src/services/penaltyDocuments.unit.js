@@ -1,4 +1,5 @@
 import expect from 'expect';
+import Validation from 'rsp-validation';
 import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
 import PenaltyDocumentsService from './penaltyDocuments';
@@ -6,6 +7,7 @@ import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
+import mockUpdatePenaltyData from '../../mock-data/fake-update-pen.json';
 
 
 describe('PenaltyDocuments service', () => {
@@ -26,6 +28,38 @@ describe('PenaltyDocuments service', () => {
 	afterEach(() => {
 		doc.put.restore();
 		callbackSpy.resetHistory();
+	});
+
+	describe('updateDocumentWithPayment', () => {
+		let createDocumentStub;
+		beforeEach(() => {
+			sinon.stub(doc, 'get').returns({
+				// No existing penalty document
+				promise: () => Promise.resolve({}),
+			});
+			createDocumentStub = sinon.stub(penaltyDocumentsService, 'createDocument').callsFake((penaltyDoc, callback) => {
+				callback(null, { statusCode: 200 });
+			});
+		});
+
+		afterEach(() => {
+			doc.get.restore();
+			createDocumentStub.restore();
+		});
+
+		it('calls back with OK status', async () => {
+			const paymentInfo = mockUpdatePenaltyData.body;
+			await penaltyDocumentsService.updateDocumentWithPayment(paymentInfo, callbackSpy);
+
+			// validate input createDocument is correct without testing internals
+			const createDocumentParams = createDocumentStub.firstCall.args[0];
+			const validation = Validation.penaltyDocumentValidation(createDocumentParams);
+			expect(validation.valid).toBe(true);
+
+			sinon.assert.calledWith(callbackSpy, null, sinon.match({
+				statusCode: 200,
+			}));
+		});
 	});
 
 	describe('updateDocumentsUponPaymentDelete', () => {

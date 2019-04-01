@@ -249,6 +249,13 @@ export default class PenaltyDocument {
 
 		dbGet.then((data) => {
 			if (!data.Item) {
+				let referenceNo = paymentInfo.penaltyRefNo;
+				if (paymentInfo.penaltyType === 'IM') {
+					referenceNo = `${referenceNo.slice(0, 6)}-${referenceNo[7]}-${referenceNo.slice(8, 13)}-IM`;
+				}
+				// No existing penalty document. Occurs when offline penalty paid.
+				// Create dummy document to be updated by the app at a later date to avoid
+				// duplicating references
 				const dummyPenaltyDoc = {
 					ID: paymentInfo.id,
 					Value: {
@@ -257,12 +264,13 @@ export default class PenaltyDocument {
 						vehicleDetails: {
 							regNo: 'UNKNOWN',
 						},
-						referenceNo: paymentInfo.penaltyRefNo,
+						referenceNo,
 						penaltyType: paymentInfo.penaltyType,
 						paymentToken: paymentInfo.paymentToken,
 						officerName: 'UNKNOWN',
 						penaltyAmount: Number(paymentInfo.paymentAmount),
 						officerID: 'UNKNOWN',
+						inPenaltyGroup: false,
 					},
 					Enabled: true,
 					Origin: portalOrigin,
@@ -270,7 +278,6 @@ export default class PenaltyDocument {
 				dummyPenaltyDoc.Hash = 'New';
 				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
 				dummyPenaltyDoc.Offset = timeNow;
-				// TODO create dummy doc
 				this.createDocument(dummyPenaltyDoc, (error, response) => {
 					if (response.statusCode !== HttpStatus.CREATED) {
 						console.log('Unable to create dummy penalty document');

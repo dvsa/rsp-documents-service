@@ -10,5 +10,6 @@
 	"plugins": [
 		"add-module-exports",
 		"transform-object-rest-spread"
-	]
+	],
+	"retainLines": true
 }

@@ -1,0 +1,10 @@
+{
+  "body": {
+    "id": "0001450000764_IM",
+    "paymentStatus": "PAID",
+    "paymentAmount": "80",
+    "penaltyRefNo": "0001450000764",
+    "penaltyType": "IM",
+    "paymentToken": "446a1774cad2ee79"
+  }
+}
