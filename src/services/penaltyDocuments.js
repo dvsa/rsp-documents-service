@@ -271,8 +271,13 @@ export default class PenaltyDocument {
 				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
 				dummyPenaltyDoc.Offset = timeNow;
 				// TODO create dummy doc
-				this.createDocument(dummyPenaltyDoc, () => {});
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc }));
+				this.createDocument(dummyPenaltyDoc, (error, response) => {
+					if (response.statusCode !== HttpStatus.CREATED) {
+						console.log('Unable to create dummy penalty document');
+						console.log(response);
+					}
+					callback(null, createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc }));
+				});
 				return;
 			}
 
