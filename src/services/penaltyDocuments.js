@@ -275,6 +275,7 @@ export default class PenaltyDocument {
 					if (response.statusCode !== HttpStatus.CREATED) {
 						console.log('Unable to create dummy penalty document');
 						console.log(response);
+						console.log(dummyPenaltyDoc);
 					}
 					callback(null, createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc }));
 				});
