@@ -232,22 +232,15 @@ describe('PenaltyGroupService', () => {
 
 		it('responds with correct response when group successfully created', async () => {
 			sinon.stub(penaltyGroupSvc, '_getPenaltyDocumentsWithIds').callsFake(() => []);
-			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 201,
-			}));
+			const response = await penaltyGroupSvc.createPenaltyGroup(penaltyGroup);
+			expect(response.statusCode).toBe(201);
 		});
 
 		it('responds with error code when payload fails validation', async () => {
 			penaltyGroup.SiteCode = 'invalid';
-			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 400,
-				body: sinon.match((body) => {
-					const parsedBody = JSON.parse(body);
-					return parsedBody.errCode === 'GroupValidation';
-				}),
-			}));
+			const response = await penaltyGroupSvc.createPenaltyGroup(penaltyGroup);
+			expect(response.statusCode).toBe(400);
+			expect(JSON.parse(response.body).errCode).toBe('GroupValidation');
 		});
 
 		it('responds with correct error response when a reference already exists', async () => {
@@ -255,16 +248,11 @@ describe('PenaltyGroupService', () => {
 				ID: id,
 				Enabled: true,
 			})));
-			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 400,
-				body: sinon.match((body) => {
-					const parsedBody = JSON.parse(body);
-					return parsedBody.errBody.clashingIds[0] === '1033900003671_FPN'
-						&& parsedBody.errCode === 'GroupDuplicateReference'
-						&& parsedBody.errMessage === 'One or more penalties already exist with the supplied reference codes';
-				}),
-			}));
+			const response = await penaltyGroupSvc.createPenaltyGroup(penaltyGroup);
+			const responseBody = JSON.parse(response.body);
+			expect(response.statusCode).toBe(400);
+			expect(responseBody.errCode).toBe('GroupDuplicateReference');
+			expect(responseBody.errMessage).toBe('One or more penalties already exist with the supplied reference codes');
 		});
 	});
 });

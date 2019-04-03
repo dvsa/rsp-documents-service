@@ -31,14 +31,10 @@ export default class PenaltyGroup {
 		this.snsTopicARN = snsTopicARN;
 	}
 
-	/**
-	 * @param {*} body
-	 * @param {LambdaCallback} callback
-	 */
-	async createPenaltyGroup(body, callback) {
+	async createPenaltyGroup(body) {
 		const validationResult = await this.validatePenaltyGroupCreationPayload(body);
 		if (!validationResult.valid) {
-			return callback(null, validationResult.response);
+			return validationResult.response;
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
@@ -46,15 +42,15 @@ export default class PenaltyGroup {
 
 		try {
 			await this.db.batchWrite(batchWriteParams).promise();
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.CREATED,
 				body: penaltyGroup,
-			}));
+			});
 		} catch (err) {
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: `Problem writing to DB: ${err}`,
-			}));
+			});
 		}
 	}
 
