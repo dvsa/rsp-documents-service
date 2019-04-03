@@ -1,0 +1,33 @@
+{
+  "Offset":1553167828,
+  "Penalties":[
+    {
+      "ID":"1033900003671_FPN",
+      "Offset":1553167828,
+      "Hash":"New",
+      "Value":{
+        "siteCode":10,
+        "penaltyAmount":100,
+        "paymentCodeDateTime":1553167828,
+        "placeWhereIssued":"Location",
+        "vehicleDetails":{
+          "regNo":"REGNO"
+        },
+        "officerName":"test@example.com",
+        "paymentToken":"3bcbe511264aff0c",
+        "officerID":"xuyg807234bxlkf712346s",
+        "nonEndorsableOffence":[],
+        "dateTime":1553126400,
+        "referenceNo":"2034900003171",
+        "inPenaltyGroup":true,
+        "penaltyType":"FPN",
+        "paymentStatus":"UNPAID"
+      },
+      "Enabled":true
+    }
+  ],
+  "Timestamp": 1553167828,
+  "Location": "Location",
+  "SiteCode": 10,
+  "VehicleRegistration": "REGNO"
+}

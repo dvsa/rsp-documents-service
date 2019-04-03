@@ -31,6 +31,7 @@ export default async (event, context) => {
 
 	if (event.queryStringParameters != null &&
 		typeof event.queryStringParameters.NextID !== 'undefined') {
+		// @ts-ignore
 		exclusiveStartKey = {
 			ID: event.queryStringParameters.NextID,
 			Offset: Number(event.queryStringParameters.NextOffset),
