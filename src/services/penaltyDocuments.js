@@ -492,8 +492,7 @@ export default class PenaltyDocument {
 			});
 	}
 
-	getDocuments(offset, exclusiveStartKey, callback) {
-
+	async getDocuments(offset, exclusiveStartKey) {
 		const params = {
 			TableName: this.penaltyDocTableName,
 			IndexName: 'ByOffset',
@@ -518,46 +517,46 @@ export default class PenaltyDocument {
 			params.ExclusiveStartKey = exclusiveStartKey;
 		}
 
-		const dbScan = this.db.query(params).promise();
 		const idList = [];
+		let data;
 
-		dbScan.then((data) => {
-			// TODO need to loop through data and populate with payment info
-			const items = data.Items;
+		try {
+			data = await this.db.query(params).promise();
+		} catch (err) {
+			return createErrorResponse({ statusCode: 400, err });
+		}
 
-			if (data.Count > 0) {
-				items.forEach((item) => {
-					idList.push(item.ID);
-					delete item.Value.paymentStatus;
-					delete item.Value.paymentAuthCode;
-					delete item.Value.paymentDate;
-					delete item.Value.paymentRef;
-					delete item.Value.paymentMethod;
-					delete item.Origin; // remove Origin as not needed in response
-				});
+		const items = data.Items;
 
-				this.getPaymentInformationViaInvocation(idList)
-					.then((response) => {
-						let mergedList = [];
-						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-						callback(null, createResponse({
-							statusCode: 200,
-							body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
-						}));
-					})
-					.catch((err) => {
-						callback(null, createErrorResponse({ statusCode: 400, err }));
-					});
-			} else {
-				// no records found in scan so return empty
-				callback(null, createResponse({
+		if (data.Count > 0) {
+			items.forEach((item) => {
+				idList.push(item.ID);
+				delete item.Value.paymentStatus;
+				delete item.Value.paymentAuthCode;
+				delete item.Value.paymentDate;
+				delete item.Value.paymentRef;
+				delete item.Value.paymentMethod;
+				delete item.Origin; // remove Origin as not needed in response
+			});
+
+			try {
+				const response = await this.getPaymentInformationViaInvocation(idList);
+				let mergedList = [];
+				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+				return createResponse({
 					statusCode: 200,
-					body: { Items: [] },
-				}));
+					body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
+				});
+			} catch (err) {
+				return createErrorResponse({ statusCode: 400, err });
 			}
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: 400, err }));
-		});
+		} else {
+			// no records found in scan so return empty
+			return createResponse({
+				statusCode: 200,
+				body: { Items: [] },
+			});
+		}
 	}
 
 	getDocumentByToken(token, callback) {

@@ -21,24 +21,18 @@ describe('list', () => {
 				httpMethod: 'GET',
 				pathParameters: null,
 			};
-			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake((offset, exclusiveStartKey, callback) => {
+			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake(async () => {
 				const response = createResponse({
 					body: penaltyDocuments,
 				});
-				callback(null, response);
+				return response;
 			});
 		});
 
-		it('should return a 200 success', (done) => {
+		it('should return a 200 success', async () => {
+			const res = await list(event, null);
 
-			list(event, null, (err, res) => {
-
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				// expect(JSON.parse(res.body)).toEqual(penaltyDocument);
-				done();
-			});
-
+			expect(res.statusCode).toBe(200);
 		});
 
 	});

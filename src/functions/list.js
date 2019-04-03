@@ -3,9 +3,10 @@ import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
 
+/** @type PenaltyDocument */
 let penaltyDocuments;
 
-export default async (event, context, callback) => {
+export default async (event, context) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -38,5 +39,5 @@ export default async (event, context, callback) => {
 	}
 
 
-	penaltyDocuments.getDocuments(offset, exclusiveStartKey, callback);
+	return penaltyDocuments.getDocuments(offset, exclusiveStartKey);
 };
