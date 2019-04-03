@@ -530,7 +530,6 @@ export default class PenaltyDocument {
 			return createErrorResponse({ statusCode: 400, err });
 		}
 
-<<<<<<< HEAD
 		const items = data.Items;
 
 		if (data.Count > 0) {
@@ -562,30 +561,6 @@ export default class PenaltyDocument {
 				body: { Items: [] },
 			});
 		}
-=======
-				this.getPaymentInformationViaInvocation(idList)
-					.then((response) => {
-						let mergedList = [];
-						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-						callback(null, createResponse({
-							statusCode: HttpStatus.OK,
-							body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
-						}));
-					})
-					.catch((err) => {
-						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-					});
-			} else {
-				// no records found in scan so return empty
-				callback(null, createResponse({
-					statusCode: HttpStatus.OK,
-					body: { Items: [] },
-				}));
-			}
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-		});
->>>>>>> develop
 	}
 
 	getDocumentByToken(token, callback) {
