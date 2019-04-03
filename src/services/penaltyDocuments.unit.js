@@ -6,6 +6,7 @@ import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
+import mockPaymentsData from '../../mock-data/fake-penalty-payment.json';
 
 
 describe('PenaltyDocuments service', () => {
@@ -26,6 +27,53 @@ describe('PenaltyDocuments service', () => {
 	afterEach(() => {
 		doc.put.restore();
 		callbackSpy.resetHistory();
+	});
+
+	describe('getDocuments', () => {
+		beforeEach(() => {
+			sinon.stub(doc, 'query').returns({
+				promise: () => Promise.resolve({
+					Items: mockPenaltiesData,
+					Count: mockPenaltiesData.length,
+				}),
+			});
+		});
+
+		afterEach(() => {
+			doc.query.restore();
+			penaltyDocumentsService.getPaymentInformationViaInvocation.restore();
+		});
+
+		context('when no payments are made', () => {
+			beforeEach(() => {
+				sinon.stub(penaltyDocumentsService, 'getPaymentInformationViaInvocation').callsFake(() => ({
+					payments: [],
+				}));
+			});
+
+			it('responds with OK status', async () => {
+				const response = await penaltyDocumentsService.getDocuments(0);
+				expect(response.statusCode).toBe(200);
+			});
+		});
+
+		context('when a payment is made', () => {
+			beforeEach(() => {
+				sinon.stub(penaltyDocumentsService, 'getPaymentInformationViaInvocation').callsFake(() => ({
+					payments: [
+						mockPaymentsData.find(mockPayment => mockPayment.ID === '820500000877_FPN'),
+					],
+				}));
+			});
+
+			it('responds with payment info', async () => {
+				const response = await penaltyDocumentsService.getDocuments(0);
+				expect(response.statusCode).toBe(200);
+				const body = JSON.parse(response.body);
+				expect(body.Items.find(item => item.ID === '820500000877_FPN').Value.paymentStatus).toBe('PAID');
+				expect(body.Items.find(item => item.ID === '820500000871_FPN').Value.paymentStatus).toBe('UNPAID');
+			});
+		});
 	});
 
 	describe('updateDocumentsUponPaymentDelete', () => {

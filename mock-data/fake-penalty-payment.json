@@ -1,0 +1,14 @@
+[
+  {
+    "ID": "820500000877_FPN",
+    "PaymentDetail": {
+      "PaymentMethod": "CARD",
+      "AuthCode": "112537",
+      "paymentDate": 1554125242,
+      "paymentAmount": 50,
+      "paymentRef": "ECMS-01-20190401-132705-190EA480"
+    },
+    "PenaltyStatus": "PAID",
+    "PenaltyGroupId": "46xu68x7o6b"
+  }
+]

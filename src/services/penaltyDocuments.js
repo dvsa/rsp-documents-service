@@ -492,6 +492,10 @@ export default class PenaltyDocument {
 			});
 	}
 
+	/**
+	 * @param {number} offset
+	 * @param {string} exclusiveStartKey
+	 */
 	async getDocuments(offset, exclusiveStartKey) {
 		const params = {
 			TableName: this.penaltyDocTableName,

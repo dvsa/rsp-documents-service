@@ -15,13 +15,14 @@ describe('list', () => {
 	});
 
 	describe('when a list of penaltyDocuments are requested', () => {
+		let getDocuments;
 
 		beforeEach(() => {
 			event = {
 				httpMethod: 'GET',
 				pathParameters: null,
 			};
-			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake(async () => {
+			getDocuments = sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake(async () => {
 				const response = createResponse({
 					body: penaltyDocuments,
 				});
@@ -29,12 +30,13 @@ describe('list', () => {
 			});
 		});
 
-		it('should return a 200 success', async () => {
-			const res = await list(event, null);
-
-			expect(res.statusCode).toBe(200);
+		afterEach(() => {
+			getDocuments.restore();
 		});
 
+		it('should return a 200 success', async () => {
+			const res = await list(event, null);
+			expect(res.statusCode).toBe(200);
+		});
 	});
-
 });
