@@ -1,12 +1,12 @@
 {
-  "name": "awslambda-apigateway-dynamodb-serverless-offline-template",
+  "name": "rsp-documents-service",
   "version": "1.0.0",
-  "description": "Emulate AWS λ, API Gateway & DynamoDB locally when developing",
+  "description": "",
   "repository": "<replace>",
   "author": "",
   "license": "MIT",
   "scripts": {
-    "start": "rm -rf build && npm run copy-localfiles && npm run parallel",
+    "start": "npm run copy-localfiles && npm run parallel",
     "presetup": "npm run copy-localfiles",
     "copy-localfiles": "npm run copy-sls && npm run copy-mockdata && npm run copy-models && npm run copy-openapi",
     "copy-sls": "./node_modules/.bin/copyfiles -f serverless/*.yml build",
@@ -39,6 +39,7 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.4.0",
     "@babel/preset-env": "^7.4.2",
     "@babel/register": "^7.4.0",
+    "babel-plugin-add-module-exports": "^1.0.0",
     "copyfiles": "^1.2.0",
     "eslint": "^4.9.0",
     "eslint-config-airbnb-base": "^12.1.0",
@@ -51,7 +52,7 @@
     "replace": "^1.0.1",
     "rimraf": "^2.6.2",
     "serverless": "^1.39.1",
-    "serverless-dynamodb-local": "^0.2.36",
+    "serverless-dynamodb-local": "^0.2.37",
     "serverless-offline": "^3.31.3",
     "serverless-openapi-documentation": "^0.4.0",
     "sinon": "^4.0.2",
@@ -60,8 +61,8 @@
     "wait-on": "^2.1.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.406.0",
     "@babel/polyfill": "^7.4.0",
+    "aws-sdk": "^2.406.0",
     "js-sha256": "^0.7.1",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
