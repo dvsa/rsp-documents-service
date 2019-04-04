@@ -884,7 +884,7 @@ export default class PenaltyDocument {
 		}
 	}
 
-	async streamDocuments(event, context, callback) {
+	async streamDocuments(event) {
 		let minOffset = 9999999999.999;
 
 		event.Records.forEach((record) => {
@@ -899,9 +899,9 @@ export default class PenaltyDocument {
 		try {
 			await this.sendSnsMessage(params);
 			console.log('Results from sending message: ', JSON.stringify(params, null, 2));
-			callback(null, `Successfully processed ${event.Records.length} records.`);
+			return `Successfully processed ${event.Records.length} records.`;
 		} catch (err) {
-			callback(`Unable to send message. Error JSON: ${JSON.stringify(err, null, 2)}`);
+			return `Unable to send message. Error JSON: ${JSON.stringify(err, null, 2)}`;
 		}
 	}
 
