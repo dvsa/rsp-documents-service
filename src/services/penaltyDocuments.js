@@ -54,7 +54,7 @@ export default class PenaltyDocument {
 		this.maxBatchSize = config.dynamodbMaxBatchSize();
 	}
 
-	getDocument(id, callback) {
+	async getDocument(id) {
 		const params = {
 			TableName: this.penaltyDocTableName,
 			Key: {
@@ -64,15 +64,14 @@ export default class PenaltyDocument {
 
 		const dbGet = this.db.get(params).promise();
 
-		dbGet.then((data) => {
+		return dbGet.then((data) => {
 			if (!data.Item || this.isEmpty(data)) {
-				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
-				return;
+				return createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } });
 			}
 			const idList = [];
 			idList.push(id);
 			delete data.Item.Origin;
-			this.getPaymentInformationViaInvocation(idList)
+			return this.getPaymentInformationViaInvocation(idList)
 				.then((response) => {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
@@ -83,12 +82,12 @@ export default class PenaltyDocument {
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
 					}
-					callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
+					return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
 				}).catch((err) => {
-					callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+					return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 				});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 		});
 	}
 
@@ -563,93 +562,97 @@ export default class PenaltyDocument {
 		}
 	}
 
-	getDocumentByToken(token, callback) {
-		lambda.invoke({
+	invokeTokenServiceLambda(token) {
+		return lambda.invoke({
 			FunctionName: this.tokenServiceARN,
 			Payload: `{"body": { "Token": "${token}" } }`,
-		}, (error, data) => {
-			if (error) {
-				console.log('Token service returned an error');
-				console.log(error.message);
-				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: error }));
-			} else if (data.Payload) {
-				try {
-					// @ts-ignore
-					const parsedPayload = JSON.parse(data.Payload);
-					if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
-						console.log('Token service returned bad request (status HttpStatus.BAD_REQUEST)');
-						const parsedBody = JSON.parse(parsedPayload.body);
-						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { name: 'Token Error', message: parsedBody.message } }));
-						return;
-					}
+		}).promise();
+	}
 
+	async getDocumentByToken(token) {
+		let data;
+		try {
+			data = await this.invokeTokenServiceLambda(token);
+		} catch (error) {
+			console.log('Token service returned an error');
+			console.log(error.message);
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: error });
+		}
+
+
+		if (data.Payload) {
+			try {
+				const parsedPayload = JSON.parse(data.Payload);
+				if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
+					console.log(`Token service returned bad request (status ${HttpStatus.BAD_REQUEST})`);
 					const parsedBody = JSON.parse(parsedPayload.body);
-					const docType = docTypeMapping[parsedBody.DocumentType];
-					const docID = `${parsedBody.Reference}_${docType}`;
-					this.getDocument(docID, (err, res) => {
-						if (res.statusCode === HttpStatus.NOT_FOUND) {
-							this.getPaymentInformationViaInvocation([docID])
-								.then((response) => {
-									const paymentInfo = {};
-									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
-										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-										paymentInfo.paymentDate =
-											Number(response.payments[0].PaymentDetail.PaymentDate);
-										paymentInfo.paymentMethod =
-										response.payments[0].PaymentDetail.PaymentMethod;
-									} else {
-										paymentInfo.paymentStatus = 'UNPAID';
-									}
-
-									const minimalDocument = formatMinimalDocument(
-										parsedBody,
-										docID,
-										token,
-										docType,
-										paymentInfo,
-									);
-
-									callback(null, createResponse({
-										statusCode: HttpStatus.OK,
-										body: minimalDocument,
-									}));
-								})
-								.catch((e) => {
-									console.log(`Error getting payment info: ${e}`);
-									callback(null, createErrorResponse({
-										statusCode: HttpStatus.BAD_REQUEST,
-										err: e,
-									}));
-								});
-						} else if (res.statusCode === HttpStatus.OK) {
-							callback(null, createResponse({
-								statusCode: HttpStatus.OK,
-								body: JSON.parse(res.body),
-							}));
-						} else {
-							callback(null, createErrorResponse({
-								statusCode: HttpStatus.BAD_REQUEST,
-								err: {
-									name: 'Error from GetDocument',
-									message: 'The GetDocument method returned an unhandled error',
-								},
-							}));
-						}
-					});
-				} catch (e) {
-					console.log(`top level catch getting doc by token: ${e}`);
-					callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: e }));
+					return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { name: 'Token Error', message: parsedBody.message } });
 				}
-				return;
+
+				const parsedBody = JSON.parse(parsedPayload.body);
+				const docType = docTypeMapping[parsedBody.DocumentType];
+				const docID = `${parsedBody.Reference}_${docType}`;
+				return this.getDocument(docID).then((res) => {
+					if (res.statusCode === HttpStatus.NOT_FOUND) {
+						return this.getPaymentInformationViaInvocation([docID])
+							.then((response) => {
+								const paymentInfo = {};
+								if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+									paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
+									paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+									paymentInfo.paymentDate =
+										Number(response.payments[0].PaymentDetail.PaymentDate);
+									paymentInfo.paymentMethod =
+									response.payments[0].PaymentDetail.PaymentMethod;
+								} else {
+									paymentInfo.paymentStatus = 'UNPAID';
+								}
+
+								const minimalDocument = formatMinimalDocument(
+									parsedBody,
+									docID,
+									token,
+									docType,
+									paymentInfo,
+								);
+
+								return createResponse({
+									statusCode: HttpStatus.OK,
+									body: minimalDocument,
+								});
+							})
+							.catch((e) => {
+								console.log(`Error getting payment info: ${e}`);
+								return createErrorResponse({
+									statusCode: HttpStatus.BAD_REQUEST,
+									err: e,
+								});
+							});
+					} else if (res.statusCode === HttpStatus.OK) {
+						return createResponse({
+							statusCode: HttpStatus.OK,
+							body: JSON.parse(res.body),
+						});
+					}
+					return createErrorResponse({
+						statusCode: HttpStatus.BAD_REQUEST,
+						err: {
+							name: 'Error from GetDocument',
+							message: 'The GetDocument method returned an unhandled error',
+						},
+					});
+				});
+			} catch (e) {
+				console.error(e);
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: e });
 			}
-			callback(null, createErrorResponse({
-				statusCode: HttpStatus.BAD_REQUEST,
-				err: {
-					name: 'No data returned from Token Service',
-					message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
-				},
-			}));
+		}
+		return createErrorResponse({
+			statusCode: HttpStatus.BAD_REQUEST,
+			err: {
+				name: 'No data returned from Token Service',
+				message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
+			},
 		});
 	}
 

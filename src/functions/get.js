@@ -4,7 +4,7 @@ import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
 
 let penaltyDocuments;
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -20,5 +20,5 @@ export default async (event, context, callback) => {
 		);
 	}
 
-	penaltyDocuments.getDocument(event.pathParameters.id, callback);
+	return penaltyDocuments.getDocument(event.pathParameters.id);
 };

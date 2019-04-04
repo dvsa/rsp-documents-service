@@ -19,7 +19,7 @@
     "watch": "./node_modules/.bin/nodemon --watch src --exec npm run compile",
     "compile": "./node_modules/.bin/babel src -d build",
     "offline": "cd ./build && sls offline start --noAuth",
-    "test": "./node_modules/.bin/mocha --require @babel/register src/**/*.unit.js",
+    "test": "./node_modules/.bin/mocha --require @babel/register --recursive \"src/**/*.unit.js\"",
     "test-i": "./node_modules/.bin/mocha --require @babel/register src/test/**/*.serviceInt.js",
     "lint": "./node_modules/.bin/eslint src",
     "build-openapi": "npm run compile && npm run copy-localfiles && cd build && sls openapi generate -f json && npm run openapireplace",
