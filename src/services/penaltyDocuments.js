@@ -874,16 +874,14 @@ export default class PenaltyDocument {
 		return params;
 	}
 
-	getSites(event, context, callback) {
+	async getSites() {
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
-		s3.getObject(params, (err, data) => {
-			if (err) {
-				callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
-			} else {
-				// @ts-ignore
-				callback(null, createStringResponse({ statusCode: HttpStatus.OK, body: data.Body.toString('utf-8') }));
-			}
-		});
+		try {
+			const data = await s3.getObject(params).promise();
+			return createStringResponse({ statusCode: HttpStatus.OK, body: data.Body.toString('utf-8') });
+		} catch (err) {
+			return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
+		}
 	}
 
 	async streamDocuments(event, context, callback) {

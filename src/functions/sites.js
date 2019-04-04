@@ -20,5 +20,5 @@ export default async (event, context, callback) => {
 			config.paymentsBatchFetchArn(),
 		);
 	}
-	penaltyDocuments.getSites(event, context, callback);
+	return penaltyDocuments.getSites();
 };
