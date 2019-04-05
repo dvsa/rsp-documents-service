@@ -13,6 +13,7 @@ import mergeDocumentsWithPayments from '../utils/mergeDocumentsWithPayments';
 import formatMinimalDocument from '../utils/formatMinimalDocument';
 import subtractDays from '../utils/subtractDays';
 import HttpStatus from '../utils/httpStatusCode';
+import dynamoClient from '../utils/dynamoClient';
 
 const sns = new SNS();
 const parse = DynamoDB.Converter.unmarshall;
@@ -26,7 +27,6 @@ export default class PenaltyDocument {
 
 	/**
 	 * Instantiate the penalty document service.
-	 * @param {AWS.DynamoDB.DocumentClient} db Dynamodb interface for penalty documents.
 	 * @param {string} penaltyDocTableName Table name of penalty documents.
 	 * @param {string} bucketName S3 bucket name where RSP DVSA sites are stored.
 	 * @param {string} snsTopicARN ARN for payment notification SNS service.
@@ -38,11 +38,11 @@ export default class PenaltyDocument {
 	 * @param {string} paymentsBatchFetchArn The payment service batch fetch ARN.
 	 */
 	constructor(
-		db,	penaltyDocTableName, bucketName,
+		penaltyDocTableName, bucketName,
 		snsTopicARN, siteResource, paymentURL,
 		tokenServiceARN, daysToHold, paymentsBatchFetchArn,
 	) {
-		this.db = db;
+		this.db = dynamoClient;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.bucketName = bucketName;
 		this.snsTopicARN = snsTopicARN;

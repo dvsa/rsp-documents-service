@@ -1,5 +1,4 @@
 import 'babel-polyfill';
-import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
 
@@ -9,7 +8,6 @@ export default async (event, context, callback) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
-			doc,
 			config.dynamodbPenaltyDocTable(),
 			config.bucketName(),
 			config.snsTopicArn(),

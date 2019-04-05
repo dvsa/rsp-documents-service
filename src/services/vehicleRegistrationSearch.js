@@ -1,10 +1,11 @@
 import createResponse from '../utils/createResponse';
 import onlyUnique from '../utils/onlyUnique';
 import HttpStatus from '../utils/httpStatusCode';
+import dynamoClient from '../utils/dynamoClient';
 
 export default class VehicleRegistrationSearch {
-	constructor(db, penaltyDocTableName, penaltyGroupTableName) {
-		this.db = db;
+	constructor(penaltyDocTableName, penaltyGroupTableName) {
+		this.db = dynamoClient;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
 	}

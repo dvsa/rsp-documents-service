@@ -3,12 +3,12 @@
 import expect from 'expect';
 import sinon from 'sinon';
 import _ from 'lodash';
-import { doc } from 'serverless-dynamodb-client';
 
 import PenaltyGroupService from './penaltyGroups';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
 import mockCreatePenaltyGroupData from '../../mock-data/fake-create-penalty-group.json';
+import doc from '../utils/dynamoClient';
 
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
@@ -17,7 +17,7 @@ describe('PenaltyGroupService', () => {
 
 	beforeEach(() => {
 		mockDbQuery = sinon.stub(doc, 'query');
-		penaltyGroupSvc = new PenaltyGroupService(doc, 'penaltyDocuments', 'penaltyGroups', process.env.SNSTOPICARN);
+		penaltyGroupSvc = new PenaltyGroupService('penaltyDocuments', 'penaltyGroups', process.env.SNSTOPICARN);
 	});
 	afterEach(() => {
 		doc.query.restore();

@@ -1,11 +1,11 @@
 import expect from 'expect';
-import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
 import PenaltyDocumentsService from './penaltyDocuments';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
+import doc from '../utils/dynamoClient';
 
 
 describe('PenaltyDocuments service', () => {
@@ -16,7 +16,7 @@ describe('PenaltyDocuments service', () => {
 	let callbackSpy;
 
 	beforeEach(() => {
-		penaltyDocumentsService = new PenaltyDocumentsService(doc, 'penaltyDocuments', '', '', '', '', '', 3, '');
+		penaltyDocumentsService = new PenaltyDocumentsService('penaltyDocuments', '', '', '', '', '', 3, '');
 		callbackSpy = sinon.spy();
 		sinon.stub(doc, 'put')
 			.returns({

@@ -11,6 +11,7 @@ import hashToken from '../utils/hash';
 import ErrorCode from '../utils/errorCode';
 import createErrorCodedResponse from '../utils/createErrorCodedResponse';
 import HttpStatus from '../utils/httpStatusCode';
+import dynamoClient from '../utils/dynamoClient';
 
 const sns = new SNS();
 const appOrigin = 'APP';
@@ -22,9 +23,8 @@ const appOrigin = 'APP';
 
 
 export default class PenaltyGroup {
-
-	constructor(db, penaltyDocTableName, penaltyGroupTableName, snsTopicARN) {
-		this.db = db;
+	constructor(penaltyDocTableName, penaltyGroupTableName, snsTopicARN) {
+		this.db = dynamoClient;
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
 		this.maxBatchSize = config.dynamodbMaxBatchSize();

@@ -1,6 +1,5 @@
 /* eslint-env es6 */
 import 'babel-polyfill';
-import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroupService from '../services/penaltyGroups';
 import config from '../config';
 
@@ -10,7 +9,6 @@ export default async (event, context, callback) => {
 	if (!penaltyGroupService) {
 		await config.bootstrap();
 		penaltyGroupService = new PenaltyGroupService(
-			doc,
 			config.dynamodbPenaltyDocTable(),
 			config.dynamodbPenaltyGroupTable(),
 			config.snsTopicArn(),
