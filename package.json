@@ -36,6 +36,7 @@
   "devDependencies": {
     "@types/mocha": "^5.2.6",
     "@types/node": "^11.9.4",
+    "aws-sdk": "^2.436.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.2",
@@ -64,7 +65,6 @@
     "wait-on": "^2.1.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.407.0",
     "babel-polyfill": "6.26.0",
     "js-sha256": "^0.7.1",
     "request": "^2.88.0",
