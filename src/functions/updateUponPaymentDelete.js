@@ -10,7 +10,7 @@ import config from '../config';
  * @type PenaltyDocument
  */
 let penaltyDocuments;
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -40,5 +40,5 @@ export default async (event, context, callback) => {
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
 	// id body document
-	penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo, callback);
+	return penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo);
 };

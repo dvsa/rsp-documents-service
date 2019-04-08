@@ -95,7 +95,7 @@ export default class PenaltyDocument {
 		return JSON.stringify(obj) === JSON.stringify({});
 	}
 
-	updateDocumentUponPaymentDelete(paymentInfo, callback) {
+	async updateDocumentUponPaymentDelete(paymentInfo) {
 		const getParams = {
 			TableName: this.penaltyDocTableName,
 			Key: {
@@ -104,7 +104,8 @@ export default class PenaltyDocument {
 		};
 		const dbGet = this.db.get(getParams).promise();
 
-		dbGet.then((data) => {
+		try {
+			const data = await dbGet;
 			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
 			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
 			data.Item.Offset = getUnixTime();
@@ -118,15 +119,14 @@ export default class PenaltyDocument {
 			};
 
 			const dbPut = this.db.put(putParams).promise();
-			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
+			return dbPut.then(() => {
+				return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
 			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-				callback(null, returnResponse);
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { message: err } });
 			});
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-		});
+		} catch (err) {
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { message: err } });
+		}
 	}
 
 	/**
