@@ -54,9 +54,8 @@ custom:
             sources: [./mock-data/fake-penalty-groups.json]
 plugins:
   - serverless-dotenv-plugin
-  - serverless-offline
   - serverless-dynamodb-local
-  - serverless-openapi-documentation
+  - serverless-offline
 provider:
   name: aws
   runtime: nodejs8.10

@@ -13,17 +13,17 @@ describe('penaltyDocuments', () => {
 
 		context('all documents', () => {
 
-			it.only('should return all documents', (done) => {
+			it('should return all documents', (done) => {
 
 				request
-					.get('/')
+					.get('/?Offset=1521311200')
 					.set('Context-Type', 'application/json')
 					.set('authorization', 'allow')
 					.expect(200)
 					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.Items).toHaveLength(3);
+						expect(res.body.Items).toHaveLength(7);
 						done();
 					});
 
