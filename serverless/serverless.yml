@@ -48,15 +48,14 @@ custom:
     seed:
       test:
         sources:
-          -
-            table: penaltyDocuments
+          - table: penaltyDocuments
             sources: [./mock-data/fake-penalty-notice.json]
-          -
-            table: penaltyGroups
+          - table: penaltyGroups
             sources: [./mock-data/fake-penalty-groups.json]
 plugins:
-  - serverless-dynamodb-local
+  - serverless-dotenv-plugin
   - serverless-offline
+  - serverless-dynamodb-local
   - serverless-openapi-documentation
 provider:
   name: aws
@@ -368,6 +367,10 @@ resources:
         AttributeDefinitions:
           - AttributeName: ID
             AttributeType: S
+          - AttributeName: Origin
+            AttributeType: S
+          - AttributeName: Offset
+            AttributeType: N
         KeySchema:
           - AttributeName: ID
             KeyType: HASH
@@ -376,6 +379,18 @@ resources:
           WriteCapacityUnits: 5
         StreamSpecification:
           StreamViewType: NEW_IMAGE
+        GlobalSecondaryIndexes:
+          - IndexName: ByOffset
+            KeySchema:
+              - AttributeName: Origin
+                KeyType: HASH
+              - AttributeName: Offset
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
     penaltyGroups:
       Type: AWS::DynamoDB::Table
       Properties:
