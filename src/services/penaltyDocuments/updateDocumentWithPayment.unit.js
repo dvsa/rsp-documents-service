@@ -100,9 +100,7 @@ describe('updateDocumentWithPayment', () => {
 				promise: Promise.resolve(),
 			});
 
-			createDocument = sinon.stub(penaltyDocuments, 'createDocument').callsFake((_, callback) => {
-				callback(null, {});
-			});
+			createDocument = sinon.stub(penaltyDocuments, 'createDocument').returns(Promise.resolve());
 			sendPaymentNotification = sinon.stub(penaltyDocuments, 'sendPaymentNotification').returns(Promise.resolve());
 		});
 

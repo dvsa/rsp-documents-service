@@ -310,15 +310,7 @@ export default class PenaltyDocument {
 		dummyPenaltyDoc.Offset = timeNow;
 
 		try {
-			const response = await new Promise((resolve, reject) => {
-				this.createDocument(dummyPenaltyDoc, (error, res) => {
-					if (error) {
-						reject(error);
-					} else {
-						resolve(res);
-					}
-				});
-			});
+			const response = await this.createDocument(dummyPenaltyDoc);
 			if (response.statusCode !== HttpStatus.CREATED) {
 				console.error('Unable to create dummy penalty document');
 			}
@@ -340,7 +332,7 @@ export default class PenaltyDocument {
 		});
 	}
 
-	createDocument(body, callback) {
+	async createDocument(body) {
 
 		delete body.Value.paymentStatus;
 		delete body.paymentAuthCode;
@@ -367,7 +359,7 @@ export default class PenaltyDocument {
 		};
 
 		idList.push(ID);
-		this.getPaymentInformationViaInvocation(idList)
+		return this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				const params = {
 					TableName: this.penaltyDocTableName,
@@ -387,30 +379,30 @@ export default class PenaltyDocument {
 						},
 						statusCode: HttpStatus.BAD_REQUEST,
 					});
-					callback(null, validationError);
-				} else {
-					const dbPut = this.db.put(params).promise();
-					dbPut.then(() => {
-						// stamp payment info if we have it
-						if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
-							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-							item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
-							item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
-							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
-						} else {
-							item.Value.paymentStatus = 'UNPAID';
-						}
-
-						callback(null, createResponse({ statusCode: HttpStatus.OK, body: item }));
-					}).catch((err) => {
-						const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-						callback(null, returnResponse);
-					});
+					console.error('Validation error in createDocument', validationError);
+					return validationError;
 				}
+				const dbPut = this.db.put(params).promise();
+				return dbPut.then(() => {
+					// stamp payment info if we have it
+					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+						item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+						item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+						item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
+						item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
+						// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
+					} else {
+						item.Value.paymentStatus = 'UNPAID';
+					}
+
+					return createResponse({ statusCode: HttpStatus.OK, body: item });
+				}).catch((err) => {
+					const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+					return returnResponse;
+				});
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-				callback(null, returnResponse);
+				return returnResponse;
 			});
 	}
 
@@ -427,7 +419,6 @@ export default class PenaltyDocument {
 				Payload: payloadStr,
 			})
 				.promise()
-				// @ts-ignore
 				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
 				.catch(err => reject(err));
 		});
