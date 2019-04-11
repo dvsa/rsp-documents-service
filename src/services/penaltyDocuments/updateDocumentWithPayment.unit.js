@@ -68,7 +68,7 @@ describe('updateDocumentWithPayment', () => {
 		context('when dynamodb put responds with an error', () => {
 			beforeEach(() => {
 				mockPut = sinon.stub(doc, 'put').returns({
-					promise: () => Promise.reject(),
+					promise: () => Promise.reject(new Error('DynamoDB put failed')),
 				});
 			});
 
