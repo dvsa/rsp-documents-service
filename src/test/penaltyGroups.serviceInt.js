@@ -29,7 +29,6 @@ describe('penaltyGroups', () => {
 				request
 					.get(`/${groupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect(200)
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
@@ -57,7 +56,6 @@ describe('penaltyGroups', () => {
 				request
 					.get(`/${disabledGroupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect(200)
 					.expect('Content-Type', 'application/json')
 					.end((err) => {
@@ -80,7 +78,6 @@ describe('penaltyGroups', () => {
 				const batch1 = await request
 					.get('/')
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.query({ Offset: startOffset - 1 })
 					.expect(200);
 				expect(batch1.body.LastEvaluatedKey.Offset).toBeDefined();
@@ -91,7 +88,6 @@ describe('penaltyGroups', () => {
 				const batch2 = await request
 					.get('/')
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.query({ Offset: lastEvaluatedOffset })
 					.expect(200);
 				expect(batch2.body.LastEvaluatedKey).toBeUndefined();
@@ -106,7 +102,6 @@ describe('penaltyGroups', () => {
 				request
 					.post('/')
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.expect(201)
 					.expect('Content-Type', 'application/json')
@@ -150,7 +145,6 @@ describe('penaltyGroups', () => {
 					.post('/')
 					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect('Content-Type', 'application/json')
 					.expect(400);
 
@@ -175,7 +169,6 @@ describe('penaltyGroups', () => {
 					.post('/')
 					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect('Content-Type', 'application/json')
 					.expect(201);
 				penaltyGroupId = response.body.ID;
@@ -200,7 +193,6 @@ describe('penaltyGroups', () => {
 				await request
 					.delete(`/${testPenaltyGroupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect('Content-Type', 'application/json')
 					.expect(204);
 
@@ -225,7 +217,6 @@ describe('penaltyGroups', () => {
 				await request
 					.delete(`/${testPenaltyGroupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect('Content-Type', 'application/json')
 					.expect(204);
 				await assertPenaltyGroupDisabled(testPenaltyGroupId);

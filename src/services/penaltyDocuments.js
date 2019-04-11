@@ -236,7 +236,7 @@ export default class PenaltyDocument {
 	}
 
 	// put
-	updateDocumentWithPayment(paymentInfo, callback) {
+	async updateDocumentWithPayment(paymentInfo) {
 		const getParams = {
 			TableName: this.penaltyDocTableName,
 			Key: {
@@ -246,8 +246,12 @@ export default class PenaltyDocument {
 		const dbGet = this.db.get(getParams).promise();
 		const timeNow = getUnixTime();
 
-		dbGet.then((data) => {
+		return dbGet.then((data) => {
 			if (!data.Item) {
+				let referenceNo = paymentInfo.penaltyRefNo;
+				if (paymentInfo.penaltyType === 'IM') {
+					referenceNo = `${referenceNo.slice(0, 6)}-${referenceNo[7]}-${referenceNo.slice(8, 13)}-IM`;
+				}
 				const dummyPenaltyDoc = {
 					ID: paymentInfo.id,
 					Value: {
@@ -256,12 +260,14 @@ export default class PenaltyDocument {
 						vehicleDetails: {
 							regNo: 'UNKNOWN',
 						},
-						referenceNo: paymentInfo.penaltyRefNo,
+						referenceNo,
 						penaltyType: paymentInfo.penaltyType,
 						paymentToken: paymentInfo.paymentToken,
 						officerName: 'UNKNOWN',
 						penaltyAmount: Number(paymentInfo.paymentAmount),
 						officerID: 'UNKNOWN',
+						inPenaltyGroup: false,
+						paymentStatus: paymentInfo.paymentStatus,
 					},
 					Enabled: true,
 					Origin: portalOrigin,
@@ -269,10 +275,23 @@ export default class PenaltyDocument {
 				dummyPenaltyDoc.Hash = 'New';
 				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
 				dummyPenaltyDoc.Offset = timeNow;
-				// TODO create dummy doc
-				this.createDocument(dummyPenaltyDoc, () => {});
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc }));
-				return;
+				// Create the penalty document but don't mark as paid
+				return new Promise((resolve, reject) => {
+					this.createDocument(dummyPenaltyDoc, (error, response) => {
+						if (error) {
+							reject(error);
+						} else {
+							resolve(response);
+						}
+					});
+				}).then((response) => {
+					if (response.statusCode !== HttpStatus.CREATED) {
+						console.error('Unable to create dummy penalty document');
+					}
+					return createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc });
+				}).catch(() => {
+					return createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc });
+				});
 			}
 
 			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
@@ -289,17 +308,18 @@ export default class PenaltyDocument {
 			};
 
 			const dbPut = this.db.put(putParams).promise();
-			dbPut.then(() => {
+			return dbPut.then(() => {
+				console.error(data);
 				if (data.Item.Origin === appOrigin) {
 					this.sendPaymentNotification(paymentInfo, data.Item);
 				}
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
+				return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-				callback(null, returnResponse);
+				return returnResponse;
 			});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 		});
 	}
 

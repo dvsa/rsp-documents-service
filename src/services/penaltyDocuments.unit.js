@@ -5,8 +5,8 @@ import PenaltyDocumentsService from './penaltyDocuments';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
-import mockPenaltiesData from '../../mock-data/fake-penalty-notice.json';
 import mockPaymentsData from '../../mock-data/fake-penalty-payment.json';
+import getMockPenalties from '../../mock-data/mock-penalty-notice';
 
 
 describe('PenaltyDocuments service', () => {
@@ -31,10 +31,11 @@ describe('PenaltyDocuments service', () => {
 
 	describe('getDocuments', () => {
 		beforeEach(() => {
+			const mockPenalties = getMockPenalties();
 			sinon.stub(doc, 'query').returns({
 				promise: () => Promise.resolve({
-					Items: mockPenaltiesData,
-					Count: mockPenaltiesData.length,
+					Items: mockPenalties,
+					Count: mockPenalties.length,
 				}),
 			});
 		});
@@ -88,7 +89,7 @@ describe('PenaltyDocuments service', () => {
 			 */
 			sinon.stub(doc, 'get').returns({
 				promise: () => Promise.resolve({
-					Item: mockPenaltiesData.find(pen => pen.id === '820500000877_FPN'),
+					Item: getMockPenalties().find(pen => pen.id === '820500000877_FPN'),
 				}),
 			});
 			const mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
@@ -114,7 +115,7 @@ describe('PenaltyDocuments service', () => {
 				}),
 			});
 
-			mockPenaltyDocument = mockPenaltiesData.find((penalty) => {
+			mockPenaltyDocument = getMockPenalties().find((penalty) => {
 				return penalty.penaltyGroupId === mockPenaltyGroup.ID;
 			});
 			mockPenaltyDocument.Hash = hashToken('46xu68x7o6b', mockPenaltyDocument.Value, mockPenaltyDocument.Enabled);

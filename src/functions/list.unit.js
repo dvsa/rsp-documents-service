@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import list from './list';
 import createResponse from '../utils/createResponse';
-import penaltyDocuments from '../../mock-data/fake-penalty-notice.json';
+import getMockPenalties from '../../mock-data/mock-penalty-notice';
 import PenaltyDocument from '../services/penaltyDocuments';
 
 describe('list', () => {
@@ -24,7 +24,7 @@ describe('list', () => {
 			};
 			getDocuments = sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake(async () => {
 				const response = createResponse({
-					body: penaltyDocuments,
+					body: getMockPenalties(),
 				});
 				return response;
 			});
