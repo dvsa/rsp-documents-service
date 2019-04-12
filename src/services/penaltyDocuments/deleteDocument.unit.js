@@ -46,6 +46,23 @@ describe('deleteDocument', () => {
 	});
 
 	context('when a document is paid', () => {
-		it('responds with an error', () => {});
+		beforeEach(() => {
+			sinon.stub(penaltyDocuments, 'getPaymentInformationViaInvocation').returns(Promise.resolve({
+				payments: [{
+					PenaltyStatus: 'PAID',
+				}],
+			}));
+		});
+		afterEach(() => {
+			penaltyDocuments.getPaymentInformationViaInvocation.restore();
+		});
+
+		it('responds with an error', async () => {
+			const id = '820500000877_FPN';
+			const body = getMockPenalties().find(pen => pen.ID === '820500000877_FPN');
+			const response = await penaltyDocuments.deleteDocument(id, body);
+			expect(response.statusCode).toBe(400);
+			expect(JSON.parse(response.body)).toEqual({ err: 'Cannot remove document that is paid' });
+		});
 	});
 });
