@@ -791,7 +791,7 @@ export default class PenaltyDocument {
 		return Promise.all(iterations);
 	}
 
-	updateDocuments(items, context, callback) {
+	async updateDocuments(items) {
 		//  let items = JSON.parse(event.body).Items;
 		const idList = [];
 		items.forEach((item) => {
@@ -802,23 +802,24 @@ export default class PenaltyDocument {
 			delete item.Value.paymentRef;
 		});
 
-		this.getPaymentInformationViaInvocation(idList)
+		return this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				let mergedList = [];
 				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-				this.asyncLoopOrdered(this, this.updateItem, mergedList).then((outputValue) => {
+				return this.asyncLoopOrdered(this, this.updateItem, mergedList).then((outputValue) => {
 					const result = {
 						Items: outputValue,
 					};
-					callback(null, createResponse({ statusCode: HttpStatus.OK, body: result }));
+					return createResponse({ statusCode: HttpStatus.OK, body: result });
 				}).catch((err) => {
 					console.log(`error updating documents in async loop: ${err}`);
-					callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
+					console.log(err);
+					return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
 				});
 			})
 			.catch((err) => {
 				console.log(`error updating documents in outer loop: ${err}`);
-				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 			});
 	}
 
