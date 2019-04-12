@@ -13,7 +13,6 @@ import mockCreatePenaltyGroupData from '../../mock-data/fake-create-penalty-grou
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
 	let mockDbQuery;
-	let callbackSpy;
 
 	beforeEach(() => {
 		mockDbQuery = sinon.stub(doc, 'query');
@@ -21,14 +20,12 @@ describe('PenaltyGroupService', () => {
 	});
 	afterEach(() => {
 		doc.query.restore();
-		callbackSpy.resetHistory();
 	});
 
 	describe('listPenaltyGroups', () => {
 		let groups;
 		const offset = 100;
 		beforeEach(() => {
-			callbackSpy = sinon.spy(() => ('callback result'));
 			groups = [
 				{
 					ID: '1234567890a',
@@ -91,7 +88,6 @@ describe('PenaltyGroupService', () => {
 			dbGetStub = sinon.stub(doc, 'get');
 			dbBatchGetStub = sinon.stub(doc, 'batchGet');
 			dbUpdateStub = sinon.stub(doc, 'update');
-			callbackSpy = sinon.spy();
 		});
 		afterEach(() => {
 			doc.get.restore();
@@ -149,7 +145,7 @@ describe('PenaltyGroupService', () => {
 				});
 			});
 
-			it('should invoke callback with status 400 including the error', async () => {
+			it('should respond with status 400 including the error', async () => {
 				const response = await penaltyGroupSvc.delete('abc123def45');
 				expect(response.statusCode).toBe(400);
 				expect(response.body).toContain('error');
@@ -170,7 +166,6 @@ describe('PenaltyGroupService', () => {
 		const expectedBatchWriteParams = getExpectedBatchParams(mockPenalties);
 		const expectedPutParams = getExpectedPutParams(mockPenaltyGroup);
 		beforeEach(() => {
-			callbackSpy = sinon.spy(() => ('callback result'));
 			mockPaymentInfo = {
 				id: 'id',
 				paymentStatus: 'UNPAID',
@@ -196,18 +191,13 @@ describe('PenaltyGroupService', () => {
 		});
 
 		it('call the correct methods when invoked and returns a success', async () => {
-			await penaltyGroupSvc.updatePenaltyGroupWithPayment(
-				mockPaymentInfo,
-				callbackSpy,
-			);
+			const response = await penaltyGroupSvc.updatePenaltyGroupWithPayment(mockPaymentInfo);
 			expect(mockGetPenaltyGroupById.called).toBe(true);
 			expect(mockGetPenaltiesWithIds.called).toBe(true);
 			expect(mockPut.getCall(0).args[0]).toEqual(expectedPutParams);
 			expect(mockBatchWrite.getCall(0).args[0]).toEqual(expectedBatchWriteParams);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 200,
-				body: JSON.stringify(mockPenaltyGroup),
-			}));
+			expect(response.statusCode).toBe(200);
+			expect(response.body).toBe(JSON.stringify(mockPenaltyGroup));
 		});
 	});
 

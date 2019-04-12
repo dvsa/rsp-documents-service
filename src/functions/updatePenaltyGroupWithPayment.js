@@ -6,7 +6,7 @@ import config from '../config';
 
 /** @type {PenaltyGroupService} */
 let penaltyGroupService;
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!penaltyGroupService) {
 		await config.bootstrap();
 		penaltyGroupService = new PenaltyGroupService(
@@ -22,5 +22,5 @@ export default async (event, context, callback) => {
 		paymentInfo = JSON.parse(event.body);
 	}
 	// id body document
-	penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo, callback);
+	penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo);
 };

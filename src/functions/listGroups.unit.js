@@ -40,7 +40,7 @@ describe('listGroups', () => {
 
 	describe('when a numeric offset string is provided', () => {
 		const Offset = '1234567890.345';
-		it('should call PenaltyGroupService with offset and callback', async () => {
+		it('should call PenaltyGroupService with offset and respond', async () => {
 			await listGroups({ queryStringParameters: { Offset } });
 			sinon.assert.calledWith(penaltyGrpSvc, 1234567890.345);
 		});

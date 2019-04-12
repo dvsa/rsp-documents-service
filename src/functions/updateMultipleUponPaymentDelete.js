@@ -10,7 +10,7 @@ import config from '../config';
  * @type PenaltyDocument
  */
 let penaltyDocuments;
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(

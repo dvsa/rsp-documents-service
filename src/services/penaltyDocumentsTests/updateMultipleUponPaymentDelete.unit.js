@@ -11,12 +11,10 @@ describe('PenaltyDocuments service', () => {
 	 * @type PenaltyDocumentsService
 	 */
 	let penaltyDocumentsService;
-	let callbackSpy;
 
 	describe('updateMultipleUponPaymentDelete', () => {
 		beforeEach(() => {
 			penaltyDocumentsService = new PenaltyDocumentsService(doc, 'penaltyDocuments', '', '', '', '', '', 3, '');
-			callbackSpy = sinon.spy();
 			sinon.stub(doc, 'put')
 				.returns({
 					promise: () => Promise.resolve('put resolved'),
@@ -31,7 +29,6 @@ describe('PenaltyDocuments service', () => {
 		afterEach(() => {
 			doc.put.restore();
 			doc.get.restore();
-			callbackSpy.resetHistory();
 		});
 
 		it('calls back with OK status', async () => {

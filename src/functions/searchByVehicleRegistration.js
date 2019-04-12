@@ -4,7 +4,7 @@ import VehicleRegistrationSearch from '../services/vehicleRegistrationSearch';
 import config from '../config';
 
 let vehicleRegistrationSearch;
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!vehicleRegistrationSearch) {
 		await config.bootstrap();
 		vehicleRegistrationSearch = new VehicleRegistrationSearch(
@@ -13,5 +13,5 @@ export default async (event, context, callback) => {
 			config.dynamodbPenaltyGroupTable(),
 		);
 	}
-	vehicleRegistrationSearch.search(decodeURI(event.pathParameters.vehicleReg), callback);
+	return vehicleRegistrationSearch.search(decodeURI(event.pathParameters.vehicleReg));
 };

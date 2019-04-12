@@ -249,7 +249,7 @@ export default class PenaltyGroup {
 		return Promise.all(deletePromises);
 	}
 
-	async updatePenaltyGroupWithPayment(paymentInfo, callback) {
+	async updatePenaltyGroupWithPayment(paymentInfo) {
 		const { id, paymentStatus, penaltyType } = paymentInfo;
 		const oldPaymentStatus = paymentStatus === 'PAID' ? 'UNPAID' : 'PAID';
 		try {
@@ -289,16 +289,15 @@ export default class PenaltyGroup {
 					this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 				}
 
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup }));
-				return;
+				return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 			}
 			if (penaltyGroup.Origin === appOrigin) {
 				paymentInfo.paymentAmount = PenaltyGroup.sumPenaltyAmounts(penaltiesToUpdate);
 				this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 			}
-			callback(null, createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup }));
+			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err }));
+			return createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err });
 		}
 	}
 
