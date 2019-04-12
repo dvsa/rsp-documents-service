@@ -100,29 +100,28 @@ export default class PenaltyGroup {
 
 	/**
 	 * @param {String} penaltyGroupId
-	 * @param {LambdaCallback} callback
 	 */
-	async getPenaltyGroup(penaltyGroupId, callback) {
+	async getPenaltyGroup(penaltyGroupId) {
 		try {
 			const penaltyGroup = await this._getPenaltyGroupById(penaltyGroupId);
 
 			if (!penaltyGroup) {
 				const msg = `Penalty Group ${penaltyGroupId} not found`;
-				return callback(null, createResponse({
+				return createResponse({
 					statusCode: HttpStatus.NOT_FOUND,
 					body: { error: msg },
-				}));
+				});
 			}
 
 			const penaltyDocs = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
 			penaltyGroup.Payments = this._groupPenaltyDocsToPayments(penaltyDocs);
 			delete penaltyGroup.PenaltyDocumentIds;
-			return callback(null, createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup }));
+			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: err.message,
-			}));
+			});
 		}
 	}
 
