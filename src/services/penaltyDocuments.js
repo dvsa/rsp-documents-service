@@ -425,83 +425,89 @@ export default class PenaltyDocument {
 	// Delete
 	async deleteDocument(id, body) {
 		const timestamp = getUnixTime();
-		const clientHash = body.Hash;
-		const Enabled = false;
-		const { Value } = body;
-		// may not need to remove this delete Value.paymentToken;
-		const newHash = hashToken(id, Value, Enabled);
 		let paidStatus = 'UNPAID';
 		const idList = [];
 		idList.push(id);
-		return this.getPaymentInformationViaInvocation(idList)
-			.then((response) => {
-				if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-					paidStatus = response.payments[0].PenaltyStatus;
-				}
 
-				if (paidStatus === 'PAID') {
-					const err = 'Cannot remove document that is paid';
-					const validationError = createResponse({
-						body: {
-							err,
-						},
-						statusCode: HttpStatus.BAD_REQUEST,
-					});
-					return validationError;
-				}
+		let response;
+		try {
+			response = await this.getPaymentInformationViaInvocation(idList);
+			if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+				paidStatus = response.payments[0].PenaltyStatus;
+			}
 
-				const params = {
-					TableName: this.penaltyDocTableName,
-					Key: {
-						ID: id,
+			if (paidStatus === 'PAID') {
+				const err = 'Cannot remove document that is paid';
+				const validationError = createResponse({
+					body: {
+						err,
 					},
-					UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
-					ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
-					ExpressionAttributeNames: {
-						'#ID': 'ID',
-						'#Hash': 'Hash',
-						'#Enabled': 'Enabled',
-						'#Offset': 'Offset',
-					},
-					ExpressionAttributeValues: {
-						':clientHash': clientHash,
-						':Enabled': true,
-						':Hash': newHash,
-						':not_enabled': false,
-						':Offset': timestamp,
-					},
-				};
-
-				const deletedItem = {
-					Enabled,
-					ID: id,
-					Offset: timestamp,
-					Hash: newHash,
-					Value,
-				};
-
-				const checkTest = Validation.penaltyDocumentValidation(body);
-				if (!checkTest.valid) {
-					const err = checkTest.error.message;
-					const validationError = createResponse({
-						body: {
-							err,
-						},
-						statusCode: HttpStatus.BAD_REQUEST,
-					});
-					return validationError;
-				}
-				const dbUpdate = this.db.update(params).promise();
-
-				return dbUpdate.then(() => {
-					return createResponse({ statusCode: HttpStatus.OK, body: deletedItem });
-				}).catch((err) => {
-					const errResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-					return errResponse;
+					statusCode: HttpStatus.BAD_REQUEST,
 				});
-			}).catch((err) => {
-				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-			});
+				return validationError;
+			}
+
+			const checkTest = Validation.penaltyDocumentValidation(body);
+			if (!checkTest.valid) {
+				const err = checkTest.error.message;
+				const validationError = createResponse({
+					body: {
+						err,
+					},
+					statusCode: HttpStatus.BAD_REQUEST,
+				});
+				return validationError;
+			}
+
+			return this.disableDocument(id, body, timestamp);
+		} catch (err) {
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+		}
+	}
+
+	async disableDocument(id, body, timestamp) {
+		const Enabled = false;
+		const { Value } = body;
+
+		const clientHash = body.Hash;
+		const newHash = hashToken(id, Value, Enabled);
+
+		const params = {
+			TableName: this.penaltyDocTableName,
+			Key: {
+				ID: id,
+			},
+			UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
+			ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+				'#Hash': 'Hash',
+				'#Enabled': 'Enabled',
+				'#Offset': 'Offset',
+			},
+			ExpressionAttributeValues: {
+				':clientHash': clientHash,
+				':Enabled': true,
+				':Hash': newHash,
+				':not_enabled': false,
+				':Offset': timestamp,
+			},
+		};
+
+		const deletedItem = {
+			Enabled,
+			ID: id,
+			Offset: timestamp,
+			Hash: newHash,
+			Value,
+		};
+
+		try {
+			await this.db.update(params).promise();
+			return createResponse({ statusCode: HttpStatus.OK, body: deletedItem });
+		} catch (err) {
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+		}
 	}
 
 	/**
