@@ -144,7 +144,7 @@ export default class PenaltyGroup {
 		}
 	}
 
-	async delete(penaltyGroupId, callback) {
+	async delete(penaltyGroupId) {
 		try {
 			const group = await this._getPenaltyGroupById(penaltyGroupId);
 			const penaltyDocuments = await this._getPenaltyDocumentsWithIds(group.PenaltyDocumentIds);
@@ -155,13 +155,13 @@ export default class PenaltyGroup {
 				await this._spliceUnpaidPenaltiesFromGroup(group, penaltyDocuments);
 			}
 
-			return callback(null, createResponse({ statusCode: HttpStatus.NO_CONTENT }));
+			return createResponse({ statusCode: HttpStatus.NO_CONTENT });
 		} catch (error) {
 			console.log(error);
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.BAD_REQUEST,
 				body: error.message,
-			}));
+			});
 		}
 	}
 

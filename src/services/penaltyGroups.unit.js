@@ -132,13 +132,13 @@ describe('PenaltyGroupService', () => {
 			});
 
 			it('should set Enabled to be false for the group, followed by each document', async () => {
-				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
+				const response = await penaltyGroupSvc.delete('abc123def45');
 				sinon.assert.callOrder(
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyGroups', Key: { ID: 'abc123def45' } })),
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc1' } })),
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc2' } })),
 				);
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 204 }));
+				expect(response.statusCode).toBe(204);
 			});
 		});
 
@@ -150,8 +150,9 @@ describe('PenaltyGroupService', () => {
 			});
 
 			it('should invoke callback with status 400 including the error', async () => {
-				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 400, body: sinon.match('error') }));
+				const response = await penaltyGroupSvc.delete('abc123def45');
+				expect(response.statusCode).toBe(400);
+				expect(response.body).toContain('error');
 			});
 		});
 	});
