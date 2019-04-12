@@ -2,8 +2,6 @@ import expect from 'expect';
 import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
 import PenaltyDocumentsService from './penaltyDocuments';
-import hashToken from '../utils/hash';
-import getUnixTime from '../utils/time';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';
 import mockPaymentsData from '../../mock-data/fake-penalty-payment.json';
 import getMockPenalties from '../../mock-data/mock-penalty-notice';
@@ -97,43 +95,6 @@ describe('PenaltyDocuments service', () => {
 			sinon.stub(penaltyDocumentsService, '_updateDocumentsToUnpaidStatus').callsFake(() => ['820500000877_FPN']);
 			const response = await penaltyDocumentsService.updateMultipleUponPaymentDelete({ penaltyDocumentIds: ['820500000877_FPN'] });
 			expect(response.statusCode).toBe(200);
-		});
-	});
-
-	describe('_tryUpdatePenaltyGroupToUnpaidStatus', () => {
-		let mockPenaltyGroup;
-		let mockPenaltyDocument;
-
-		beforeEach(() => {
-			mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
-			mockPenaltyGroup.PaymentStatus = 'PAID';
-			sinon.stub(doc, 'get').returns({
-				promise: () => Promise.resolve({
-					Item: mockPenaltyGroup,
-				}),
-			});
-
-			mockPenaltyDocument = getMockPenalties().find((penalty) => {
-				return penalty.penaltyGroupId === mockPenaltyGroup.ID;
-			});
-			mockPenaltyDocument.Hash = hashToken('46xu68x7o6b', mockPenaltyDocument.Value, mockPenaltyDocument.Enabled);
-			mockPenaltyDocument.Offset = getUnixTime();
-		});
-
-		afterEach(() => {
-			doc.get.restore();
-		});
-
-		it("doesn't update when the new payment status is paid", async () => {
-			// eslint-disable-next-line no-underscore-dangle
-			const promiseResponse = await penaltyDocumentsService._tryUpdatePenaltyGroupToUnpaidStatus(mockPenaltyDocument, 'PAID');
-			expect(promiseResponse).toBeUndefined();
-		});
-
-		it('updates group with unpaid status when initial status is paid', async () => {
-			// eslint-disable-next-line no-underscore-dangle
-			const promiseResponse = await penaltyDocumentsService._tryUpdatePenaltyGroupToUnpaidStatus(mockPenaltyDocument, 'UNPAID');
-			expect(promiseResponse).toBeDefined();
 		});
 	});
 });
