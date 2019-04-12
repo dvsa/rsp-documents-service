@@ -21,6 +21,6 @@ export default async (event) => {
 	}
 
 	const data = JSON.parse(event.body);
-	return penaltyDocuments.deleteDocument(event.pathParameters.id);
+	return penaltyDocuments.deleteDocument(event.pathParameters.id, data);
 
 };
