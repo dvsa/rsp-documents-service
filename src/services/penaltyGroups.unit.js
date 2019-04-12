@@ -57,13 +57,12 @@ describe('PenaltyGroupService', () => {
 					});
 			});
 			it('should respond 200 returning all data from the database response', async () => {
-				const result = await penaltyGroupSvc.listPenaltyGroups(offset, callbackSpy);
+				const result = await penaltyGroupSvc.listPenaltyGroups(offset);
 
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({
-					statusCode: 200,
-					body: JSON.stringify({ data: { Items: groups, Count: 2, ScannedCount: 2 } }),
+				expect(result.statusCode).toBe(200);
+				expect(result.body).toBe(JSON.stringify({
+					data: { Items: groups, Count: 2, ScannedCount: 2 },
 				}));
-				expect(result).toBe('callback result');
 			});
 		});
 
@@ -75,13 +74,10 @@ describe('PenaltyGroupService', () => {
 					.throws({});
 			});
 			it('should return a 500 with the error', async () => {
-				const result = await penaltyGroupSvc.listPenaltyGroups(offset, callbackSpy);
+				const result = await penaltyGroupSvc.listPenaltyGroups(offset);
 
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({
-					statusCode: 500,
-					body: {},
-				}));
-				expect(result).toBe('callback result');
+				expect(result.statusCode).toBe(500);
+				expect(result.body).toBe('{}');
 			});
 		});
 	});

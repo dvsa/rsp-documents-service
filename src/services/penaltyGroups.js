@@ -125,7 +125,7 @@ export default class PenaltyGroup {
 		}
 	}
 
-	async listPenaltyGroups(offsetFrom, callback) {
+	async listPenaltyGroups(offsetFrom) {
 		try {
 			const params = {
 				TableName: this.penaltyGroupTableName,
@@ -137,10 +137,10 @@ export default class PenaltyGroup {
 			};
 
 			const result = await this.db.query(params).promise();
-			return callback(null, createResponse({ statusCode: HttpStatus.OK, body: result }));
+			return createResponse({ statusCode: HttpStatus.OK, body: result });
 		} catch (error) {
 			const resp = createResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, body: error });
-			return callback(null, resp);
+			return resp;
 		}
 	}
 
