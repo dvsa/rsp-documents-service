@@ -77,7 +77,7 @@ describe('PenaltyDocuments service', () => {
 		});
 	});
 
-	describe('updateDocumentsUponPaymentDelete', () => {
+	describe('updateMultipleUponPaymentDelete', () => {
 		after(() => {
 			doc.get.restore();
 		});
@@ -95,10 +95,8 @@ describe('PenaltyDocuments service', () => {
 			const mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
 			sinon.stub(penaltyDocumentsService, '_tryUpdatePenaltyGroupToUnpaidStatus').callsFake(() => mockPenaltyGroup);
 			sinon.stub(penaltyDocumentsService, '_updateDocumentsToUnpaidStatus').callsFake(() => ['820500000877_FPN']);
-			await penaltyDocumentsService.updateMultipleUponPaymentDelete({ penaltyDocumentIds: ['820500000877_FPN'] }, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 200,
-			}));
+			const response = await penaltyDocumentsService.updateMultipleUponPaymentDelete({ penaltyDocumentIds: ['820500000877_FPN'] });
+			expect(response.statusCode).toBe(200);
 		});
 	});
 

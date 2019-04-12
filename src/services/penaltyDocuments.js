@@ -133,10 +133,8 @@ export default class PenaltyDocument {
 	 * Update the penalty document and its parent group with paymentInfo.
 	 * @param {{penaltyDocumentIds: Array<string>}} paymentInfo The new
 	 * payment info. (e.g. {penaltyDocuments: [890700000823_FPN, 912900000182_IM]}).
-	 * @param {(_, response) => void} callback Callback returning a status code
-	 * and the new document or an error.
 	 */
-	async updateMultipleUponPaymentDelete(paymentInfo, callback) {
+	async updateMultipleUponPaymentDelete(paymentInfo) {
 		try {
 			const updatedDocs = await this._updateDocumentsToUnpaidStatus(paymentInfo.penaltyDocumentIds);
 
@@ -145,10 +143,10 @@ export default class PenaltyDocument {
 				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].penaltyGroupId, 'UNPAID');
 			}
 
-			callback(null, createResponse({ statusCode: HttpStatus.OK }));
+			return createResponse({ statusCode: HttpStatus.OK });
 		} catch (err) {
 			console.log(`Error updating multiple docs upon payment delete ${err}`);
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 		}
 	}
 

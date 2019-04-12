@@ -39,5 +39,5 @@ export default async (event, context, callback) => {
 
 	console.log(JSON.stringify(paymentInfo, null, 2));
 
-	penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo, callback);
+	return penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo);
 };
