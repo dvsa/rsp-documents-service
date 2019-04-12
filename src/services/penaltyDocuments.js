@@ -423,7 +423,7 @@ export default class PenaltyDocument {
 	}
 
 	// Delete
-	deleteDocument(id, body, callback) {
+	async deleteDocument(id, body) {
 		const timestamp = getUnixTime();
 		const clientHash = body.Hash;
 		const Enabled = false;
@@ -433,7 +433,7 @@ export default class PenaltyDocument {
 		let paidStatus = 'UNPAID';
 		const idList = [];
 		idList.push(id);
-		this.getPaymentInformationViaInvocation(idList)
+		return this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 					paidStatus = response.payments[0].PenaltyStatus;
@@ -447,62 +447,60 @@ export default class PenaltyDocument {
 						},
 						statusCode: HttpStatus.BAD_REQUEST,
 					});
-					callback(null, validationError);
-				} else {
-
-					const params = {
-						TableName: this.penaltyDocTableName,
-						Key: {
-							ID: id,
-						},
-						UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
-						ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
-						ExpressionAttributeNames: {
-							'#ID': 'ID',
-							'#Hash': 'Hash',
-							'#Enabled': 'Enabled',
-							'#Offset': 'Offset',
-						},
-						ExpressionAttributeValues: {
-							':clientHash': clientHash,
-							':Enabled': true,
-							':Hash': newHash,
-							':not_enabled': false,
-							':Offset': timestamp,
-						},
-					};
-
-					const deletedItem = {
-						Enabled,
-						ID: id,
-						Offset: timestamp,
-						Hash: newHash,
-						Value,
-					};
-
-					const checkTest = Validation.penaltyDocumentValidation(body);
-					if (!checkTest.valid) {
-						const err = checkTest.error.message;
-						const validationError = createResponse({
-							body: {
-								err,
-							},
-							statusCode: HttpStatus.BAD_REQUEST,
-						});
-						callback(null, validationError);
-					} else {
-						const dbUpdate = this.db.update(params).promise();
-
-						dbUpdate.then(() => {
-							callback(null, createResponse({ statusCode: HttpStatus.OK, body: deletedItem }));
-						}).catch((err) => {
-							const errResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-							callback(null, errResponse);
-						});
-					}
+					return validationError;
 				}
+
+				const params = {
+					TableName: this.penaltyDocTableName,
+					Key: {
+						ID: id,
+					},
+					UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
+					ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
+					ExpressionAttributeNames: {
+						'#ID': 'ID',
+						'#Hash': 'Hash',
+						'#Enabled': 'Enabled',
+						'#Offset': 'Offset',
+					},
+					ExpressionAttributeValues: {
+						':clientHash': clientHash,
+						':Enabled': true,
+						':Hash': newHash,
+						':not_enabled': false,
+						':Offset': timestamp,
+					},
+				};
+
+				const deletedItem = {
+					Enabled,
+					ID: id,
+					Offset: timestamp,
+					Hash: newHash,
+					Value,
+				};
+
+				const checkTest = Validation.penaltyDocumentValidation(body);
+				if (!checkTest.valid) {
+					const err = checkTest.error.message;
+					const validationError = createResponse({
+						body: {
+							err,
+						},
+						statusCode: HttpStatus.BAD_REQUEST,
+					});
+					return validationError;
+				}
+				const dbUpdate = this.db.update(params).promise();
+
+				return dbUpdate.then(() => {
+					return createResponse({ statusCode: HttpStatus.OK, body: deletedItem });
+				}).catch((err) => {
+					const errResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+					return errResponse;
+				});
 			}).catch((err) => {
-				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 			});
 	}
 
