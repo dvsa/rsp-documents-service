@@ -40,7 +40,6 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.4.0",
     "@babel/preset-env": "^7.4.2",
     "@babel/register": "^7.4.0",
-    "babel-plugin-add-module-exports": "^1.0.0",
     "copyfiles": "^1.2.0",
     "eslint": "^4.9.0",
     "eslint-config-airbnb-base": "^12.1.0",

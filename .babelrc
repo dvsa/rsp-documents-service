@@ -12,7 +12,6 @@
     ],
   ],
   "plugins": [
-    "@babel/plugin-proposal-object-rest-spread",
-    "add-module-exports",
+    "@babel/plugin-proposal-object-rest-spread"
   ]
 }
