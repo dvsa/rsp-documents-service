@@ -18,7 +18,7 @@ describe('penaltyDocuments', () => {
 					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.Items).toHaveLength(7);
+						expect(res.body.Items).toHaveLength(8);
 						done();
 					});
 			});

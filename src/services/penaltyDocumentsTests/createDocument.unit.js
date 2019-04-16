@@ -33,7 +33,9 @@ describe('createDocument', () => {
 			});
 
 			it('responds with the unpaid penalty', async () => {
-				const response = await penaltyDocuments.createDocument(getMockPenalties().find(pen => pen.ID === '820500000877_FPN'));
+				const penalty = getMockPenalties().find(pen => pen.ID === '920600000111_FPN');
+				delete penalty.penaltyGroupId;
+				const response = await penaltyDocuments.createDocument(penalty);
 				expect(response.statusCode).toBe(200);
 				const putParams = dbPut.getCall(0).args[0];
 				expect(putParams.Item.Value.paymentStatus).toBe('UNPAID');
@@ -43,7 +45,7 @@ describe('createDocument', () => {
 			beforeEach(() => {
 				sinon.stub(penaltyDocuments, 'getPaymentInformationViaInvocation').returns(Promise.resolve({
 					payments: [{
-						ID: '820500000877_FPN',
+						ID: '920600000111_FPN',
 						PenaltyStatus: 'PAID',
 						PaymentDetail: {
 							AuthCode: '001234',
@@ -61,7 +63,7 @@ describe('createDocument', () => {
 			});
 
 			it('responds with the paid penalty and payment details', async () => {
-				const response = await penaltyDocuments.createDocument(getMockPenalties().find(pen => pen.ID === '820500000877_FPN'));
+				const response = await penaltyDocuments.createDocument(getMockPenalties().find(pen => pen.ID === '920600000111_FPN'));
 				expect(response.statusCode).toBe(200);
 				const responseBody = JSON.parse(response.body);
 				expect(responseBody.Value.paymentStatus).toBe('PAID');

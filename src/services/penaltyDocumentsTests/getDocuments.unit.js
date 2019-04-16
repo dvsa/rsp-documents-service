@@ -42,7 +42,7 @@ describe('getDocuments', () => {
 		beforeEach(() => {
 			sinon.stub(penaltyDocuments, 'getPaymentInformationViaInvocation').callsFake(() => ({
 				payments: [
-					mockPaymentsData.find(mockPayment => mockPayment.ID === '820500000877_FPN'),
+					mockPaymentsData.find(mockPayment => mockPayment.ID === '820500000812_FPN'),
 				],
 			}));
 		});
@@ -51,7 +51,7 @@ describe('getDocuments', () => {
 			const response = await penaltyDocuments.getDocuments(0);
 			expect(response.statusCode).toBe(200);
 			const body = JSON.parse(response.body);
-			expect(body.Items.find(item => item.ID === '820500000877_FPN').Value.paymentStatus).toBe('PAID');
+			expect(body.Items.find(item => item.ID === '820500000812_FPN').Value.paymentStatus).toBe('PAID');
 			expect(body.Items.find(item => item.ID === '820500000871_FPN').Value.paymentStatus).toBe('UNPAID');
 		});
 	});

@@ -15,7 +15,7 @@ describe('_tryUpdatePenaltyGroupToUnpaidStatus', () => {
 
 	beforeEach(() => {
 		penaltyDocuments = mockPenaltyDocumentsService(doc);
-		mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6b'; });
+		mockPenaltyGroup = mockPenaltyGroupsData.find((group) => { return group.ID === '46xu68x7o6c'; });
 		mockPenaltyGroup.PaymentStatus = 'PAID';
 		sinon.stub(doc, 'get').returns({
 			promise: () => Promise.resolve({

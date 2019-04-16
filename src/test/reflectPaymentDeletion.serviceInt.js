@@ -35,14 +35,14 @@ describe('payment deletion reflection', () => {
 		});
 		context('update multi docs', () => {
 			it('updates multiple documents', async () => {
-				let penaltyGroup = await getGroupById('46xu68x7o6b');
+				let penaltyGroup = await getGroupById('46xu68x7o6c');
 				expect(penaltyGroup.Item.PaymentStatus).toEqual('PAID');
 				await new Promise((resolve, reject) => {
 					request.put('/updateMultipleUponPaymentDelete')
 						.set('Context-Type', 'application/json')
 						.set('authorization', 'allow')
 						.send({
-							penaltyDocumentIds: ['820500000878_FPN', '820500000877_FPN'],
+							penaltyDocumentIds: ['820500000812_FPN', '820500000822_FPN'],
 						})
 						.expect(200)
 						.end((err) => {
@@ -53,7 +53,7 @@ describe('payment deletion reflection', () => {
 							}
 						});
 				});
-				penaltyGroup = await getGroupById('46xu68x7o6b');
+				penaltyGroup = await getGroupById('46xu68x7o6c');
 				expect(penaltyGroup.Item.PaymentStatus).toEqual('UNPAID');
 			});
 		});

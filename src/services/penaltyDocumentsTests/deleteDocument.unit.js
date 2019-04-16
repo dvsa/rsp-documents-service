@@ -33,13 +33,13 @@ describe('deleteDocument', () => {
 			});
 
 			it('response with status code 200', async () => {
-				const id = '820500000877_FPN';
-				const body = getMockPenalties().find(pen => pen.ID === '820500000877_FPN');
+				const id = '920600000111_FPN';
+				const body = getMockPenalties().find(pen => pen.ID === '920600000111_FPN');
 				const response = await penaltyDocuments.deleteDocument(id, body);
 				expect(response.statusCode).toBe(200);
 				const dbUpdateParams = dbUpdate.getCall(0).args[0];
 				expect(dbUpdateParams.ExpressionAttributeValues[':not_enabled']).toBe(false);
-				expect(dbUpdateParams.Key.ID).toBe('820500000877_FPN');
+				expect(dbUpdateParams.Key.ID).toBe('920600000111_FPN');
 				expect(dbUpdateParams.ExpressionAttributeValues[':Hash']).not.toEqual(body.Value.Hash);
 			});
 		});
