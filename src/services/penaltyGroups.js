@@ -297,6 +297,7 @@ export default class PenaltyGroup {
 			}
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
+			console.error(err);
 			return createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err });
 		}
 	}
