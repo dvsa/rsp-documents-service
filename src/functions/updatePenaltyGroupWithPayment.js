@@ -22,5 +22,5 @@ export default async (event) => {
 		paymentInfo = JSON.parse(event.body);
 	}
 	// id body document
-	penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo);
+	return penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo);
 };
