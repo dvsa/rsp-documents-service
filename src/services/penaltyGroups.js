@@ -31,14 +31,10 @@ export default class PenaltyGroup {
 		this.snsTopicARN = snsTopicARN;
 	}
 
-	/**
-	 * @param {*} body
-	 * @param {LambdaCallback} callback
-	 */
-	async createPenaltyGroup(body, callback) {
+	async createPenaltyGroup(body) {
 		const validationResult = await this.validatePenaltyGroupCreationPayload(body);
 		if (!validationResult.valid) {
-			return callback(null, validationResult.response);
+			return validationResult.response;
 		}
 
 		const penaltyGroup = this._enrichPenaltyGroupRequest(body);
@@ -46,15 +42,15 @@ export default class PenaltyGroup {
 
 		try {
 			await this.db.batchWrite(batchWriteParams).promise();
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.CREATED,
 				body: penaltyGroup,
-			}));
+			});
 		} catch (err) {
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: `Problem writing to DB: ${err}`,
-			}));
+			});
 		}
 	}
 
@@ -104,33 +100,32 @@ export default class PenaltyGroup {
 
 	/**
 	 * @param {String} penaltyGroupId
-	 * @param {LambdaCallback} callback
 	 */
-	async getPenaltyGroup(penaltyGroupId, callback) {
+	async getPenaltyGroup(penaltyGroupId) {
 		try {
 			const penaltyGroup = await this._getPenaltyGroupById(penaltyGroupId);
 
 			if (!penaltyGroup) {
 				const msg = `Penalty Group ${penaltyGroupId} not found`;
-				return callback(null, createResponse({
+				return createResponse({
 					statusCode: HttpStatus.NOT_FOUND,
 					body: { error: msg },
-				}));
+				});
 			}
 
 			const penaltyDocs = await this._getPenaltiesWithIds(penaltyGroup.PenaltyDocumentIds);
 			penaltyGroup.Payments = this._groupPenaltyDocsToPayments(penaltyDocs);
 			delete penaltyGroup.PenaltyDocumentIds;
-			return callback(null, createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup }));
+			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: err.message,
-			}));
+			});
 		}
 	}
 
-	async listPenaltyGroups(offsetFrom, callback) {
+	async listPenaltyGroups(offsetFrom) {
 		try {
 			const params = {
 				TableName: this.penaltyGroupTableName,
@@ -142,14 +137,14 @@ export default class PenaltyGroup {
 			};
 
 			const result = await this.db.query(params).promise();
-			return callback(null, createResponse({ statusCode: HttpStatus.OK, body: result }));
+			return createResponse({ statusCode: HttpStatus.OK, body: result });
 		} catch (error) {
 			const resp = createResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, body: error });
-			return callback(null, resp);
+			return resp;
 		}
 	}
 
-	async delete(penaltyGroupId, callback) {
+	async delete(penaltyGroupId) {
 		try {
 			const group = await this._getPenaltyGroupById(penaltyGroupId);
 			const penaltyDocuments = await this._getPenaltyDocumentsWithIds(group.PenaltyDocumentIds);
@@ -160,13 +155,13 @@ export default class PenaltyGroup {
 				await this._spliceUnpaidPenaltiesFromGroup(group, penaltyDocuments);
 			}
 
-			return callback(null, createResponse({ statusCode: HttpStatus.NO_CONTENT }));
+			return createResponse({ statusCode: HttpStatus.NO_CONTENT });
 		} catch (error) {
 			console.log(error);
-			return callback(null, createResponse({
+			return createResponse({
 				statusCode: HttpStatus.BAD_REQUEST,
 				body: error.message,
-			}));
+			});
 		}
 	}
 
@@ -254,7 +249,7 @@ export default class PenaltyGroup {
 		return Promise.all(deletePromises);
 	}
 
-	async updatePenaltyGroupWithPayment(paymentInfo, callback) {
+	async updatePenaltyGroupWithPayment(paymentInfo) {
 		const { id, paymentStatus, penaltyType } = paymentInfo;
 		const oldPaymentStatus = paymentStatus === 'PAID' ? 'UNPAID' : 'PAID';
 		try {
@@ -294,16 +289,16 @@ export default class PenaltyGroup {
 					this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 				}
 
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup }));
-				return;
+				return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 			}
 			if (penaltyGroup.Origin === appOrigin) {
 				paymentInfo.paymentAmount = PenaltyGroup.sumPenaltyAmounts(penaltiesToUpdate);
 				this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 			}
-			callback(null, createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup }));
+			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err }));
+			console.error(err);
+			return createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err });
 		}
 	}
 

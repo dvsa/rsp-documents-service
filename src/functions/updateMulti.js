@@ -1,11 +1,11 @@
-import 'babel-polyfill';
+import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
 
 let penaltyDocuments;
 
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -22,5 +22,5 @@ export default async (event, context, callback) => {
 	}
 
 	const items = JSON.parse(event.body).Items;
-	penaltyDocuments.updateDocuments(items, context, callback);
+	return penaltyDocuments.updateDocuments(items);
 };

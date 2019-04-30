@@ -13,7 +13,6 @@ import mockCreatePenaltyGroupData from '../../mock-data/fake-create-penalty-grou
 describe('PenaltyGroupService', () => {
 	let penaltyGroupSvc;
 	let mockDbQuery;
-	let callbackSpy;
 
 	beforeEach(() => {
 		mockDbQuery = sinon.stub(doc, 'query');
@@ -21,14 +20,12 @@ describe('PenaltyGroupService', () => {
 	});
 	afterEach(() => {
 		doc.query.restore();
-		callbackSpy.resetHistory();
 	});
 
 	describe('listPenaltyGroups', () => {
 		let groups;
 		const offset = 100;
 		beforeEach(() => {
-			callbackSpy = sinon.spy(() => ('callback result'));
 			groups = [
 				{
 					ID: '1234567890a',
@@ -57,13 +54,12 @@ describe('PenaltyGroupService', () => {
 					});
 			});
 			it('should respond 200 returning all data from the database response', async () => {
-				const result = await penaltyGroupSvc.listPenaltyGroups(offset, callbackSpy);
+				const result = await penaltyGroupSvc.listPenaltyGroups(offset);
 
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({
-					statusCode: 200,
-					body: JSON.stringify({ data: { Items: groups, Count: 2, ScannedCount: 2 } }),
+				expect(result.statusCode).toBe(200);
+				expect(result.body).toBe(JSON.stringify({
+					data: { Items: groups, Count: 2, ScannedCount: 2 },
 				}));
-				expect(result).toBe('callback result');
 			});
 		});
 
@@ -75,13 +71,10 @@ describe('PenaltyGroupService', () => {
 					.throws({});
 			});
 			it('should return a 500 with the error', async () => {
-				const result = await penaltyGroupSvc.listPenaltyGroups(offset, callbackSpy);
+				const result = await penaltyGroupSvc.listPenaltyGroups(offset);
 
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({
-					statusCode: 500,
-					body: {},
-				}));
-				expect(result).toBe('callback result');
+				expect(result.statusCode).toBe(500);
+				expect(result.body).toBe('{}');
 			});
 		});
 	});
@@ -95,7 +88,6 @@ describe('PenaltyGroupService', () => {
 			dbGetStub = sinon.stub(doc, 'get');
 			dbBatchGetStub = sinon.stub(doc, 'batchGet');
 			dbUpdateStub = sinon.stub(doc, 'update');
-			callbackSpy = sinon.spy();
 		});
 		afterEach(() => {
 			doc.get.restore();
@@ -136,13 +128,13 @@ describe('PenaltyGroupService', () => {
 			});
 
 			it('should set Enabled to be false for the group, followed by each document', async () => {
-				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
+				const response = await penaltyGroupSvc.delete('abc123def45');
 				sinon.assert.callOrder(
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyGroups', Key: { ID: 'abc123def45' } })),
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc1' } })),
 					dbUpdateStub.withArgs(sinon.match({ TableName: 'penaltyDocuments', Key: { ID: 'doc2' } })),
 				);
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 204 }));
+				expect(response.statusCode).toBe(204);
 			});
 		});
 
@@ -153,9 +145,10 @@ describe('PenaltyGroupService', () => {
 				});
 			});
 
-			it('should invoke callback with status 400 including the error', async () => {
-				await penaltyGroupSvc.delete('abc123def45', callbackSpy);
-				sinon.assert.calledWith(callbackSpy, null, sinon.match({ statusCode: 400, body: sinon.match('error') }));
+			it('should respond with status 400 including the error', async () => {
+				const response = await penaltyGroupSvc.delete('abc123def45');
+				expect(response.statusCode).toBe(400);
+				expect(response.body).toContain('error');
 			});
 		});
 	});
@@ -173,7 +166,6 @@ describe('PenaltyGroupService', () => {
 		const expectedBatchWriteParams = getExpectedBatchParams(mockPenalties);
 		const expectedPutParams = getExpectedPutParams(mockPenaltyGroup);
 		beforeEach(() => {
-			callbackSpy = sinon.spy(() => ('callback result'));
 			mockPaymentInfo = {
 				id: 'id',
 				paymentStatus: 'UNPAID',
@@ -199,18 +191,13 @@ describe('PenaltyGroupService', () => {
 		});
 
 		it('call the correct methods when invoked and returns a success', async () => {
-			await penaltyGroupSvc.updatePenaltyGroupWithPayment(
-				mockPaymentInfo,
-				callbackSpy,
-			);
+			const response = await penaltyGroupSvc.updatePenaltyGroupWithPayment(mockPaymentInfo);
 			expect(mockGetPenaltyGroupById.called).toBe(true);
 			expect(mockGetPenaltiesWithIds.called).toBe(true);
 			expect(mockPut.getCall(0).args[0]).toEqual(expectedPutParams);
 			expect(mockBatchWrite.getCall(0).args[0]).toEqual(expectedBatchWriteParams);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 200,
-				body: JSON.stringify(mockPenaltyGroup),
-			}));
+			expect(response.statusCode).toBe(200);
+			expect(response.body).toBe(JSON.stringify(mockPenaltyGroup));
 		});
 	});
 
@@ -232,22 +219,15 @@ describe('PenaltyGroupService', () => {
 
 		it('responds with correct response when group successfully created', async () => {
 			sinon.stub(penaltyGroupSvc, '_getPenaltyDocumentsWithIds').callsFake(() => []);
-			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 201,
-			}));
+			const response = await penaltyGroupSvc.createPenaltyGroup(penaltyGroup);
+			expect(response.statusCode).toBe(201);
 		});
 
 		it('responds with error code when payload fails validation', async () => {
 			penaltyGroup.SiteCode = 'invalid';
-			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 400,
-				body: sinon.match((body) => {
-					const parsedBody = JSON.parse(body);
-					return parsedBody.errCode === 'GroupValidation';
-				}),
-			}));
+			const response = await penaltyGroupSvc.createPenaltyGroup(penaltyGroup);
+			expect(response.statusCode).toBe(400);
+			expect(JSON.parse(response.body).errCode).toBe('GroupValidation');
 		});
 
 		it('responds with correct error response when a reference already exists', async () => {
@@ -255,16 +235,11 @@ describe('PenaltyGroupService', () => {
 				ID: id,
 				Enabled: true,
 			})));
-			await penaltyGroupSvc.createPenaltyGroup(penaltyGroup, callbackSpy);
-			sinon.assert.calledWith(callbackSpy, null, sinon.match({
-				statusCode: 400,
-				body: sinon.match((body) => {
-					const parsedBody = JSON.parse(body);
-					return parsedBody.errBody.clashingIds[0] === '1033900003671_FPN'
-						&& parsedBody.errCode === 'GroupDuplicateReference'
-						&& parsedBody.errMessage === 'One or more penalties already exist with the supplied reference codes';
-				}),
-			}));
+			const response = await penaltyGroupSvc.createPenaltyGroup(penaltyGroup);
+			const responseBody = JSON.parse(response.body);
+			expect(response.statusCode).toBe(400);
+			expect(responseBody.errCode).toBe('GroupDuplicateReference');
+			expect(responseBody.errMessage).toBe('One or more penalties already exist with the supplied reference codes');
 		});
 	});
 });

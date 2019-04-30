@@ -1,5 +1,5 @@
 // @ts-check
-import 'babel-polyfill';
+import '@babel/polyfill';
 
 import list from './functions/list';
 import listGroups from './functions/listGroups';
@@ -19,7 +19,7 @@ import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
 
-const handler = {
+export {
 	list,
 	listGroups,
 	get,
@@ -38,5 +38,3 @@ const handler = {
 	updatePenaltyGroupWithPayment,
 	searchByVehicleRegistration,
 };
-
-export default handler;

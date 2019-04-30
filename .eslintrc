@@ -19,7 +19,8 @@
           "array": false,
           "object": true
         }
-      ]
+      ],
+      "no-console": "off"
     }
 
 }

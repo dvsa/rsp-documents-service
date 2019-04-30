@@ -1,11 +1,11 @@
-import 'babel-polyfill';
+import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 
 import config from '../config';
 import PenaltyGroupService from '../services/penaltyGroups';
 
 let penaltyGroupService;
-export default async (event, context, callback) => {
+export default async (event) => {
 	if (!penaltyGroupService) {
 		await config.bootstrap();
 		penaltyGroupService = new PenaltyGroupService(
@@ -15,5 +15,5 @@ export default async (event, context, callback) => {
 			config.snsTopicArn(),
 		);
 	}
-	penaltyGroupService.delete(event.pathParameters.id, callback);
+	return penaltyGroupService.delete(event.pathParameters.id);
 };

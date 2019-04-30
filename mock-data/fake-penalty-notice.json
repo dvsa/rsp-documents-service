@@ -9,34 +9,22 @@
     "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
-        "paymentStatus": "PAID",
+        "paymentStatus": "UNPAID",
         "inPenaltyGroup": true,
-        "paymentToken": "XXX generated paymentToken XXX",
-        "formNo": "FPN 11/08",
+        "paymentToken": "c50f7829620bc8ba",
         "referenceNo": "820500000877",
-        "driverDetails": {
-            "name": "James Moriarty",
-            "address": "1000 Baker Street, NW1 5LA, LONDON",
-            "licenceNumber": "MORIA801127JA09900"
-        },
         "vehicleDetails": {
-            "regNo": "OK08OK",
-            "make": "Rolls Royce",
-            "nationality": "UK"
+            "regNo": "OK08OK"
         },
-        "trailerDetails": {
-            "number1": "1",
-            "number2": "2"
-        },
-        "nonEndorsableOffence": [
-            "INCORRECT USE OF MODE SWITCH - ARTICLE 34(5) EU 165/2014, 27/10/2016"
-        ],
         "penaltyAmount": 50,
         "paymentDueDate": 479945600,
-        "officerName": "Sherlock Holmes",
+        "officerName": "Sherlock.Holmes@example.com",
         "officerID": "Blah111",
+        "paymentCodeDateTime": 1476180720,
         "dateTime": 1476180720,
-        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN"
+        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
+        "nonEndorsableOffence": [],
+        "siteCode": 2
     }
 },
 {
@@ -49,7 +37,7 @@
     "VehicleRegistration": "QM05 VH",
     "Value": { 
         "penaltyType" : "FPN",
-        "paymentStatus": "PAID",
+        "paymentStatus": "UNPAID",
         "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
@@ -207,7 +195,7 @@
     "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
-        "paymentStatus": "UNPAID",
+        "paymentStatus": "PAID",
         "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
@@ -247,7 +235,7 @@
     "VehicleRegistration": "OK08OK",
     "Value": {
         "penaltyType": "FPN",
-        "paymentStatus": "UNPAID",
+        "paymentStatus": "PAID",
         "inPenaltyGroup": true,
         "paymentToken": "XXX generated paymentToken XXX",
         "formNo": "FPN 11/08",
@@ -275,6 +263,33 @@
         "officerID": "Blah111",
         "dateTime": 1476180720,
         "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN"
+    }
+},
+{
+    "ID": "920600000111_FPN",
+    "Hash": "6a1e32a2a319c7674fbd83f34cb07b35fdc1cecab261fd02450da821c359d74d",
+    "Enabled": true,
+    "Offset": 1521311200.345,
+    "Origin": "APP",
+    "VehicleRegistration": "OK08OK",
+    "Value": {
+        "penaltyType": "FPN",
+        "paymentStatus": "UNPAID",
+        "inPenaltyGroup": false,
+        "paymentToken": "c50f7829620bc8ba",
+        "referenceNo": "920600000111",
+        "vehicleDetails": {
+            "regNo": "OK08OK"
+        },
+        "penaltyAmount": 50,
+        "paymentDueDate": 479945600,
+        "officerName": "Sherlock.Holmes@example.com",
+        "officerID": "Blah111",
+        "paymentCodeDateTime": 1476180720,
+        "dateTime": 1476180720,
+        "placeWhereIssued": "BLACKWALL TUNNEL A, PAVILLION WAY, METROPOLITAN",
+        "nonEndorsableOffence": [],
+        "siteCode": 2
     }
 }
 ]
