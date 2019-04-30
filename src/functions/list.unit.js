@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import list from './list';
 import createResponse from '../utils/createResponse';
-import penaltyDocuments from '../../mock-data/fake-penalty-notice.json';
+import getMockPenalties from '../../mock-data/mock-penalty-notice';
 import PenaltyDocument from '../services/penaltyDocuments';
 
 describe('list', () => {
@@ -15,32 +15,28 @@ describe('list', () => {
 	});
 
 	describe('when a list of penaltyDocuments are requested', () => {
+		let getDocuments;
 
 		beforeEach(() => {
 			event = {
 				httpMethod: 'GET',
 				pathParameters: null,
 			};
-			sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake((offset, exclusiveStartKey, callback) => {
+			getDocuments = sinon.stub(PenaltyDocument.prototype, 'getDocuments').callsFake(async () => {
 				const response = createResponse({
-					body: penaltyDocuments,
+					body: getMockPenalties(),
 				});
-				callback(null, response);
+				return response;
 			});
 		});
 
-		it('should return a 200 success', (done) => {
-
-			list(event, null, (err, res) => {
-
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				// expect(JSON.parse(res.body)).toEqual(penaltyDocument);
-				done();
-			});
-
+		afterEach(() => {
+			getDocuments.restore();
 		});
 
+		it('should return a 200 success', async () => {
+			const res = await list(event, null);
+			expect(res.statusCode).toBe(200);
+		});
 	});
-
 });

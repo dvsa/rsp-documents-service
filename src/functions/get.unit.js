@@ -25,23 +25,22 @@ describe('get', () => {
 				},
 			};
 			penaltyDocument = penaltyDocuments.filter(item => item.ID === '123456669966_FPN');
-			sinon.stub(PenaltyDocument.prototype, 'getDocument').callsFake((id, callback) => {
+			sinon.stub(PenaltyDocument.prototype, 'getDocument').callsFake((id) => {
 				const response = createResponse({
 					body: penaltyDocument,
 				});
-				callback(null, response);
+				return Promise.resolve(response);
 			});
 		});
 
-		it('should return a 200 success with the correct penaltyDocument', (done) => {
+		afterEach(() => {
+			PenaltyDocument.prototype.getDocument.restore();
+		});
 
-			get(event, null, (err, res) => {
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				expect(JSON.parse(res.body)).toEqual(penaltyDocument);
-				done();
-			});
-
+		it('should return a 200 success with the correct penaltyDocument', async () => {
+			const res = await get(event);
+			expect(res.statusCode).toBe(200);
+			expect(JSON.parse(res.body)).toEqual(penaltyDocument);
 		});
 
 	});

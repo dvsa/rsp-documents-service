@@ -45,7 +45,7 @@ export default {
 		Timestamp: 1532945465.234729,
 		SiteCode: -72,
 		Location: 'Trowell Services',
-		VehicleRegistration: '11 abc',
+		VehicleRegistration: '11ABC',
 		Offset: 123,
 		Penalties: [penalty1, penalty2],
 	},

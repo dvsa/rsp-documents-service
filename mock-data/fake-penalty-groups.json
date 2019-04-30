@@ -1,7 +1,7 @@
 [
   {
     "ID": "46xu68x7o6b",
-    "PaymentStatus": "PAID",
+    "PaymentStatus": "UNPAID",
     "Timestamp": 15329454.234729,
     "Offset": 15329454.112,
     "VehicleRegistration": "11 ABC, PL09 XMN",
@@ -18,7 +18,7 @@
   },
   {
     "ID": "87xu68s7o6c",
-    "PaymentStatus": "PAID",
+    "PaymentStatus": "UNPAID",
     "Timestamp": 15329454.234729,
     "Offset": 15329454.112,
     "VehicleRegistration": "12 EFG",
@@ -35,19 +35,19 @@
   },
   {
     "ID": "46xu68x7o6c",
-    "PaymentStatus": "UNPAID",
+    "PaymentStatus": "PAID",
     "Timestamp": 15329454.234729,
     "Offset": 15329454.112,
     "VehicleRegistration": "11 ABC, PL09 XMN",
     "Location": "Trowell Services",
-    "TotalAmount": 130,
+    "TotalAmount": 100,
     "SiteCode": 3,
     "Origin": "APP",
     "Enabled": true,
     "Hash": "abc123",
     "PenaltyDocumentIds": [
-      "820500000877_FPN",
-      "820500000878_FPN"
+      "820500000812_FPN",
+      "820500000822_FPN"
     ]
   }
 ]

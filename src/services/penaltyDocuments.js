@@ -54,7 +54,7 @@ export default class PenaltyDocument {
 		this.maxBatchSize = config.dynamodbMaxBatchSize();
 	}
 
-	getDocument(id, callback) {
+	async getDocument(id) {
 		const params = {
 			TableName: this.penaltyDocTableName,
 			Key: {
@@ -64,15 +64,14 @@ export default class PenaltyDocument {
 
 		const dbGet = this.db.get(params).promise();
 
-		dbGet.then((data) => {
+		return dbGet.then((data) => {
 			if (!data.Item || this.isEmpty(data)) {
-				callback(null, createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } }));
-				return;
+				return createResponse({ statusCode: 404, body: { error: 'ITEM NOT FOUND' } });
 			}
 			const idList = [];
 			idList.push(id);
 			delete data.Item.Origin;
-			this.getPaymentInformationViaInvocation(idList)
+			return this.getPaymentInformationViaInvocation(idList)
 				.then((response) => {
 					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 						data.Item.Value.paymentStatus = response.payments[0].PenaltyStatus;
@@ -83,12 +82,12 @@ export default class PenaltyDocument {
 					} else {
 						data.Item.Value.paymentStatus = 'UNPAID';
 					}
-					callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
+					return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
 				}).catch((err) => {
-					callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+					return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 				});
 		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 		});
 	}
 
@@ -96,7 +95,7 @@ export default class PenaltyDocument {
 		return JSON.stringify(obj) === JSON.stringify({});
 	}
 
-	updateDocumentUponPaymentDelete(paymentInfo, callback) {
+	async updateDocumentUponPaymentDelete(paymentInfo) {
 		const getParams = {
 			TableName: this.penaltyDocTableName,
 			Key: {
@@ -105,7 +104,8 @@ export default class PenaltyDocument {
 		};
 		const dbGet = this.db.get(getParams).promise();
 
-		dbGet.then((data) => {
+		try {
+			const data = await dbGet;
 			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
 			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
 			data.Item.Offset = getUnixTime();
@@ -119,25 +119,22 @@ export default class PenaltyDocument {
 			};
 
 			const dbPut = this.db.put(putParams).promise();
-			dbPut.then(() => {
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
+			return dbPut.then(() => {
+				return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
 			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-				callback(null, returnResponse);
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { message: err } });
 			});
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-		});
+		} catch (err) {
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { message: err } });
+		}
 	}
 
 	/**
 	 * Update the penalty document and its parent group with paymentInfo.
 	 * @param {{penaltyDocumentIds: Array<string>}} paymentInfo The new
 	 * payment info. (e.g. {penaltyDocuments: [890700000823_FPN, 912900000182_IM]}).
-	 * @param {(_, response) => void} callback Callback returning a status code
-	 * and the new document or an error.
 	 */
-	async updateMultipleUponPaymentDelete(paymentInfo, callback) {
+	async updateMultipleUponPaymentDelete(paymentInfo) {
 		try {
 			const updatedDocs = await this._updateDocumentsToUnpaidStatus(paymentInfo.penaltyDocumentIds);
 
@@ -146,10 +143,10 @@ export default class PenaltyDocument {
 				await this._tryUpdatePenaltyGroupToUnpaidStatus(updatedDocs[0].penaltyGroupId, 'UNPAID');
 			}
 
-			callback(null, createResponse({ statusCode: HttpStatus.OK }));
+			return createResponse({ statusCode: HttpStatus.OK });
 		} catch (err) {
 			console.log(`Error updating multiple docs upon payment delete ${err}`);
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 		}
 	}
 
@@ -237,71 +234,89 @@ export default class PenaltyDocument {
 	}
 
 	// put
-	updateDocumentWithPayment(paymentInfo, callback) {
+	async updateDocumentWithPayment(paymentInfo) {
 		const getParams = {
 			TableName: this.penaltyDocTableName,
 			Key: {
 				ID: paymentInfo.id,
 			},
 		};
-		const dbGet = this.db.get(getParams).promise();
-		const timeNow = getUnixTime();
 
-		dbGet.then((data) => {
+		try {
+			const data = await this.db.get(getParams).promise();
 			if (!data.Item) {
-				const dummyPenaltyDoc = {
-					ID: paymentInfo.id,
-					Value: {
-						dateTime: timeNow,
-						siteCode: 5,
-						vehicleDetails: {
-							regNo: 'UNKNOWN',
-						},
-						referenceNo: paymentInfo.penaltyRefNo,
-						penaltyType: paymentInfo.penaltyType,
-						paymentToken: paymentInfo.paymentToken,
-						officerName: 'UNKNOWN',
-						penaltyAmount: Number(paymentInfo.paymentAmount),
-						officerID: 'UNKNOWN',
-					},
-					Enabled: true,
-					Origin: portalOrigin,
-				};
-				dummyPenaltyDoc.Hash = 'New';
-				// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
-				dummyPenaltyDoc.Offset = timeNow;
-				// TODO create dummy doc
-				this.createDocument(dummyPenaltyDoc, () => {});
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc }));
-				return;
+				return await this.createDummyDocumentForPayment(paymentInfo);
 			}
+			await this.putDocumentWithPayment(data.Item, paymentInfo);
 
-			data.Item.Value.paymentStatus = paymentInfo.paymentStatus;
-			data.Item.Hash = hashToken(paymentInfo.id, data.Item.Value, data.Item.Enabled);
-			data.Item.Offset = getUnixTime();
+			return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
+		} catch (err) {
+			console.error(err);
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+		}
+	}
 
-			const putParams = {
-				TableName: this.penaltyDocTableName,
-				Item: data.Item,
-				ConditionExpression: 'attribute_exists(#ID)',
-				ExpressionAttributeNames: {
-					'#ID': 'ID',
+	async putDocumentWithPayment(penalty, paymentInfo) {
+		penalty.Value.paymentStatus = paymentInfo.paymentStatus;
+		penalty.Hash = hashToken(paymentInfo.id, penalty.Value, penalty.Enabled);
+		penalty.Offset = getUnixTime();
+
+		const putParams = {
+			TableName: this.penaltyDocTableName,
+			Item: penalty,
+			ConditionExpression: 'attribute_exists(#ID)',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+			},
+		};
+
+		await this.db.put(putParams).promise();
+
+		if (penalty.Origin === appOrigin) {
+			this.sendPaymentNotification(paymentInfo, penalty);
+		}
+	}
+
+	async createDummyDocumentForPayment(paymentInfo) {
+		const timeNow = getUnixTime();
+		let referenceNo = paymentInfo.penaltyRefNo;
+		if (paymentInfo.penaltyType === 'IM') {
+			referenceNo = `${referenceNo.slice(0, 6)}-${referenceNo[7]}-${referenceNo.slice(8, 13)}-IM`;
+		}
+		const dummyPenaltyDoc = {
+			ID: paymentInfo.id,
+			Value: {
+				dateTime: timeNow,
+				siteCode: 5,
+				vehicleDetails: {
+					regNo: 'UNKNOWN',
 				},
-			};
+				referenceNo,
+				penaltyType: paymentInfo.penaltyType,
+				paymentToken: paymentInfo.paymentToken,
+				officerName: 'UNKNOWN',
+				penaltyAmount: Number(paymentInfo.paymentAmount),
+				officerID: 'UNKNOWN',
+				inPenaltyGroup: false,
+				paymentStatus: paymentInfo.paymentStatus,
+			},
+			Enabled: true,
+			Origin: portalOrigin,
+		};
+		dummyPenaltyDoc.Hash = 'New';
+		// hashToken(paymentInfo.id, dummyPenaltyDoc.Value, dummyPenaltyDoc.Enabled);
+		dummyPenaltyDoc.Offset = timeNow;
 
-			const dbPut = this.db.put(putParams).promise();
-			dbPut.then(() => {
-				if (data.Item.Origin === appOrigin) {
-					this.sendPaymentNotification(paymentInfo, data.Item);
-				}
-				callback(null, createResponse({ statusCode: HttpStatus.OK, body: data.Item }));
-			}).catch((err) => {
-				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-				callback(null, returnResponse);
-			});
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-		});
+		try {
+			const response = await this.createDocument(dummyPenaltyDoc);
+			if (response.statusCode !== HttpStatus.CREATED) {
+				console.error('Unable to create dummy penalty document');
+			}
+		} catch (err) {
+			// Log error but fail silently
+			console.error(err);
+		}
+		return createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc });
 	}
 
 	sendPaymentNotification(paymentInfo, documentInfo) {
@@ -315,7 +330,7 @@ export default class PenaltyDocument {
 		});
 	}
 
-	createDocument(body, callback) {
+	async createDocument(body) {
 
 		delete body.Value.paymentStatus;
 		delete body.paymentAuthCode;
@@ -342,7 +357,7 @@ export default class PenaltyDocument {
 		};
 
 		idList.push(ID);
-		this.getPaymentInformationViaInvocation(idList)
+		return this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				const params = {
 					TableName: this.penaltyDocTableName,
@@ -362,30 +377,30 @@ export default class PenaltyDocument {
 						},
 						statusCode: HttpStatus.BAD_REQUEST,
 					});
-					callback(null, validationError);
-				} else {
-					const dbPut = this.db.put(params).promise();
-					dbPut.then(() => {
-						// stamp payment info if we have it
-						if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-							item.Value.paymentStatus = response.payments[0].PenaltyStatus;
-							item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-							item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
-							item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
-							// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
-						} else {
-							item.Value.paymentStatus = 'UNPAID';
-						}
-
-						callback(null, createResponse({ statusCode: HttpStatus.OK, body: item }));
-					}).catch((err) => {
-						const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-						callback(null, returnResponse);
-					});
+					console.error('Validation error in createDocument', validationError);
+					return validationError;
 				}
+				const dbPut = this.db.put(params).promise();
+				return dbPut.then(() => {
+					// stamp payment info if we have it
+					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+						item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+						item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+						item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
+						item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
+						// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
+					} else {
+						item.Value.paymentStatus = 'UNPAID';
+					}
+
+					return createResponse({ statusCode: HttpStatus.OK, body: item });
+				}).catch((err) => {
+					const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+					return returnResponse;
+				});
 			}).catch((err) => {
 				const returnResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-				callback(null, returnResponse);
+				return returnResponse;
 			});
 	}
 
@@ -402,98 +417,104 @@ export default class PenaltyDocument {
 				Payload: payloadStr,
 			})
 				.promise()
-				// @ts-ignore
 				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
 				.catch(err => reject(err));
 		});
 	}
 
 	// Delete
-	deleteDocument(id, body, callback) {
+	async deleteDocument(id, body) {
 		const timestamp = getUnixTime();
-		const clientHash = body.Hash;
-		const Enabled = false;
-		const { Value } = body;
-		// may not need to remove this delete Value.paymentToken;
-		const newHash = hashToken(id, Value, Enabled);
 		let paidStatus = 'UNPAID';
 		const idList = [];
 		idList.push(id);
-		this.getPaymentInformationViaInvocation(idList)
-			.then((response) => {
-				if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-					paidStatus = response.payments[0].PenaltyStatus;
-				}
 
-				if (paidStatus === 'PAID') {
-					const err = 'Cannot remove document that is paid';
-					const validationError = createResponse({
-						body: {
-							err,
-						},
-						statusCode: HttpStatus.BAD_REQUEST,
-					});
-					callback(null, validationError);
-				} else {
+		let response;
+		try {
+			response = await this.getPaymentInformationViaInvocation(idList);
+			if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+				paidStatus = response.payments[0].PenaltyStatus;
+			}
 
-					const params = {
-						TableName: this.penaltyDocTableName,
-						Key: {
-							ID: id,
-						},
-						UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
-						ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
-						ExpressionAttributeNames: {
-							'#ID': 'ID',
-							'#Hash': 'Hash',
-							'#Enabled': 'Enabled',
-							'#Offset': 'Offset',
-						},
-						ExpressionAttributeValues: {
-							':clientHash': clientHash,
-							':Enabled': true,
-							':Hash': newHash,
-							':not_enabled': false,
-							':Offset': timestamp,
-						},
-					};
+			if (paidStatus === 'PAID') {
+				const err = 'Cannot remove document that is paid';
+				const validationError = createResponse({
+					body: {
+						err,
+					},
+					statusCode: HttpStatus.BAD_REQUEST,
+				});
+				return validationError;
+			}
 
-					const deletedItem = {
-						Enabled,
-						ID: id,
-						Offset: timestamp,
-						Hash: newHash,
-						Value,
-					};
+			const checkTest = Validation.penaltyDocumentValidation(body);
+			if (!checkTest.valid) {
+				const err = checkTest.error.message;
+				const validationError = createResponse({
+					body: {
+						err,
+					},
+					statusCode: HttpStatus.BAD_REQUEST,
+				});
+				return validationError;
+			}
 
-					const checkTest = Validation.penaltyDocumentValidation(body);
-					if (!checkTest.valid) {
-						const err = checkTest.error.message;
-						const validationError = createResponse({
-							body: {
-								err,
-							},
-							statusCode: HttpStatus.BAD_REQUEST,
-						});
-						callback(null, validationError);
-					} else {
-						const dbUpdate = this.db.update(params).promise();
-
-						dbUpdate.then(() => {
-							callback(null, createResponse({ statusCode: HttpStatus.OK, body: deletedItem }));
-						}).catch((err) => {
-							const errResponse = createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
-							callback(null, errResponse);
-						});
-					}
-				}
-			}).catch((err) => {
-				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-			});
+			return this.disableDocument(id, body, timestamp);
+		} catch (err) {
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+		}
 	}
 
-	getDocuments(offset, exclusiveStartKey, callback) {
+	async disableDocument(id, body, timestamp) {
+		const Enabled = false;
+		const { Value } = body;
 
+		const clientHash = body.Hash;
+		const newHash = hashToken(id, Value, Enabled);
+
+		const params = {
+			TableName: this.penaltyDocTableName,
+			Key: {
+				ID: id,
+			},
+			UpdateExpression: 'set #Enabled = :not_enabled, #Hash = :Hash, #Offset = :Offset',
+			ConditionExpression: 'attribute_exists(#ID) AND #Hash=:clientHash AND #Enabled = :Enabled',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+				'#Hash': 'Hash',
+				'#Enabled': 'Enabled',
+				'#Offset': 'Offset',
+			},
+			ExpressionAttributeValues: {
+				':clientHash': clientHash,
+				':Enabled': true,
+				':Hash': newHash,
+				':not_enabled': false,
+				':Offset': timestamp,
+			},
+		};
+
+		const deletedItem = {
+			Enabled,
+			ID: id,
+			Offset: timestamp,
+			Hash: newHash,
+			Value,
+		};
+
+		try {
+			await this.db.update(params).promise();
+			return createResponse({ statusCode: HttpStatus.OK, body: deletedItem });
+		} catch (err) {
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
+		}
+	}
+
+	/**
+	 * @param {number} offset
+	 * @param {string} exclusiveStartKey
+	 */
+	async getDocuments(offset, exclusiveStartKey) {
 		const params = {
 			TableName: this.penaltyDocTableName,
 			IndexName: 'ByOffset',
@@ -518,135 +539,139 @@ export default class PenaltyDocument {
 			params.ExclusiveStartKey = exclusiveStartKey;
 		}
 
-		const dbScan = this.db.query(params).promise();
 		const idList = [];
+		let data;
 
-		dbScan.then((data) => {
-			// TODO need to loop through data and populate with payment info
-			const items = data.Items;
+		try {
+			data = await this.db.query(params).promise();
+		} catch (err) {
+			return createErrorResponse({ statusCode: 400, err });
+		}
 
-			if (data.Count > 0) {
-				items.forEach((item) => {
-					idList.push(item.ID);
-					delete item.Value.paymentStatus;
-					delete item.Value.paymentAuthCode;
-					delete item.Value.paymentDate;
-					delete item.Value.paymentRef;
-					delete item.Value.paymentMethod;
-					delete item.Origin; // remove Origin as not needed in response
+		const items = data.Items;
+
+		if (data.Count > 0) {
+			items.forEach((item) => {
+				idList.push(item.ID);
+				delete item.Value.paymentStatus;
+				delete item.Value.paymentAuthCode;
+				delete item.Value.paymentDate;
+				delete item.Value.paymentRef;
+				delete item.Value.paymentMethod;
+				delete item.Origin; // remove Origin as not needed in response
+			});
+
+			try {
+				const response = await this.getPaymentInformationViaInvocation(idList);
+				let mergedList = [];
+				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
+				return createResponse({
+					statusCode: 200,
+					body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
 				});
-
-				this.getPaymentInformationViaInvocation(idList)
-					.then((response) => {
-						let mergedList = [];
-						mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-						callback(null, createResponse({
-							statusCode: HttpStatus.OK,
-							body: { LastEvaluatedKey: data.LastEvaluatedKey, Items: mergedList },
-						}));
-					})
-					.catch((err) => {
-						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-					});
-			} else {
-				// no records found in scan so return empty
-				callback(null, createResponse({
-					statusCode: HttpStatus.OK,
-					body: { Items: [] },
-				}));
+			} catch (err) {
+				return createErrorResponse({ statusCode: 400, err });
 			}
-		}).catch((err) => {
-			callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
-		});
+		} else {
+			// no records found in scan so return empty
+			return createResponse({
+				statusCode: 200,
+				body: { Items: [] },
+			});
+		}
 	}
 
-	getDocumentByToken(token, callback) {
-		lambda.invoke({
+	invokeTokenServiceLambda(token) {
+		return lambda.invoke({
 			FunctionName: this.tokenServiceARN,
 			Payload: `{"body": { "Token": "${token}" } }`,
-		}, (error, data) => {
-			if (error) {
-				console.log('Token service returned an error');
-				console.log(error.message);
-				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: error }));
-			} else if (data.Payload) {
-				try {
-					// @ts-ignore
-					const parsedPayload = JSON.parse(data.Payload);
-					if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
-						console.log('Token service returned bad request (status HttpStatus.BAD_REQUEST)');
-						const parsedBody = JSON.parse(parsedPayload.body);
-						callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { name: 'Token Error', message: parsedBody.message } }));
-						return;
-					}
+		}).promise();
+	}
 
+	async getDocumentByToken(token) {
+		let data;
+		try {
+			data = await this.invokeTokenServiceLambda(token);
+		} catch (error) {
+			console.log('Token service returned an error');
+			console.log(error.message);
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: error });
+		}
+
+
+		if (data.Payload) {
+			try {
+				const parsedPayload = JSON.parse(data.Payload);
+				if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
+					console.log(`Token service returned bad request (status ${HttpStatus.BAD_REQUEST})`);
 					const parsedBody = JSON.parse(parsedPayload.body);
-					const docType = docTypeMapping[parsedBody.DocumentType];
-					const docID = `${parsedBody.Reference}_${docType}`;
-					this.getDocument(docID, (err, res) => {
-						if (res.statusCode === HttpStatus.NOT_FOUND) {
-							this.getPaymentInformationViaInvocation([docID])
-								.then((response) => {
-									const paymentInfo = {};
-									if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-										paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
-										paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-										paymentInfo.paymentDate =
-											Number(response.payments[0].PaymentDetail.PaymentDate);
-										paymentInfo.paymentMethod =
-										response.payments[0].PaymentDetail.PaymentMethod;
-									} else {
-										paymentInfo.paymentStatus = 'UNPAID';
-									}
-
-									const minimalDocument = formatMinimalDocument(
-										parsedBody,
-										docID,
-										token,
-										docType,
-										paymentInfo,
-									);
-
-									callback(null, createResponse({
-										statusCode: HttpStatus.OK,
-										body: minimalDocument,
-									}));
-								})
-								.catch((e) => {
-									console.log(`Error getting payment info: ${e}`);
-									callback(null, createErrorResponse({
-										statusCode: HttpStatus.BAD_REQUEST,
-										err: e,
-									}));
-								});
-						} else if (res.statusCode === HttpStatus.OK) {
-							callback(null, createResponse({
-								statusCode: HttpStatus.OK,
-								body: JSON.parse(res.body),
-							}));
-						} else {
-							callback(null, createErrorResponse({
-								statusCode: HttpStatus.BAD_REQUEST,
-								err: {
-									name: 'Error from GetDocument',
-									message: 'The GetDocument method returned an unhandled error',
-								},
-							}));
-						}
-					});
-				} catch (e) {
-					console.log(`top level catch getting doc by token: ${e}`);
-					callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: e }));
+					return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: { name: 'Token Error', message: parsedBody.message } });
 				}
-				return;
+
+				const parsedBody = JSON.parse(parsedPayload.body);
+				const docType = docTypeMapping[parsedBody.DocumentType];
+				const docID = `${parsedBody.Reference}_${docType}`;
+				return this.getDocument(docID).then((res) => {
+					if (res.statusCode === HttpStatus.NOT_FOUND) {
+						return this.getPaymentInformationViaInvocation([docID])
+							.then((response) => {
+								const paymentInfo = {};
+								if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
+									paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
+									paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
+									paymentInfo.paymentDate =
+										Number(response.payments[0].PaymentDetail.PaymentDate);
+									paymentInfo.paymentMethod =
+									response.payments[0].PaymentDetail.PaymentMethod;
+								} else {
+									paymentInfo.paymentStatus = 'UNPAID';
+								}
+
+								const minimalDocument = formatMinimalDocument(
+									parsedBody,
+									docID,
+									token,
+									docType,
+									paymentInfo,
+								);
+
+								return createResponse({
+									statusCode: HttpStatus.OK,
+									body: minimalDocument,
+								});
+							})
+							.catch((e) => {
+								console.log(`Error getting payment info: ${e}`);
+								return createErrorResponse({
+									statusCode: HttpStatus.BAD_REQUEST,
+									err: e,
+								});
+							});
+					} else if (res.statusCode === HttpStatus.OK) {
+						return createResponse({
+							statusCode: HttpStatus.OK,
+							body: JSON.parse(res.body),
+						});
+					}
+					return createErrorResponse({
+						statusCode: HttpStatus.BAD_REQUEST,
+						err: {
+							name: 'Error from GetDocument',
+							message: 'The GetDocument method returned an unhandled error',
+						},
+					});
+				});
+			} catch (e) {
+				console.error(e);
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: e });
 			}
-			callback(null, createErrorResponse({
-				statusCode: HttpStatus.BAD_REQUEST,
-				err: {
-					name: 'No data returned from Token Service',
-					message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
-				},
-			}));
+		}
+		return createErrorResponse({
+			statusCode: HttpStatus.BAD_REQUEST,
+			err: {
+				name: 'No data returned from Token Service',
+				message: 'The token service returned no data, it is likely there was some issue decoding the provided token',
+			},
 		});
 	}
 
@@ -768,7 +793,7 @@ export default class PenaltyDocument {
 		return Promise.all(iterations);
 	}
 
-	updateDocuments(items, context, callback) {
+	async updateDocuments(items) {
 		//  let items = JSON.parse(event.body).Items;
 		const idList = [];
 		items.forEach((item) => {
@@ -779,23 +804,24 @@ export default class PenaltyDocument {
 			delete item.Value.paymentRef;
 		});
 
-		this.getPaymentInformationViaInvocation(idList)
+		return this.getPaymentInformationViaInvocation(idList)
 			.then((response) => {
 				let mergedList = [];
 				mergedList = mergeDocumentsWithPayments({ items, payments: response.payments });
-				this.asyncLoopOrdered(this, this.updateItem, mergedList).then((outputValue) => {
+				return this.asyncLoopOrdered(this, this.updateItem, mergedList).then((outputValue) => {
 					const result = {
 						Items: outputValue,
 					};
-					callback(null, createResponse({ statusCode: HttpStatus.OK, body: result }));
+					return createResponse({ statusCode: HttpStatus.OK, body: result });
 				}).catch((err) => {
 					console.log(`error updating documents in async loop: ${err}`);
-					callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
+					console.log(err);
+					return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
 				});
 			})
 			.catch((err) => {
 				console.log(`error updating documents in outer loop: ${err}`);
-				callback(null, createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err }));
+				return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err });
 			});
 	}
 
@@ -870,19 +896,17 @@ export default class PenaltyDocument {
 		return params;
 	}
 
-	getSites(event, context, callback) {
+	async getSites() {
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
-		s3.getObject(params, (err, data) => {
-			if (err) {
-				callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
-			} else {
-				// @ts-ignore
-				callback(null, createStringResponse({ statusCode: HttpStatus.OK, body: data.Body.toString('utf-8') }));
-			}
-		});
+		try {
+			const data = await s3.getObject(params).promise();
+			return createStringResponse({ statusCode: HttpStatus.OK, body: data.Body.toString('utf-8') });
+		} catch (err) {
+			return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
+		}
 	}
 
-	async streamDocuments(event, context, callback) {
+	async streamDocuments(event) {
 		let minOffset = 9999999999.999;
 
 		event.Records.forEach((record) => {
@@ -897,9 +921,9 @@ export default class PenaltyDocument {
 		try {
 			await this.sendSnsMessage(params);
 			console.log('Results from sending message: ', JSON.stringify(params, null, 2));
-			callback(null, `Successfully processed ${event.Records.length} records.`);
+			return `Successfully processed ${event.Records.length} records.`;
 		} catch (err) {
-			callback(`Unable to send message. Error JSON: ${JSON.stringify(err, null, 2)}`);
+			return `Unable to send message. Error JSON: ${JSON.stringify(err, null, 2)}`;
 		}
 	}
 

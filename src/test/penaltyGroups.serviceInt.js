@@ -29,9 +29,8 @@ describe('penaltyGroups', () => {
 				request
 					.get(`/${groupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect(200)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
 						expect(res.body.ID).toEqual(groupId);
@@ -57,9 +56,8 @@ describe('penaltyGroups', () => {
 				request
 					.get(`/${disabledGroupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.expect(200)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err) => {
 						if (err) throw err;
 						done();
@@ -80,7 +78,6 @@ describe('penaltyGroups', () => {
 				const batch1 = await request
 					.get('/')
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.query({ Offset: startOffset - 1 })
 					.expect(200);
 				expect(batch1.body.LastEvaluatedKey.Offset).toBeDefined();
@@ -91,7 +88,6 @@ describe('penaltyGroups', () => {
 				const batch2 = await request
 					.get('/')
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.query({ Offset: lastEvaluatedOffset })
 					.expect(200);
 				expect(batch2.body.LastEvaluatedKey).toBeUndefined();
@@ -106,10 +102,9 @@ describe('penaltyGroups', () => {
 				request
 					.post('/')
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
 					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.expect(201)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
 						expect(res.body.ID).toBe('46xu68x7wps');
@@ -150,11 +145,12 @@ describe('penaltyGroups', () => {
 					.post('/')
 					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.expect(400);
 
-				expect(JSON.parse(response.text)).toBe('Bad request: There were clashing IDs (987654321012_FPN)');
+				const responseBody = JSON.parse(response.text);
+				expect(responseBody.errCode).toBe('GroupDuplicateReference');
+				expect(responseBody.errBody.clashingIds[0]).toBe('987654321012_FPN');
 				await assertPenaltyDocumentDoesntExist(nonClashingId);
 			});
 		});
@@ -175,8 +171,7 @@ describe('penaltyGroups', () => {
 					.post('/')
 					.send(testPenaltyGroupCreationPayload.penaltyGroupPayload)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.expect(201);
 				penaltyGroupId = response.body.ID;
 			});
@@ -200,8 +195,7 @@ describe('penaltyGroups', () => {
 				await request
 					.delete(`/${testPenaltyGroupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.expect(204);
 
 				await assertPenaltyGroupDisabled(testPenaltyGroupId);
@@ -225,8 +219,7 @@ describe('penaltyGroups', () => {
 				await request
 					.delete(`/${testPenaltyGroupId}`)
 					.set('Content-Type', 'application/json')
-					.set('Authorization', 'allow')
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.expect(204);
 				await assertPenaltyGroupDisabled(testPenaltyGroupId);
 				await assertPenaltyGroupStrictlyContainsDocIds(testPenaltyGroupId, paidDocIds);

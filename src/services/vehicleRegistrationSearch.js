@@ -8,7 +8,7 @@ export default class VehicleRegistrationSearch {
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
 	}
-	async search(vehicleReg, callback) {
+	async search(vehicleReg) {
 		try {
 			// Check in single penalties first
 			const { Items } = await this._searchSinglePenalties(vehicleReg);
@@ -21,26 +21,26 @@ export default class VehicleRegistrationSearch {
 				});
 				// If there are no penalties in groups, just return the penalties
 				if (penaltiesInGroups.length < 1) {
-					return callback(null, createResponse({
+					return createResponse({
 						statusCode: HttpStatus.OK,
 						body: { Penalties, PenaltyGroups: [] },
-					}));
+					});
 				}
 				// Otherwise, get the penalty groups
 				const penaltyGroupIds = penaltiesInGroups.map(p => p.penaltyGroupId);
 				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
 				const PenaltyGroups = Responses[this.penaltyGroupTableName];
-				return callback(null, createResponse({
+				return createResponse({
 					statusCode: HttpStatus.OK,
 					body: { Penalties, PenaltyGroups },
-				}));
+				});
 			}
 			// Return 404 not found
 			console.log(`No penalties found for registration ${vehicleReg}`);
-			return callback(null, createResponse({ statusCode: HttpStatus.NOT_FOUND, body: 'No penalties found' }));
+			return createResponse({ statusCode: HttpStatus.NOT_FOUND, body: 'No penalties found' });
 		} catch (err) {
 			console.log(err);
-			return callback(null, createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err }));
+			return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
 		}
 	}
 	_batchGetPenaltyGroups(ids) {
