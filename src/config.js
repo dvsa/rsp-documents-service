@@ -29,7 +29,6 @@ async function bootstrap() {
 					return;
 				}
 				configuration = JSON.parse(secretsManagerResponse.SecretString);
-				console.log(`Cached ${Object.keys(configuration).length} config items from secrets manager`);
 				resolve(configuration);
 			});
 		} else {

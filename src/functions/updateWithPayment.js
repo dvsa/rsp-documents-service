@@ -30,7 +30,5 @@ export default async (event) => {
 		paymentToken: event.body.paymentToken,
 	};
 
-	console.log(JSON.stringify(paymentInfo, null, 2));
-	// id body document
 	return penaltyDocuments.updateDocumentWithPayment(paymentInfo);
 };
