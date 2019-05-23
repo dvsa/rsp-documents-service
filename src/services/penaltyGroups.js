@@ -45,7 +45,7 @@ export default class PenaltyGroup {
 				body: penaltyGroup,
 			});
 		} catch (err) {
-			logError('PenaltyGroupCreateError', { batchWriteParams });
+			logError('PenaltyGroupCreate', { batchWriteParams });
 			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: `Problem writing to DB: ${err}`,
@@ -57,7 +57,7 @@ export default class PenaltyGroup {
 		const schemaValidationResult = Validation.penaltyGroupValidation(payload);
 		if (!schemaValidationResult.valid) {
 			const errMsg = schemaValidationResult.error.message;
-			logError('PenaltyGroupSchemaValidationError', { payload, error: errMsg });
+			logError('PenaltyGroupSchemaValidation', { payload, error: errMsg });
 			return { valid: false, response: this.groupValidationFailedResponse(errMsg) };
 		}
 
@@ -117,7 +117,7 @@ export default class PenaltyGroup {
 			delete penaltyGroup.PenaltyDocumentIds;
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			logError('GetPenaltyGroupError', { penaltyGroupId });
+			logError('GetPenaltyGroup', { penaltyGroupId });
 			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: err.message,
@@ -159,7 +159,7 @@ export default class PenaltyGroup {
 
 			return createResponse({ statusCode: HttpStatus.NO_CONTENT });
 		} catch (error) {
-			logError('DeletePenaltyGroupError', { errorMessage: error.message, penaltyGroupId });
+			logError('DeletePenaltyGroup', { errorMessage: error.message, penaltyGroupId });
 			return createResponse({
 				statusCode: HttpStatus.BAD_REQUEST,
 				body: error.message,
@@ -305,7 +305,7 @@ export default class PenaltyGroup {
 			});
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			logError('UpdatePenaltyGroupError', { err: err.message, paymentInfo });
+			logError('UpdatePenaltyGroup', { err: err.message, paymentInfo });
 			return createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err });
 		}
 	}
@@ -354,7 +354,7 @@ export default class PenaltyGroup {
 			const snsResponse = await sns.publish(params).promise();
 			logInfo('PaymentNotificationSent', { snsResponse, snsMessage: params });
 		} catch (err) {
-			logError('PaymentNotificationError', {
+			logError('PaymentNotification', {
 				err: err.message,
 				snsMessage: params,
 			});
