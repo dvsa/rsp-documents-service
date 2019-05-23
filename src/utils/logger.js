@@ -1,9 +1,3 @@
-export const ServiceName = {
-	Payments: 'PaymentsService',
-	CPMS: 'CPMSOrchestrationService',
-	Documents: 'DocumentsService',
-};
-
 export function logInfo(logName, message) {
 	console.log(JSON.stringify({
 		logLevel: 'INFO',
