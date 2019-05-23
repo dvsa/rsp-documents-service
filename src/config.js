@@ -24,7 +24,7 @@ async function bootstrap() {
 			const secretsManagerClient = new SecretsManager({ region: process.env.REGION });
 			secretsManagerClient.getSecretValue({ SecretId }, (err, secretsManagerResponse) => {
 				if (err) {
-					logError('DocServiceSecretsManager', err.message);
+					logError('DocServiceSecretsManagerError', err.message);
 					reject(err);
 					return;
 				}

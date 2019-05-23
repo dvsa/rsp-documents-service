@@ -10,6 +10,6 @@ export function logError(logName, message) {
 	console.error(JSON.stringify({
 		logLevel: 'ERROR',
 		message,
-		logName: `${logName}Error`,
+		logName,
 	}, null, 2));
 }

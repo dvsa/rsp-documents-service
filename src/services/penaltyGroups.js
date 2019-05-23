@@ -45,7 +45,7 @@ export default class PenaltyGroup {
 				body: penaltyGroup,
 			});
 		} catch (err) {
-			logError('PenaltyGroupCreate', { batchWriteParams });
+			logError('PenaltyGroupCreateError', { batchWriteParams });
 			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: `Problem writing to DB: ${err}`,
@@ -57,7 +57,7 @@ export default class PenaltyGroup {
 		const schemaValidationResult = Validation.penaltyGroupValidation(payload);
 		if (!schemaValidationResult.valid) {
 			const errMsg = schemaValidationResult.error.message;
-			logError('PenaltyGroupSchemaValidation', { payload, error: errMsg });
+			logError('PenaltyGroupSchemaValidationError', { payload, error: errMsg });
 			return { valid: false, response: this.groupValidationFailedResponse(errMsg) };
 		}
 
@@ -117,7 +117,7 @@ export default class PenaltyGroup {
 			delete penaltyGroup.PenaltyDocumentIds;
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			logError('GetPenaltyGroup', { penaltyGroupId });
+			logError('GetPenaltyGroupError', { penaltyGroupId });
 			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: err.message,
@@ -139,7 +139,7 @@ export default class PenaltyGroup {
 			const result = await this.db.query(params).promise();
 			return createResponse({ statusCode: HttpStatus.OK, body: result });
 		} catch (error) {
-			logError('ListPenaltyGroups', { offsetFrom, error: error.message });
+			logError('ListPenaltyGroupsError', { offsetFrom, error: error.message });
 			return createResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, body: error.message });
 		}
 	}
@@ -159,7 +159,7 @@ export default class PenaltyGroup {
 
 			return createResponse({ statusCode: HttpStatus.NO_CONTENT });
 		} catch (error) {
-			logError('DeletePenaltyGroup', { errorMessage: error.message, penaltyGroupId });
+			logError('DeletePenaltyGroupError', { errorMessage: error.message, penaltyGroupId });
 			return createResponse({
 				statusCode: HttpStatus.BAD_REQUEST,
 				body: error.message,
@@ -305,7 +305,7 @@ export default class PenaltyGroup {
 			});
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			logError('UpdatePenaltyGroup', { err: err.message, paymentInfo });
+			logError('UpdatePenaltyGroupError', { err: err.message, paymentInfo });
 			return createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err });
 		}
 	}
@@ -354,7 +354,7 @@ export default class PenaltyGroup {
 			const snsResponse = await sns.publish(params).promise();
 			logInfo('PaymentNotificationSent', { snsResponse, snsMessage: params });
 		} catch (err) {
-			logError('PaymentNotification', {
+			logError('PaymentNotificationError', {
 				err: err.message,
 				snsMessage: params,
 			});
@@ -399,7 +399,7 @@ export default class PenaltyGroup {
 			const penaltyGroupContainer = await this.db.get(groupParams).promise();
 			return penaltyGroupContainer.Item;
 		} catch (err) {
-			logError('GetPenaltyGroupById', { errorMessage: err.message, penaltyGroupId });
+			logError('GetPenaltyGroupByIdError', { errorMessage: err.message, penaltyGroupId });
 			throw new Error(`Problem fetching penaltyGroup: ${err.message}`);
 		}
 	}
@@ -416,7 +416,7 @@ export default class PenaltyGroup {
 			const penaltyDocItemContainer = await penaltyDocPromise;
 			return penaltyDocItemContainer.Responses[this.penaltyDocTableName];
 		} catch (err) {
-			logError('GetPenaltiesWithIDs', { penaltyIds, errorMessage: err.message });
+			logError('GetPenaltiesWithIDsError', { penaltyIds, errorMessage: err.message });
 			throw new Error(`Problem fetching penaltyDocuments: ${err.message}`);
 		}
 	}

@@ -147,7 +147,7 @@ export default class PenaltyDocument {
 
 			return createResponse({ statusCode: HttpStatus.OK });
 		} catch (err) {
-			logError('UpdateMultipleUponPaymentDelete', {
+			logError('UpdateMultipleUponPaymentDeleteError', {
 				message: 'Error updating multiple docs upon payment delete',
 				error: err.message,
 				penaltyDocumentIds,
@@ -257,7 +257,7 @@ export default class PenaltyDocument {
 
 			return createResponse({ statusCode: HttpStatus.OK, body: data.Item });
 		} catch (err) {
-			logError('UpdateDocumentWithPayment', {
+			logError('UpdateDocumentWithPaymentError', {
 				error: err.message,
 				documentId: paymentInfo.id,
 				paymentToken: paymentInfo.paymentToken,
@@ -324,7 +324,7 @@ export default class PenaltyDocument {
 					paymentToken: paymentInfo.paymentToken,
 				});
 			} else {
-				logError('DummmyPenaltyDocumentCreate', {
+				logError('DummmyPenaltyDocumentCreateError', {
 					message: 'Unable to create dummy penalty document',
 					statusCode: response.statusCode,
 					dummyPenaltyDoc,
@@ -332,7 +332,7 @@ export default class PenaltyDocument {
 			}
 		} catch (err) {
 			// Log error but fail silently
-			logError('DummmyPenaltyDocumentCreate', {
+			logError('DummmyPenaltyDocumentCreateError', {
 				error: err.message,
 				dummyPenaltyDoc
 			});
@@ -344,7 +344,7 @@ export default class PenaltyDocument {
 		const params = this.paymentMessageParams(paymentInfo, documentInfo);
 		sns.publish(params, (err, data) => {
 			if (err) {
-				logError('SendPaymentNotification', {
+				logError('SendPaymentNotificationError', {
 					message: 'Unable to send message.',
 					error: err.message,
 				});
@@ -449,7 +449,7 @@ export default class PenaltyDocument {
 				.promise()
 				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
 				.catch(err => {
-					logError('GetPaymentInfoViaInvocation', {
+					logError('GetPaymentInfoViaInvocationError', {
 						idList,
 						error: err.message,
 					});
@@ -629,7 +629,7 @@ export default class PenaltyDocument {
 		try {
 			data = await this.invokeTokenServiceLambda(token);
 		} catch (error) {
-			logError('GetDocumentByToken', {
+			logError('GetDocumentByTokenError', {
 				error: error.message,
 				token,
 			});
@@ -642,7 +642,7 @@ export default class PenaltyDocument {
 				const parsedPayload = JSON.parse(data.Payload);
 				if (parsedPayload.statusCode === HttpStatus.BAD_REQUEST) {
 					const payloadBody = JSON.parse(parsedPayload.body);
-					logError('GetDocumentTokenServiceResponse', {
+					logError('GetDocumentTokenServiceResponseError', {
 						message: 'Token service returned bad request (status 400)',
 						payloadBody,
 						paymentCode: token,
@@ -698,7 +698,7 @@ export default class PenaltyDocument {
 						name: 'Error from GetDocument',
 						message: 'The GetDocument method returned an unhandled error',
 					};
-					logError('GetDocumentByToken', {
+					logError('GetDocumentByTokenError', {
 						...errMessage,
 						docID,
 						docStatusCode: res.statusCode,
@@ -709,7 +709,7 @@ export default class PenaltyDocument {
 					});
 				});
 			} catch (e) {
-				logError('GetDocumentByToken', {
+				logError('GetDocumentByTokenError', {
 					error: e.message,
 					payload: data.Payload,
 				});
@@ -863,7 +863,7 @@ export default class PenaltyDocument {
 					};
 					return createResponse({ statusCode: HttpStatus.OK, body: result });
 				}).catch((err) => {
-					logError('UpdateDocumentsAsyncUpdateItem', {
+					logError('UpdateDocumentsAsyncUpdateItemError', {
 						mergedList,
 						error: err.message,
 					});
@@ -975,7 +975,7 @@ export default class PenaltyDocument {
 			});
 			return `Successfully processed ${event.Records.length} records.`;
 		} catch (err) {
-			logError('StreamDocumentsSendMessage', {
+			logError('StreamDocumentsSendMessageError', {
 				error: err.message,
 				snsMessageParams: params,
 			});

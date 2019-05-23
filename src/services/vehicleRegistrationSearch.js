@@ -44,7 +44,7 @@ export default class VehicleRegistrationSearch {
 			})
 			return createResponse({ statusCode: HttpStatus.NOT_FOUND, body: 'No penalties found' });
 		} catch (err) {
-			logError('VehicleRegSearch', {
+			logError('VehicleRegSearchError', {
 				vehicleReg,
 				error: err.message,
 			});
