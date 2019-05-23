@@ -11,14 +11,12 @@ import hashToken from '../utils/hash';
 import ErrorCode from '../utils/errorCode';
 import createErrorCodedResponse from '../utils/createErrorCodedResponse';
 import HttpStatus from '../utils/httpStatusCode';
+import { logError, logInfo } from '../utils/logger';
 
 const sns = new SNS();
 const appOrigin = 'APP';
 
 /** @typedef {{ ID: String, Enabled: boolean }} PenaltyDocument */
-/** @typedef
- * {(err: any, response: {statusCode: number, body: any, headers: any}) => void} LambdaCallback
- */
 
 
 export default class PenaltyGroup {
@@ -47,6 +45,7 @@ export default class PenaltyGroup {
 				body: penaltyGroup,
 			});
 		} catch (err) {
+			logError('PenaltyGroupCreateError', { batchWriteParams });
 			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: `Problem writing to DB: ${err}`,
@@ -58,7 +57,7 @@ export default class PenaltyGroup {
 		const schemaValidationResult = Validation.penaltyGroupValidation(payload);
 		if (!schemaValidationResult.valid) {
 			const errMsg = schemaValidationResult.error.message;
-			console.log(`Got payload: ${JSON.stringify(payload)}`);
+			logError('PenaltyGroupSchemaValidationError', { payload, error: errMsg });
 			return { valid: false, response: this.groupValidationFailedResponse(errMsg) };
 		}
 
@@ -118,6 +117,7 @@ export default class PenaltyGroup {
 			delete penaltyGroup.PenaltyDocumentIds;
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
+			logError('GetPenaltyGroupError', { penaltyGroupId });
 			return createResponse({
 				statusCode: HttpStatus.SERVICE_UNAVAILABLE,
 				body: err.message,
@@ -139,8 +139,8 @@ export default class PenaltyGroup {
 			const result = await this.db.query(params).promise();
 			return createResponse({ statusCode: HttpStatus.OK, body: result });
 		} catch (error) {
-			const resp = createResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, body: error });
-			return resp;
+			logError('ListPenaltyGroups', { offsetFrom, error: error.message });
+			return createResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, body: error.message });
 		}
 	}
 
@@ -155,9 +155,11 @@ export default class PenaltyGroup {
 				await this._spliceUnpaidPenaltiesFromGroup(group, penaltyDocuments);
 			}
 
+			logInfo('DeletePenaltyGroupSuccess', { penaltyGroupId });
+
 			return createResponse({ statusCode: HttpStatus.NO_CONTENT });
 		} catch (error) {
-			console.log(error);
+			logError('DeletePenaltyGroupError', { errorMessage: error.message, penaltyGroupId });
 			return createResponse({
 				statusCode: HttpStatus.BAD_REQUEST,
 				body: error.message,
@@ -289,15 +291,21 @@ export default class PenaltyGroup {
 					this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 				}
 
+				logInfo('UpdateGroupPaymentStatusSuccess', { paymentStatus, penaltyType, penaltyGroupId: id });
 				return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 			}
 			if (penaltyGroup.Origin === appOrigin) {
 				paymentInfo.paymentAmount = PenaltyGroup.sumPenaltyAmounts(penaltiesToUpdate);
 				this.sendPaymentNotification(paymentInfo, penaltiesToUpdate[0]);
 			}
+			logInfo('UpdateGroupPaymentChildrenSuccess', {
+				paymentStatus,
+				penaltyType,
+				penaltyGroupId: id,
+			});
 			return createResponse({ statusCode: HttpStatus.OK, body: penaltyGroup });
 		} catch (err) {
-			console.error(err);
+			logError('UpdatePenaltyGroupError', { err: err.message, paymentInfo });
 			return createErrorResponse({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, err });
 		}
 	}
@@ -343,10 +351,13 @@ export default class PenaltyGroup {
 	async sendPaymentNotification(paymentInfo, documentInfo) {
 		const params = this._paymentMessageParams(paymentInfo, documentInfo);
 		try {
-			const data = await sns.publish(params).promise();
-			console.log('Results from sending message: ', JSON.stringify(data, null, 2));
+			const snsResponse = await sns.publish(params).promise();
+			logInfo('PaymentNotificationSent', { snsResponse, snsMessage: params });
 		} catch (err) {
-			console.log('Unable to send message. Error JSON:', JSON.stringify(err, null, 2));
+			logError('PaymentNotificationError', {
+				err: err.message,
+				snsMessage: params,
+			});
 		}
 	}
 
@@ -380,36 +391,34 @@ export default class PenaltyGroup {
 	}
 
 	async _getPenaltyGroupById(penaltyGroupId) {
-		return new Promise(async (resolve, reject) => {
-			try {
-				const groupParams = {
-					TableName: this.penaltyGroupTableName,
-					Key: { ID: penaltyGroupId },
-				};
-				const penaltyGroupContainer = await this.db.get(groupParams).promise();
-				resolve(penaltyGroupContainer.Item);
-			} catch (err) {
-				reject(new Error(`Problem fetching penaltyGroup: ${err}`));
-			}
-		});
+		try {
+			const groupParams = {
+				TableName: this.penaltyGroupTableName,
+				Key: { ID: penaltyGroupId },
+			};
+			const penaltyGroupContainer = await this.db.get(groupParams).promise();
+			return penaltyGroupContainer.Item;
+		} catch (err) {
+			logError('GetPenaltyGroupById', { errorMessage: err.message, penaltyGroupId });
+			throw new Error(`Problem fetching penaltyGroup: ${err.message}`);
+		}
 	}
 
 	async _getPenaltiesWithIds(penaltyIds) {
-		return new Promise(async (resolve, reject) => {
-			try {
-				const requestItems = penaltyIds.map(docId => ({
-					ID: docId,
-				}));
-				const penaltyDocumentParams = { RequestItems: {} };
-				penaltyDocumentParams.RequestItems[this.penaltyDocTableName] = { Keys: requestItems };
-				const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
+		try {
+			const requestItems = penaltyIds.map(docId => ({
+				ID: docId,
+			}));
+			const penaltyDocumentParams = { RequestItems: {} };
+			penaltyDocumentParams.RequestItems[this.penaltyDocTableName] = { Keys: requestItems };
+			const penaltyDocPromise = this.db.batchGet(penaltyDocumentParams).promise();
 
-				const penaltyDocItemContainer = await penaltyDocPromise;
-				resolve(penaltyDocItemContainer.Responses[this.penaltyDocTableName]);
-			} catch (err) {
-				reject(new Error(`Problem fetching penaltyDocuments: ${err}`));
-			}
-		});
+			const penaltyDocItemContainer = await penaltyDocPromise;
+			return penaltyDocItemContainer.Responses[this.penaltyDocTableName];
+		} catch (err) {
+			logError('GetPenaltiesWithIDs', { penaltyIds, errorMessage: err.message });
+			throw new Error(`Problem fetching penaltyDocuments: ${err.message}`);
+		}
 	}
 
 	_groupPenaltyDocsToPayments(penaltyDocs) {
