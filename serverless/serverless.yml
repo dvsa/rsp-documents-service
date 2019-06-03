@@ -70,7 +70,26 @@ functions:
     memorySize: 128
   updatePenaltyGroupWithPayment:
     handler: handler.updatePenaltyGroupWithPayment
-    memorySize: 128  
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updatePenaltyGroupWithPayment
+          method: put
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
+  updatePenaltyGroupWithPaymentStartTime:
+    handler: handler.updatePenaltyGroupWithPaymentStartTime
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updatePenaltyGroupWithPaymentStartTime
+          method: put
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128

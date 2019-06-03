@@ -18,6 +18,7 @@ import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import updateMultipleUponPaymentDelete from './functions/updateMultipleUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
+import updatePenaltyGroupWithPaymentStartTime from './functions/updatePenaltyGroupWithPaymentStartTime';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
 
 export {
@@ -38,5 +39,6 @@ export {
 	updateWithPaymentStartTime,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
+	updatePenaltyGroupWithPaymentStartTime,
 	searchByVehicleRegistration,
 };
