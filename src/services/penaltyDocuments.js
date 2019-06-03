@@ -816,7 +816,6 @@ export default class PenaltyDocument {
 						}
 					}
 					resolve(createSimpleResponse({ statusCode: HttpStatus.OK, body: updatedItem }));
-					logInfo('UpdateItemSuccess', params);
 				}).catch((err) => {
 					updatedItem.Value.paymentStatus = 'UNPAID';
 					const responseBody = {
