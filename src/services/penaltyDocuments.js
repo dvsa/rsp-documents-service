@@ -818,11 +818,17 @@ export default class PenaltyDocument {
 					resolve(createSimpleResponse({ statusCode: HttpStatus.OK, body: updatedItem }));
 				}).catch((err) => {
 					updatedItem.Value.paymentStatus = 'UNPAID';
-					resolve(createSimpleResponse({
+					const responseBody = {
 						statusCode: HttpStatus.BAD_REQUEST,
 						body: updatedItem,
 						error: err,
-					}));
+					};
+
+					logError('UpdateItemError', {
+						responseBody,
+					});
+
+					resolve(createSimpleResponse(responseBody));
 				});
 			} else {
 				resolve(createSimpleResponse({
