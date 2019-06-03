@@ -13,6 +13,7 @@ import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import streamDocuments from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
+import updateDocumentWithPaymentStartTime from 'functions/updateDocumentWithPaymentStartTime';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import updateMultipleUponPaymentDelete from './functions/updateMultipleUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
@@ -34,6 +35,7 @@ export {
 	streamDocuments,
 	updateMultipleUponPaymentDelete,
 	updateWithPayment,
+	updateDocumentWithPaymentStartTime,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
 	searchByVehicleRegistration,

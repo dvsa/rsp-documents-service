@@ -65,6 +65,9 @@ functions:
   updateWithPayment:
     handler: handler.updateWithPayment
     memorySize: 128
+  updateDocumentWithPaymentStartTime:
+    handler: handler.updateDocumentWithPaymentStartTime
+    memorySize: 128
   updatePenaltyGroupWithPayment:
     handler: handler.updatePenaltyGroupWithPayment
     memorySize: 128  
