@@ -37,7 +37,5 @@ export default async (event) => {
 		penaltyDocumentIds: body.penaltyDocumentIds,
 	};
 
-	console.log(JSON.stringify(paymentInfo, null, 2));
-
 	return penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo);
 };

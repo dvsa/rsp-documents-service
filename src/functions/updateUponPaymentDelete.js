@@ -38,7 +38,5 @@ export default async (event) => {
 		paymentStatus: body.paymentStatus,
 	};
 
-	console.log(JSON.stringify(paymentInfo, null, 2));
-	// id body document
 	return penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo);
 };

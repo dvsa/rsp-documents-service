@@ -14,7 +14,6 @@ const createErrorCodedResponse = (httpStatusCode, errCode, errMessage, errBody =
 		},
 		body: JSON.stringify({ errCode, errMessage, errBody }),
 	};
-	console.log(response);
 	return response;
 };
 
