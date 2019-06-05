@@ -340,9 +340,14 @@ export default class PenaltyGroup {
 			},
 		};
 		try {
-			const data = await this.db.update(updateParams).promise();
-			return createResponse({ statusCode: HttpStatus.OK })
+			await this.db.update(updateParams).promise();
+			return createResponse({ statusCode: HttpStatus.OK });
 		} catch (err) {
+			logError('UpdateGroupWithPaymentStartTimeError', {
+				groupId,
+				penaltyType,
+				error: err.message,
+			});
 			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: err.message });
 		}
 	}

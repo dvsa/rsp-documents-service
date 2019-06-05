@@ -288,6 +288,10 @@ export default class PenaltyDocument {
 			const data = await this.db.update(updateParams).promise();
 			return createResponse({ statusCode: HttpStatus.OK })
 		} catch (err) {
+			logError('UpdateDocumentWithPaymentStartTimeError', {
+				documentId,
+				error: err.message,
+			});
 			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: err.message });
 		}
 	}
