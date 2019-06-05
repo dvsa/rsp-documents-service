@@ -2,19 +2,15 @@ import expect from 'expect';
 import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
 import mockPenaltyDocumentsService from './service.unit';
-import getMockPenalties from '../../../mock-data/mock-penalty-notice';
 
 
 describe('updateDocumentWithPaymentStartTime', () => {
 	const penaltyDocuments = mockPenaltyDocumentsService(doc);
   let penaltyDocumentId = '820500000877_FPN';
-  let mockPenalties;
-  let mockUpdate;
 
   context('when a penalty exists', () => {
     beforeEach(() => {
-      mockPenalties = getMockPenalties();
-      mockUpdate = sinon.stub(doc, 'update').returns({
+      sinon.stub(doc, 'update').returns({
         promise: () => Promise.resolve(),
       });
     });
@@ -31,8 +27,7 @@ describe('updateDocumentWithPaymentStartTime', () => {
 
   context('when the update fails', () => {
     beforeEach(() => {
-      mockPenalties = getMockPenalties();
-      mockUpdate = sinon.stub(doc, 'update').returns({
+      sinon.stub(doc, 'update').returns({
         promise: () => Promise.reject(new Error('Penalty does not exists')),
       });
     });
