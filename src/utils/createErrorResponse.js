@@ -7,6 +7,5 @@ export default ({ statusCode, err }) => {
 		},
 		body: JSON.stringify({ name: err.name, message: err.message }),
 	};
-	console.log(response);
 	return response;
 };

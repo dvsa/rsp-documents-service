@@ -13,10 +13,12 @@ import updateMulti from './functions/updateMulti';
 import sites from './functions/sites';
 import streamDocuments from './functions/stream';
 import updateWithPayment from './functions/updateWithPayment';
+import updateWithPaymentStartTime from './functions/updateWithPaymentStartTime';
 import updateUponPaymentDelete from './functions/updateUponPaymentDelete';
 import updateMultipleUponPaymentDelete from './functions/updateMultipleUponPaymentDelete';
 import getDocumentByToken from './functions/getDocumentByToken';
 import updatePenaltyGroupWithPayment from './functions/updatePenaltyGroupWithPayment';
+import updatePenaltyGroupWithPaymentStartTime from './functions/updatePenaltyGroupWithPaymentStartTime';
 import searchByVehicleRegistration from './functions/searchByVehicleRegistration';
 
 export {
@@ -34,7 +36,9 @@ export {
 	streamDocuments,
 	updateMultipleUponPaymentDelete,
 	updateWithPayment,
+	updateWithPaymentStartTime,
 	updateUponPaymentDelete,
 	updatePenaltyGroupWithPayment,
+	updatePenaltyGroupWithPaymentStartTime,
 	searchByVehicleRegistration,
 };

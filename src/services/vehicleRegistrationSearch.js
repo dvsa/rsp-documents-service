@@ -1,6 +1,7 @@
 import createResponse from '../utils/createResponse';
 import onlyUnique from '../utils/onlyUnique';
 import HttpStatus from '../utils/httpStatusCode';
+import { logInfo, logError } from '../utils/logger';
 
 export default class VehicleRegistrationSearch {
 	constructor(db, penaltyDocTableName, penaltyGroupTableName) {
@@ -8,6 +9,7 @@ export default class VehicleRegistrationSearch {
 		this.penaltyDocTableName = penaltyDocTableName;
 		this.penaltyGroupTableName = penaltyGroupTableName;
 	}
+
 	async search(vehicleReg) {
 		try {
 			// Check in single penalties first
@@ -36,13 +38,20 @@ export default class VehicleRegistrationSearch {
 				});
 			}
 			// Return 404 not found
-			console.log(`No penalties found for registration ${vehicleReg}`);
+			logInfo('VehicleRegNotFound', {
+				vehicleReg,
+				message: `No penalties found for registration ${vehicleReg}`,
+			})
 			return createResponse({ statusCode: HttpStatus.NOT_FOUND, body: 'No penalties found' });
 		} catch (err) {
-			console.log(err);
+			logError('VehicleRegSearchError', {
+				vehicleReg,
+				error: err.message,
+			});
 			return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
 		}
 	}
+
 	_batchGetPenaltyGroups(ids) {
 		const uniqueIds = ids.filter(onlyUnique);
 		const batchGetRequestKeys = uniqueIds.map(id => ({
@@ -57,6 +66,7 @@ export default class VehicleRegistrationSearch {
 		};
 		return this.db.batchGet(batchGetParams).promise();
 	}
+
 	_searchSinglePenalties(vehicleReg) {
 		const params = {
 			TableName: this.penaltyDocTableName,
