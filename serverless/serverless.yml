@@ -65,9 +65,20 @@ functions:
   updateWithPayment:
     handler: handler.updateWithPayment
     memorySize: 128
+  updateWithPaymentStartTime:
+    handler: handler.updateWithPaymentStartTime
+    memorySize: 128
+    events:
+      -
+        http:
+          path: documents/updateWithPaymentStartTime
+          method: put
+          authorizer: aws_iam
+          timeout: 12
+          cors: true
   updatePenaltyGroupWithPayment:
     handler: handler.updatePenaltyGroupWithPayment
-    memorySize: 128  
+    memorySize: 128
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128
@@ -313,6 +324,17 @@ functions:
           path: penaltyGroup/{id}
           method: delete
           authorizer: aws_iam
+          cors: true
+  updatePenaltyGroupWithPaymentStartTime:
+    handler: handler.updatePenaltyGroupWithPaymentStartTime
+    memorySize: 128
+    events:
+      -
+        http:
+          path: penaltyGroup/updateWithPaymentStartTime
+          method: put
+          authorizer: aws_iam
+          timeout: 12
           cors: true
   updateMulti:
     handler: handler.updateMulti

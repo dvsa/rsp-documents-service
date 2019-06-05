@@ -242,6 +242,42 @@ describe('PenaltyGroupService', () => {
 			expect(responseBody.errMessage).toBe('One or more penalties already exist with the supplied reference codes');
 		});
 	});
+
+	describe('updateDocumentWithPaymentStartTime', () => {
+		context('when a penalty exists', () => {
+			beforeEach(() => {
+				sinon.stub(doc, 'update').returns({
+					promise: () => Promise.resolve(),
+				});
+			});
+	
+			afterEach(() => {
+				doc.update.restore();
+			});
+	
+			it('updates the document', async () => {
+				const response = await penaltyGroupSvc.updatePenaltyGroupWithPaymentStartTime('16abf61', 'FPN');
+				expect(response.statusCode).toBe(200);
+			});
+		});
+	
+		context('when the update fails', () => {
+			beforeEach(() => {
+				sinon.stub(doc, 'update').returns({
+					promise: () => Promise.reject(new Error('Penalty does not exists')),
+				});
+			});
+	
+			afterEach(() => {
+				doc.update.restore();
+			});
+	
+			it('responds with bad request', async () => {
+				const response = await penaltyGroupSvc.updatePenaltyGroupWithPaymentStartTime('16abf61', 'FPN');
+				expect(response.statusCode).toBe(400);
+			});
+		});
+	});
 });
 
 const whenDbWithLimitAndOffset = (mockDbQuery, limit, offset) => {

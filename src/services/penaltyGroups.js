@@ -310,6 +310,48 @@ export default class PenaltyGroup {
 		}
 	}
 
+	penaltyTypeToAttrName(penaltyType) {
+		switch(penaltyType) {
+			case 'FPN':
+				return 'fpnPaymentStartTime';
+			case 'IM':
+				return 'imPaymentStartTime';
+			case 'CDN':
+				return 'cdnPaymentStartTime';
+			default:
+				throw new Error(`No payment start time for penaltyType: ${penaltyType}`)
+		}
+	}
+
+	async updatePenaltyGroupWithPaymentStartTime(groupId, penaltyType) {
+		const updateParams = {
+			TableName: this.penaltyGroupTableName,
+			Key: {
+				ID: groupId,
+			},
+			UpdateExpression: 'set #paymentStartTime = :paymentStartTime',
+			ConditionExpression: 'attribute_exists(#ID)',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+				'#paymentStartTime': this.penaltyTypeToAttrName(penaltyType),
+			},
+			ExpressionAttributeValues: {
+				':paymentStartTime': new Date().valueOf() / 1000,
+			},
+		};
+		try {
+			await this.db.update(updateParams).promise();
+			return createResponse({ statusCode: HttpStatus.OK });
+		} catch (err) {
+			logError('UpdateGroupWithPaymentStartTimeError', {
+				groupId,
+				penaltyType,
+				error: err.message,
+			});
+			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: err.message });
+		}
+	}
+
 	_enrichPenaltyGroupRequest(body) {
 		const penGrp = { ...body };
 		const { Timestamp, SiteCode, Penalties } = penGrp;
