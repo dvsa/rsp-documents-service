@@ -22,6 +22,7 @@ const lambda = new Lambda({ region: 'eu-west-1' });
 const docTypeMapping = ['FPN', 'IM', 'CDN'];
 const portalOrigin = 'PORTAL';
 const appOrigin = 'APP';
+const newHashConstant = '<NewHash>';
 
 export default class PenaltyDocument {
 
@@ -729,7 +730,7 @@ export default class PenaltyDocument {
 	updateItem(item) {
 		const timestamp = getUnixTime();
 		const key = item.ID;
-		const clientHash = item.Hash ? item.Hash : '<NewHash>';
+		const clientHash = item.Hash ? item.Hash : newHashConstant;
 		const { Value, Enabled } = item;
 
 		// save values before removing them on insert
@@ -769,7 +770,8 @@ export default class PenaltyDocument {
 				ID: key,
 			},
 			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin, #VehicleRegistration = :VehicleRegistration',
-			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash)',
+			// Update if not exists, portal origin, app origin with matching hash (from app db), or if no hash from app but existing token is cancelled.
+			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND :isNewHash = :newHashTrue AND #Enabled = :notEnabled)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
 				'#Hash': 'Hash',
@@ -782,6 +784,9 @@ export default class PenaltyDocument {
 			ExpressionAttributeValues: {
 				':clientHash': clientHash,
 				':Enabled': Enabled,
+				':notEnabled': false,
+				':isNewHash': clientHash === newHashConstant || clientHash === 'New',
+				':newHashTrue': true,
 				':Value': Value,
 				':Hash': newHash,
 				':Offset': timestamp,
