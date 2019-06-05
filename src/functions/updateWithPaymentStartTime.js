@@ -21,5 +21,7 @@ export default async (event) => {
 		);
 	}
 
-	return penaltyDocuments.updateDocumentWithPaymentStartTime(event.body.id);
+	const data = JSON.parse(event.body);
+
+	return penaltyDocuments.updateDocumentWithPaymentStartTime(data.id);
 };

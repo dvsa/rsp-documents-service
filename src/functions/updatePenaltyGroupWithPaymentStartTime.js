@@ -15,7 +15,9 @@ export default async (event) => {
 			config.dynamodbPenaltyGroupTable(),
 			config.snsTopicArn(),
 		);
-  }
+	}
+	
+	const data = JSON.parse(event.body);
 
-	return penaltyGroupService.updatePenaltyGroupWithPaymentStartTime(event.body.id, event.body.penaltyType);
+	return penaltyGroupService.updatePenaltyGroupWithPaymentStartTime(data.id, data.penaltyType);
 };
