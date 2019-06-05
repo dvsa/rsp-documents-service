@@ -325,7 +325,7 @@ export default class PenaltyGroup {
 
 	async updatePenaltyGroupWithPaymentStartTime(groupId, penaltyType) {
 		const updateParams = {
-			TableName: this.penaltyDocTableName,
+			TableName: this.penaltyGroupTableName,
 			Key: {
 				ID: groupId,
 			},
