@@ -736,7 +736,7 @@ export default class PenaltyDocument {
 				':clientHash': clientHash,
 				':Enabled': Enabled,
 				':notEnabled': false,
-				':isNewHash': clientHash === newHashConstant,
+				':isNewHash': clientHash === newHashConstant || clientHash === 'New',
 				':newHashTrue': true,
 				':Value': Value,
 				':Hash': newHash,
