@@ -722,7 +722,7 @@ export default class PenaltyDocument {
 			},
 			UpdateExpression: 'set #Value = :Value, #Hash = :Hash, #Offset = :Offset, #Enabled = :Enabled, #Origin = :Origin, #VehicleRegistration = :VehicleRegistration',
 			// Update if not exists, portal origin, app origin with matching hash (from app db), or if no hash from app but existing token is cancelled.
-			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND :isNewHash AND #Enabled = :notEnabled)',
+			ConditionExpression: 'attribute_not_exists(#ID) OR (#Origin = :PortalOrigin  and attribute_exists(#ID)) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND #Hash=:clientHash) OR (#Origin = :AppOrigin and attribute_exists(#ID) AND :isNewHash = :newHashTrue AND #Enabled = :notEnabled)',
 			ExpressionAttributeNames: {
 				'#ID': 'ID',
 				'#Hash': 'Hash',
@@ -737,6 +737,7 @@ export default class PenaltyDocument {
 				':Enabled': Enabled,
 				':notEnabled': false,
 				':isNewHash': clientHash === newHashConstant,
+				':newHashTrue': true,
 				':Value': Value,
 				':Hash': newHash,
 				':Offset': timestamp,
