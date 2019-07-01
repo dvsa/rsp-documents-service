@@ -772,7 +772,7 @@ export default class PenaltyDocument {
 			savedPaymentDate = Number(` ${item.Value.paymentDate}`.slice(1));
 		}
 
-		delete item.Value.paymentStatus;
+		// Don't delete payment status from payment data as reg search relies on it
 		delete item.Value.paymentAuthCode;
 		delete item.Value.paymentDate;
 		delete item.Value.paymentRef;
