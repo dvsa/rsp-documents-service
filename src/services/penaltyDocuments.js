@@ -395,7 +395,6 @@ export default class PenaltyDocument {
 
 		const timestamp = getUnixTime();
 		const { Value, Enabled, ID } = body;
-		const idList = [];
 		// remove payment info, payment service is single point truth
 		// may not need to remove this delete Value.paymentToken;
 		if (typeof body.Origin === 'undefined') {
@@ -412,8 +411,7 @@ export default class PenaltyDocument {
 			VehicleRegistration: Value.vehicleDetails.regNo,
 		};
 
-		idList.push(ID);
-		return this.getPaymentInformationViaInvocation(idList)
+		return this.getPaymentInformationViaInvocation([ID])
 			.then((response) => {
 				const params = {
 					TableName: this.penaltyDocTableName,
@@ -439,17 +437,16 @@ export default class PenaltyDocument {
 					});
 					return validationError;
 				}
+				const paymentExists = response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0;
+				item.Value.paymentStatus = paymentExists ? 'PAID' : 'UNPAID';
 				const dbPut = this.db.put(params).promise();
 				return dbPut.then(() => {
 					// stamp payment info if we have it
-					if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
-						item.Value.paymentStatus = response.payments[0].PenaltyStatus;
+					if (paymentExists) {
 						item.Value.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
 						item.Value.paymentDate = Number(response.payments[0].PaymentDetail.PaymentDate);
 						item.Value.paymentRef = response.payments[0].PaymentDetail.PaymentRef;
 						// item.Hash = hashToken(ID, item.Value, Enabled); // recalc hash if payment found
-					} else {
-						item.Value.paymentStatus = 'UNPAID';
 					}
 
 					return createResponse({ statusCode: HttpStatus.OK, body: item });
