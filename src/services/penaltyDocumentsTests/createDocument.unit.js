@@ -67,6 +67,8 @@ describe('createDocument', () => {
 				expect(response.statusCode).toBe(200);
 				const responseBody = JSON.parse(response.body);
 				expect(responseBody.Value.paymentStatus).toBe('PAID');
+				const putParams = dbPut.getCall(0).args[0];
+				expect(putParams.Item.Value.paymentStatus).toBe('PAID');
 			});
 		});
 	});
