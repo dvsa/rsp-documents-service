@@ -117,6 +117,8 @@ describe('updateDocumentWithPayment', () => {
 			sinon.assert.calledOnce(createDocument);
 			sinon.assert.notCalled(putStub);
 			sinon.assert.notCalled(sendPaymentNotification);
+			const createDocumentParams = createDocument.getCall(0).args[0];
+			expect(createDocumentParams.Value.paymentStatus).toBe('PAID');
 		});
 	});
 
