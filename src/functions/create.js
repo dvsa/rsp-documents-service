@@ -22,5 +22,6 @@ export default async (event) => {
 
 	const data = JSON.parse(event.body);
 	// id body document
+	delete data.Value.paymentStatus;
 	return penaltyDocuments.createDocument(data);
 };

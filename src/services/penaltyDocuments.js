@@ -389,8 +389,6 @@ export default class PenaltyDocument {
 	}
 
 	async createDocument(body) {
-
-		delete body.Value.paymentStatus;
 		delete body.paymentAuthCode;
 		delete body.paymentDate;
 		delete body.paymentRef;
