@@ -58,7 +58,7 @@ plugins:
   - serverless-offline
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.18.0
   region: eu-west-1
 
 functions:
