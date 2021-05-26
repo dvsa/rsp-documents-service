@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.4.0",
-    "aws-sdk": "^2.406.0",
+    "aws-sdk": "^2.900.0",
     "js-sha256": "^0.7.1",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
