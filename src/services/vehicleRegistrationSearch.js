@@ -29,7 +29,7 @@ export default class VehicleRegistrationSearch {
 					});
 				}
 				// Otherwise, get the penalty groups
-				const penaltyGroupIds = penaltiesInGroups.map(p => p.penaltyGroupId);
+				const penaltyGroupIds = penaltiesInGroups.map((p) => p.penaltyGroupId);
 				const { Responses } = await this._batchGetPenaltyGroups(penaltyGroupIds);
 				const PenaltyGroups = Responses[this.penaltyGroupTableName];
 				return createResponse({
@@ -41,7 +41,7 @@ export default class VehicleRegistrationSearch {
 			logInfo('VehicleRegNotFound', {
 				vehicleReg,
 				message: `No penalties found for registration ${vehicleReg}`,
-			})
+			});
 			return createResponse({ statusCode: HttpStatus.NOT_FOUND, body: 'No penalties found' });
 		} catch (err) {
 			logError('VehicleRegSearchError', {
@@ -54,7 +54,7 @@ export default class VehicleRegistrationSearch {
 
 	_batchGetPenaltyGroups(ids) {
 		const uniqueIds = ids.filter(onlyUnique);
-		const batchGetRequestKeys = uniqueIds.map(id => ({
+		const batchGetRequestKeys = uniqueIds.map((id) => ({
 			ID: id,
 		}));
 		const batchGetParams = {

@@ -209,8 +209,8 @@ describe('penaltyGroups', () => {
 			beforeEach(async () => {
 				const { id, docIds } = await insertDeletionTestPartPaidPenaltyGroup();
 				testPenaltyGroupId = id;
-				paidDocIds = docIds.filter(docId => docId.includes('IM'));
-				unpaidDocIds = docIds.filter(docId => docId.includes('FPN'));
+				paidDocIds = docIds.filter((docId) => docId.includes('IM'));
+				unpaidDocIds = docIds.filter((docId) => docId.includes('FPN'));
 			});
 			afterEach(async () => {
 				await removeDeleteTestPenaltyGroup(testPenaltyGroupId, [...paidDocIds, ...unpaidDocIds]);
@@ -260,7 +260,7 @@ async function insertNPenaltyGroupsIncrementingFromOffset(groupCount, startOffse
 	} catch (error) {
 		console.log(`Error inserting penalty groups :${error}`);
 	}
-	return putRequests.map(r => String(r.PutRequest.Item.ID));
+	return putRequests.map((r) => String(r.PutRequest.Item.ID));
 }
 
 async function removePenaltyGroupsById(ids) {
@@ -344,7 +344,7 @@ function documentPutRequest(docId, paymentStatus = 'UNPAID', reg = 'TESTREG', pe
 
 async function insertDeletionTestUnpaidPenaltyGroup() {
 	const docIds = ['deleteintegdoc01_FPN', 'deleteintegdoc02_FPN', 'deleteintegdoc03_FPN'];
-	const documentPutRequests = docIds.map(id => documentPutRequest(id));
+	const documentPutRequests = docIds.map((id) => documentPutRequest(id));
 	const params = {
 		RequestItems: {
 			penaltyGroups: [groupPutRequest(docIds)],
@@ -376,10 +376,10 @@ async function insertDeletionTestPartPaidPenaltyGroup() {
 		},
 	];
 	const groupVehicleReg = '11AAA,11AAB,11AAC';
-	const allDocIds = [paidIm.id, ...unpaidFpns.map(fpn => fpn.id)];
+	const allDocIds = [paidIm.id, ...unpaidFpns.map((fpn) => fpn.id)];
 	const documentPutRequests = [
 		documentPutRequest(paidIm.id, 'PAID', paidIm.reg, paidIm.amount),
-		...unpaidFpns.map(fpn => documentPutRequest(fpn.id, 'UNPAID', fpn.reg, fpn.amount)),
+		...unpaidFpns.map((fpn) => documentPutRequest(fpn.id, 'UNPAID', fpn.reg, fpn.amount)),
 	];
 	const params = {
 		RequestItems: {
@@ -471,8 +471,8 @@ async function assertPenaltyDocumentDoesntExist(id) {
 }
 
 async function assertPenaltyDocumentsDontExist(ids) {
-	const assertionPromises = ids.map(id => new Promise(async (resolve) => {
-		await assertPenaltyDocumentDoesntExist(id);
+	const assertionPromises = ids.map((id) => new Promise((resolve) => {
+		assertPenaltyDocumentDoesntExist(id);
 		resolve();
 	}));
 	await Promise.all(assertionPromises);

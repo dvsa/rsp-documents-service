@@ -1,4 +1,4 @@
-export default(date, days) => {
+export default (date, days) => {
 	return (new Date(
 		date.getFullYear(),
 		date.getMonth(),

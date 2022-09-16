@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    CodeUri: src/functions
+
+Resources:
+    updateWithPayment:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updateWithPayment.handler
+    get:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: get.handler
+    updateWithPaymentStartTime:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updateWithPaymentStartTime.handler
+    updatePenaltyGroupWithPayment:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updatePenaltyGroupWithPayment.handler
+    updateUponPaymentDelete:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updateUponPaymentDelete.handler
+    streamDocuments:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: stream.handler
+    updateMultipleUponPaymentDelete:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updateMultipleUponPaymentDelete.Handler
+    sites:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: sites.handler
+    list:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: list.handler
+    listGroups:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: listGroups.handler
+    getByToken:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: getDocumentByToken.handler
+    create:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: create.handler
+    createPenaltyGroup:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: createPenaltyGroup.handler
+    getPenaltyGroup:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: getPenaltyGroup.handler
+    remove:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: delete.handler
+    deleteGroup:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: deleteGroup.handler
+    updatePenaltyGroupWithPaymentStartTime:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updatePenaltyGroupWithPaymentStartTime.handler
+    updateMulti:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: updateMulti.handler
+    searchByVehicleRegistration:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: searchByVehicleRegistration.handler

@@ -1,6 +1,5 @@
 // @ts-check
 /* eslint-env es6 */
-import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
@@ -10,7 +9,7 @@ import config from '../config';
  * @type PenaltyDocument
  */
 let penaltyDocuments;
-export default async (event) => {
+export const handler = async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -39,3 +38,5 @@ export default async (event) => {
 
 	return penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo);
 };
+
+export default handler;

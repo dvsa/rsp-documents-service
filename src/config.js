@@ -40,7 +40,7 @@ async function bootstrap() {
 	});
 }
 
-const fromConfiguration = configKey => () => {
+const fromConfiguration = (configKey) => () => {
 	return configuration[configKey];
 };
 

@@ -5,7 +5,6 @@ import PenaltyDocumentsService from '../penaltyDocuments';
 import mockPenaltyGroupsData from '../../../mock-data/fake-penalty-groups.json';
 import getMockPenalties from '../../../mock-data/mock-penalty-notice';
 
-
 describe('PenaltyDocuments service', () => {
 	/**
 	 * @type PenaltyDocumentsService
@@ -22,7 +21,7 @@ describe('PenaltyDocuments service', () => {
 
 			sinon.stub(doc, 'get').returns({
 				promise: () => Promise.resolve({
-					Item: getMockPenalties().find(pen => pen.id === '820500000877_FPN'),
+					Item: getMockPenalties().find((pen) => pen.id === '820500000877_FPN'),
 				}),
 			});
 		});

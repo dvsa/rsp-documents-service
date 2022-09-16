@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import expect from 'expect';
 
 import PenaltyGroup from '../services/penaltyGroups';
-import listGroups from '../functions/listGroups';
+import listGroups from './listGroups';
 
 describe('listGroups', () => {
 

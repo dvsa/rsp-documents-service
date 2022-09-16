@@ -1,6 +1,8 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import { SNS, S3, Lambda, DynamoDB } from 'aws-sdk';
+import {
+	SNS, S3, Lambda, DynamoDB,
+} from 'aws-sdk';
 import Validation from 'rsp-validation';
 import config from '../config';
 import hashToken from '../utils/hash';
@@ -40,9 +42,15 @@ export default class PenaltyDocument {
 	 * @param {string} paymentsBatchFetchArn The payment service batch fetch ARN.
 	 */
 	constructor(
-		db,	penaltyDocTableName, bucketName,
-		snsTopicARN, siteResource, paymentURL,
-		tokenServiceARN, daysToHold, paymentsBatchFetchArn,
+		db,
+		penaltyDocTableName,
+		bucketName,
+		snsTopicARN,
+		siteResource,
+		paymentURL,
+		tokenServiceARN,
+		daysToHold,
+		paymentsBatchFetchArn,
 	) {
 		this.db = db;
 		this.penaltyDocTableName = penaltyDocTableName;
@@ -173,7 +181,7 @@ export default class PenaltyDocument {
 			return this.db.get(getParams).promise();
 		});
 
-		const penaltyDocuments = (await Promise.all(penaltyDocumentRequests)).map(doc => doc.Item);
+		const penaltyDocuments = (await Promise.all(penaltyDocumentRequests)).map((doc) => doc.Item);
 
 		const putRequests = penaltyDocuments.map((penaltyDocument) => {
 			return this._tryUpdatePenaltyDocToUnpaidStatus(penaltyDocument);
@@ -287,7 +295,7 @@ export default class PenaltyDocument {
 		};
 		try {
 			await this.db.update(updateParams).promise();
-			return createResponse({ statusCode: HttpStatus.OK })
+			return createResponse({ statusCode: HttpStatus.OK });
 		} catch (err) {
 			logError('UpdateDocumentWithPaymentStartTimeError', {
 				documentId,
@@ -365,7 +373,7 @@ export default class PenaltyDocument {
 			// Log error but fail silently
 			logError('DummmyPenaltyDocumentCreateError', {
 				error: err.message,
-				dummyPenaltyDoc
+				dummyPenaltyDoc,
 			});
 		}
 		return createResponse({ statusCode: HttpStatus.OK, body: dummyPenaltyDoc });
@@ -473,8 +481,8 @@ export default class PenaltyDocument {
 				Payload: payloadStr,
 			})
 				.promise()
-				.then(data => resolve(JSON.parse(JSON.parse(data.Payload).body)))
-				.catch(err => {
+				.then((data) => resolve(JSON.parse(JSON.parse(data.Payload).body)))
+				.catch((err) => {
 					logError('GetPaymentInfoViaInvocationError', {
 						idList,
 						error: err.message,
@@ -662,7 +670,6 @@ export default class PenaltyDocument {
 			return createErrorResponse({ statusCode: HttpStatus.BAD_REQUEST, err: error });
 		}
 
-
 		if (data.Payload) {
 			try {
 				const parsedPayload = JSON.parse(data.Payload);
@@ -687,10 +694,8 @@ export default class PenaltyDocument {
 								if (response.payments !== null && typeof response.payments !== 'undefined' && response.payments.length > 0) {
 									paymentInfo.paymentStatus = response.payments[0].PenaltyStatus;
 									paymentInfo.paymentAuthCode = response.payments[0].PaymentDetail.AuthCode;
-									paymentInfo.paymentDate =
-										Number(response.payments[0].PaymentDetail.PaymentDate);
-									paymentInfo.paymentMethod =
-									response.payments[0].PaymentDetail.PaymentMethod;
+									paymentInfo.paymentDate =										Number(response.payments[0].PaymentDetail.PaymentDate);
+									paymentInfo.paymentMethod =									response.payments[0].PaymentDetail.PaymentMethod;
 								} else {
 									paymentInfo.paymentStatus = 'UNPAID';
 								}
@@ -714,7 +719,7 @@ export default class PenaltyDocument {
 									err: e,
 								});
 							});
-					} else if (res.statusCode === HttpStatus.OK) {
+					} if (res.statusCode === HttpStatus.OK) {
 						return createResponse({
 							statusCode: HttpStatus.OK,
 							body: JSON.parse(res.body),
@@ -856,7 +861,7 @@ export default class PenaltyDocument {
 
 					logError('UpdateItemError', {
 						responseBody,
-						params
+						params,
 					});
 
 					resolve(createSimpleResponse(responseBody));

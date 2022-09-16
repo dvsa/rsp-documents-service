@@ -1,4 +1,3 @@
-
 export default (tokenObject, id, tokenString, penaltyType, paymentInfo) => {
 	if (!paymentInfo.paymentAuthCode) {
 		return {
@@ -25,4 +24,3 @@ export default (tokenObject, id, tokenString, penaltyType, paymentInfo) => {
 		},
 	};
 };
-

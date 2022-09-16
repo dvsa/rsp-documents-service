@@ -4,7 +4,6 @@ import sinon from 'sinon';
 import mockPenaltyDocumentsService from './service.unit';
 import mockPenaltyDocuments from '../../../mock-data/fake-penalty-notice.json';
 
-
 describe('updateDocumentUponPaymentDelete', () => {
 	let penaltyDocumentsService;
 	let paymentInfo;

@@ -2,7 +2,6 @@ import supertest from 'supertest';
 import AWS from 'aws-sdk';
 import expect from 'expect';
 
-
 const url = 'http://localhost:3000/documents';
 const request = supertest(url);
 let docClient;
