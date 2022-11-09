@@ -1,12 +1,9 @@
 const fs = require('fs-extra');
 const { merge } = require('webpack-merge');
-const common = require('./webpack.common');
 const archiver = require('archiver');
+const common = require('./webpack.common');
 
-const LAMBDA_NAME = 'updateWithPayment';
 const OUTPUT_FOLDER = './dist';
-const REPO_NAME = 'cpms-sap-payments-lambda';
-const BRANCH_NAME = 'branch';
 
 class BundlePlugin {
 	/**
@@ -58,34 +55,33 @@ class BundlePlugin {
 
 const lambdaArr = [
 	'create',
-	'createPenaltyGroup',
 	'delete',
-	'deleteGroup',
 	'get',
 	'getDocumentByToken',
-	'getPenaltyGroup',
 	'list',
+	'sites',
+	'streamDocuments',
+	'updateMulti',
+	'updateWithPayment',
+	'getPenaltyGroup',
+	'deleteGroup',
+	'updateUponPaymentDelete',
+	'createPenaltyGroup',
+	'updatePenaltyGroupWithPayment',
 	'listGroups',
 	'searchByVehicleRegistration',
-	'sites',
-	'stream',
-	'updateMulti',
 	'updateMultipleUponPaymentDelete',
-	'updatePenaltyGroupWithPayment',
-	'updatePenaltyGroupWithPaymentStartTime',
-	'updateUponPaymentDelete',
-	'updateWithPayment',
 	'updateWithPaymentStartTime',
+	'updatePenaltyGroupWithPaymentStartTime',
 ];
 
 function getArchives() {
-	return lambdaArr.map(lambdaName => ({
+	return lambdaArr.map((lambdaName) => ({
 		inputPath: `.aws-sam/build/${lambdaName}`,
 		outputPath: `${OUTPUT_FOLDER}`,
 		outputName: `${lambdaName}`,
 	}));
 }
-
 
 module.exports = () => {
 	return merge(common, {

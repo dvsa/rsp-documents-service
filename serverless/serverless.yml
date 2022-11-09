@@ -228,7 +228,7 @@ functions:
                   description: "500 server error"
                 responseModels:
                   application/json: "ErrorResponse"
-  getByToken:
+  getDocumentByToken:
     handler: handler.getDocumentByToken
     memorySize: 128
     events:
@@ -295,7 +295,7 @@ functions:
           documentation:
             summary: Retrieve a penalty group by ID
   delete:
-    handler: handler.remove
+    handler: handler.delete
     memorySize: 128
     events:
       -
