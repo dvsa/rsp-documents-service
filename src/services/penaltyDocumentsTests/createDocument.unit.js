@@ -4,7 +4,6 @@ import { doc } from 'serverless-dynamodb-client';
 import mockPenaltyDocumentsService from './service.unit';
 import getMockPenalties from '../../../mock-data/mock-penalty-notice';
 
-
 describe('createDocument', () => {
 	context('when a document is created', () => {
 		let penaltyDocuments = mockPenaltyDocumentsService(doc);
@@ -33,7 +32,7 @@ describe('createDocument', () => {
 			});
 
 			it('responds with the unpaid penalty', async () => {
-				const penalty = getMockPenalties().find(pen => pen.ID === '920600000111_FPN');
+				const penalty = getMockPenalties().find((pen) => pen.ID === '920600000111_FPN');
 				delete penalty.penaltyGroupId;
 				const response = await penaltyDocuments.createDocument(penalty);
 				expect(response.statusCode).toBe(200);
@@ -63,7 +62,7 @@ describe('createDocument', () => {
 			});
 
 			it('responds with the paid penalty and payment details', async () => {
-				const response = await penaltyDocuments.createDocument(getMockPenalties().find(pen => pen.ID === '920600000111_FPN'));
+				const response = await penaltyDocuments.createDocument(getMockPenalties().find((pen) => pen.ID === '920600000111_FPN'));
 				expect(response.statusCode).toBe(200);
 				const responseBody = JSON.parse(response.body);
 				expect(responseBody.Value.paymentStatus).toBe('PAID');

@@ -34,7 +34,7 @@ describe('deleteDocument', () => {
 
 			it('response with status code 200', async () => {
 				const id = '920600000111_FPN';
-				const body = getMockPenalties().find(pen => pen.ID === '920600000111_FPN');
+				const body = getMockPenalties().find((pen) => pen.ID === '920600000111_FPN');
 				const response = await penaltyDocuments.deleteDocument(id, body);
 				expect(response.statusCode).toBe(200);
 				const dbUpdateParams = dbUpdate.getCall(0).args[0];
@@ -59,7 +59,7 @@ describe('deleteDocument', () => {
 
 		it('responds with an error', async () => {
 			const id = '820500000877_FPN';
-			const body = getMockPenalties().find(pen => pen.ID === '820500000877_FPN');
+			const body = getMockPenalties().find((pen) => pen.ID === '820500000877_FPN');
 			const response = await penaltyDocuments.deleteDocument(id, body);
 			expect(response.statusCode).toBe(400);
 			expect(JSON.parse(response.body)).toEqual({ err: 'Cannot remove document that is paid' });

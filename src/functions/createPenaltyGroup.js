@@ -2,10 +2,9 @@ import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroup from '../services/penaltyGroups';
 import config from '../config';
 
-
 /** @type PenaltyGroup */
 let penaltyGroups;
-export default async (event) => {
+export const handler = async (event) => {
 	if (!penaltyGroups) {
 		await config.bootstrap();
 		penaltyGroups = new PenaltyGroup(
@@ -18,3 +17,5 @@ export default async (event) => {
 	const data = JSON.parse(event.body);
 	return penaltyGroups.createPenaltyGroup(data);
 };
+
+export default handler;

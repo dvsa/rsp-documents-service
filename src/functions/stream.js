@@ -4,7 +4,7 @@ import config from '../config';
 
 let penaltyDocuments;
 
-export default async (event) => {
+export const handler = async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -22,3 +22,5 @@ export default async (event) => {
 
 	return penaltyDocuments.streamDocuments(event);
 };
+
+export default handler;

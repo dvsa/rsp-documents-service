@@ -18,7 +18,6 @@ const appOrigin = 'APP';
 
 /** @typedef {{ ID: String, Enabled: boolean }} PenaltyDocument */
 
-
 export default class PenaltyGroup {
 
 	constructor(db, penaltyDocTableName, penaltyGroupTableName, snsTopicARN) {
@@ -61,11 +60,11 @@ export default class PenaltyGroup {
 			return { valid: false, response: this.groupValidationFailedResponse(errMsg) };
 		}
 
-		const newDocIds = payload.Penalties.map(p => p.ID);
+		const newDocIds = payload.Penalties.map((p) => p.ID);
 		const existingDocsWithIds = await this._getPenaltyDocumentsWithIds(newDocIds);
-		const allExistingDocsDisabled = existingDocsWithIds.every(p => p.Enabled === false);
+		const allExistingDocsDisabled = existingDocsWithIds.every((p) => p.Enabled === false);
 		if (existingDocsWithIds.length !== 0 && !allExistingDocsDisabled) {
-			const clashingIds = existingDocsWithIds.map(doc => doc.ID);
+			const clashingIds = existingDocsWithIds.map((doc) => doc.ID);
 			return { valid: false, response: this.duplicateReferenceResponse(clashingIds) };
 		}
 
@@ -168,14 +167,14 @@ export default class PenaltyGroup {
 	}
 
 	_documentsIndicateGroupWhollyUnpaid(penaltyDocuments) {
-		return !penaltyDocuments.some(doc => doc.Value.paymentStatus === 'PAID');
+		return !penaltyDocuments.some((doc) => doc.Value.paymentStatus === 'PAID');
 	}
 
 	async _disableGroupAndPenalties(penaltyGroupId, penaltyDocuments) {
 		const groupParams = this._disableIdInTableParams(this.penaltyGroupTableName, penaltyGroupId);
 		await this.db.update(groupParams).promise();
 
-		const docIdsToHashes = penaltyDocuments.map(doc => ({
+		const docIdsToHashes = penaltyDocuments.map((doc) => ({
 			id: doc.ID,
 			hash: hashToken(doc.ID, doc.Value, false),
 		}));
@@ -202,13 +201,13 @@ export default class PenaltyGroup {
 	_amendGroupRemovingUnpaidPenalties(penaltyGroup, penaltyDocuments, paidIds) {
 		const amendedGroup = { ...penaltyGroup };
 		const paidPenaltyDocuments = penaltyDocuments
-			.filter(doc => paidIds.includes(doc.ID));
+			.filter((doc) => paidIds.includes(doc.ID));
 		amendedGroup.Offset = getUnixTime();
 		amendedGroup.PaymentStatus = 'PAID';
 		amendedGroup.TotalAmount = paidPenaltyDocuments
 			.reduce((sum, doc) => sum + doc.Value.penaltyAmount, 0);
 		amendedGroup.VehicleRegistration = paidPenaltyDocuments
-			.map(doc => doc.Value.vehicleDetails.regNo)
+			.map((doc) => doc.Value.vehicleDetails.regNo)
 			.join(',');
 		amendedGroup.Enabled = false;
 		amendedGroup.PenaltyDocumentIds = paidIds;
@@ -267,8 +266,8 @@ export default class PenaltyGroup {
 			// Update penalties
 			await this.db.batchWrite(batchWriteParams).promise();
 			// Check if all other penalties have been paid
-			const otherPenalties = penaltyDocs.filter(p => p.Value.penaltyType !== penaltyType);
-			const anyOutstanding = otherPenalties.some(p => p.Value.paymentStatus === oldPaymentStatus);
+			const otherPenalties = penaltyDocs.filter((p) => p.Value.penaltyType !== penaltyType);
+			const anyOutstanding = otherPenalties.some((p) => p.Value.paymentStatus === oldPaymentStatus);
 			if (!anyOutstanding) {
 				// Update penalty group payment status if all penalties have been paid
 				penaltyGroup.PaymentStatus = paymentStatus;
@@ -311,15 +310,15 @@ export default class PenaltyGroup {
 	}
 
 	penaltyTypeToAttrName(penaltyType) {
-		switch(penaltyType) {
-			case 'FPN':
-				return 'fpnPaymentStartTime';
-			case 'IM':
-				return 'imPaymentStartTime';
-			case 'CDN':
-				return 'cdnPaymentStartTime';
-			default:
-				throw new Error(`No payment start time for penaltyType: ${penaltyType}`)
+		switch (penaltyType) {
+		case 'FPN':
+			return 'fpnPaymentStartTime';
+		case 'IM':
+			return 'imPaymentStartTime';
+		case 'CDN':
+			return 'cdnPaymentStartTime';
+		default:
+			throw new Error(`No payment start time for penaltyType: ${penaltyType}`);
 		}
 	}
 
@@ -409,7 +408,7 @@ export default class PenaltyGroup {
 				Item: this._createPersistablePenaltyGroup(penaltyGroup),
 			},
 		};
-		const penaltyPutRequests = penaltyGroup.Penalties.map(p => ({
+		const penaltyPutRequests = penaltyGroup.Penalties.map((p) => ({
 			PutRequest: {
 				Item: p,
 			},
@@ -427,7 +426,7 @@ export default class PenaltyGroup {
 
 	_createPersistablePenaltyGroup(penaltyGroup) {
 		const persistableGrp = { ...penaltyGroup };
-		persistableGrp.PenaltyDocumentIds = persistableGrp.Penalties.map(p => p.ID);
+		persistableGrp.PenaltyDocumentIds = persistableGrp.Penalties.map((p) => p.ID);
 		delete persistableGrp.Penalties;
 		return persistableGrp;
 	}
@@ -448,7 +447,7 @@ export default class PenaltyGroup {
 
 	async _getPenaltiesWithIds(penaltyIds) {
 		try {
-			const requestItems = penaltyIds.map(docId => ({
+			const requestItems = penaltyIds.map((docId) => ({
 				ID: docId,
 			}));
 			const penaltyDocumentParams = { RequestItems: {} };
@@ -466,16 +465,16 @@ export default class PenaltyGroup {
 	_groupPenaltyDocsToPayments(penaltyDocs) {
 		const penaltiesByType = this._groupPenaltiesByType(penaltyDocs);
 
-		const paymentList = Object.keys(penaltiesByType).map(categoryName => ({
+		const paymentList = Object.keys(penaltiesByType).map((categoryName) => ({
 			PaymentCategory: categoryName,
 			TotalAmount: penaltiesByType[categoryName]
 				.reduce((total, penalty) => total + penalty.Value.penaltyAmount, 0),
 			PaymentStatus: penaltiesByType[categoryName]
-				.every(penalty => penalty.Value.paymentStatus === 'PAID') ? 'PAID' : 'UNPAID',
+				.every((penalty) => penalty.Value.paymentStatus === 'PAID') ? 'PAID' : 'UNPAID',
 			Penalties: penaltiesByType[categoryName],
 		}));
 
-		return paymentList.filter(group => group.Penalties.length > 0);
+		return paymentList.filter((group) => group.Penalties.length > 0);
 	}
 
 	_disableIdInTableParams(tableName, id, newHash) {
@@ -573,7 +572,7 @@ export default class PenaltyGroup {
 		const batchGetParams = {
 			RequestItems: {
 				[this.penaltyDocTableName]: {
-					Keys: ids.map(id => ({
+					Keys: ids.map((id) => ({
 						ID: id,
 					})),
 				},
@@ -585,7 +584,7 @@ export default class PenaltyGroup {
 
 	static sumPenaltyAmounts(penalties) {
 		return penalties
-			.map(p => p.Value.penaltyAmount)
+			.map((p) => p.Value.penaltyAmount)
 			.reduce((acc, curr) => acc + curr);
 	}
 

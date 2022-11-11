@@ -7,7 +7,6 @@ import getUnixTime from '../../utils/time';
 import getMockPenalties from '../../../mock-data/mock-penalty-notice';
 import mockPenaltyGroupsData from '../../../mock-data/fake-penalty-groups.json';
 
-
 describe('_tryUpdatePenaltyGroupToUnpaidStatus', () => {
 	let mockPenaltyGroup;
 	let mockPenaltyDocument;

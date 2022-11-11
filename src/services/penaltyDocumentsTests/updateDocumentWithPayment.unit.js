@@ -24,7 +24,7 @@ describe('updateDocumentWithPayment', () => {
 
 		beforeEach(() => {
 			penaltyDocuments = mockPenaltyDocumentsService(doc);
-			const penaltyDocument = getMockPenalties().find(pen => pen.ID === '820500000880_IM');
+			const penaltyDocument = getMockPenalties().find((pen) => pen.ID === '820500000880_IM');
 			console.error(penaltyDocument);
 			sinon.stub(doc, 'get').returns({
 				promise: () => Promise.resolve({ Item: penaltyDocument }),
@@ -53,7 +53,7 @@ describe('updateDocumentWithPayment', () => {
 			it('updates the document to be paid', async () => {
 				const response = await penaltyDocuments.updateDocumentWithPayment(paymentInfo);
 				expect(response.statusCode).toBe(200);
-				const penaltyDocument = getMockPenalties().find(pen => pen.ID === '820500000880_IM');
+				const penaltyDocument = getMockPenalties().find((pen) => pen.ID === '820500000880_IM');
 				penaltyDocument.Value.paymentStatus = 'PAID';
 				// Expect hash, offset and payment status to be changed.
 				const putParams = mockPut.getCall(0).args[0];

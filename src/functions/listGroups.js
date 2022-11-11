@@ -1,11 +1,10 @@
-import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import config from '../config';
 import PenaltyGroupService from '../services/penaltyGroups';
 
 let penaltyGroupService;
 
-export default async (event) => {
+export const handler = async (event) => {
 	if (!penaltyGroupService) {
 		await config.bootstrap();
 		penaltyGroupService = new PenaltyGroupService(
@@ -24,3 +23,5 @@ export default async (event) => {
 
 	return penaltyGroupService.listPenaltyGroups(numericOffset);
 };
+
+export default handler;

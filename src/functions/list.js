@@ -1,4 +1,3 @@
-import '@babel/polyfill';
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
@@ -6,7 +5,7 @@ import config from '../config';
 /** @type PenaltyDocument */
 let penaltyDocuments;
 
-export default async (event, context) => {
+export const handler = async (event) => {
 	if (!penaltyDocuments) {
 		await config.bootstrap();
 		penaltyDocuments = new PenaltyDocument(
@@ -29,8 +28,8 @@ export default async (event, context) => {
 		offset = event.queryStringParameters.Offset;
 	}
 
-	if (event.queryStringParameters != null &&
-		typeof event.queryStringParameters.NextID !== 'undefined') {
+	if (event.queryStringParameters != null
+		&& typeof event.queryStringParameters.NextID !== 'undefined') {
 		// @ts-ignore
 		exclusiveStartKey = {
 			ID: event.queryStringParameters.NextID,
@@ -39,6 +38,7 @@ export default async (event, context) => {
 		};
 	}
 
-
 	return penaltyDocuments.getDocuments(offset, exclusiveStartKey);
 };
+
+export default handler;

@@ -7,7 +7,6 @@ const TEST_ID = 'abc123';
 const PAYMENT_STATUS = 'PAID';
 const PENALTY_TYPE = 'test';
 
-
 describe('updatePenaltyGroupsWithPayment', () => {
 	let penaltyGroupSvc;
 	const event = { body: { id: TEST_ID, paymentStatus: PAYMENT_STATUS, penaltyType: PENALTY_TYPE } };

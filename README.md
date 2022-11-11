@@ -1,4 +1,10 @@
 # aws-serverless-starter-template
+
+### Node JS 16
+
+Use [Node Version Manager](https://npm.github.io/installation-setup-docs/installing/using-a-node-version-manager.html) (nvm) to use right Node Version. Specified in `.nvmrc`.
+- `nvm use`
+
 #### Run AWS Lambda node functions locally with a mock API Gateway and DynamoDB to test against
 - `npm install serverless -g`
 - `npm install`
@@ -42,3 +48,11 @@ https://github.com/UKHomeOffice/repo-security-scanner
 - After installing, run with `git log -p | scanrepo`.
 
 These will be run as part of prepush so please make sure you set up the git hook above so you don't accidentally introduce any new security vulnerabilities.
+
+### Building
+
+To build for deployment to AWS.
+
+- `npm run package`
+
+This uses aws-sam-plugin and webpack to build each Lambda into it's own archive zip ready to upload to s3 or Lambda.

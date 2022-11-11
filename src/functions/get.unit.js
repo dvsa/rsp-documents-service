@@ -24,8 +24,8 @@ describe('get', () => {
 					id: '123456669966_FPN',
 				},
 			};
-			penaltyDocument = penaltyDocuments.filter(item => item.ID === '123456669966_FPN');
-			sinon.stub(PenaltyDocument.prototype, 'getDocument').callsFake((id) => {
+			penaltyDocument = penaltyDocuments.filter((item) => item.ID === '123456669966_FPN');
+			sinon.stub(PenaltyDocument.prototype, 'getDocument').callsFake(() => {
 				const response = createResponse({
 					body: penaltyDocument,
 				});

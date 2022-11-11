@@ -1,3 +1,3 @@
 npm run presetup
 cd ./build
-sls dynamodb install
+../node_modules/serverless/bin/serverless.js dynamodb install

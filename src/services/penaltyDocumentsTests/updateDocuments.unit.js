@@ -5,7 +5,6 @@ import mockPenaltyDocumentsService from './service.unit';
 import getMockPenalties from '../../../mock-data/mock-penalty-notice';
 import createResponse from '../../utils/createResponse';
 
-
 describe('updateDocuments', () => {
 	let penaltyDocuments;
 
