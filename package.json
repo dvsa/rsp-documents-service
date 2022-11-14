@@ -22,7 +22,7 @@
     "parallel": "./node_modules/.bin/run-p watch offline",
     "watch": "./node_modules/.bin/nodemon --watch src --exec npm run compile",
     "compile": "./node_modules/.bin/babel src -d build",
-    "offline": "cd ./build && sls offline start --noAuth",
+    "offline": "cd ./build && sls offline start --noAuth --httpPort 3010 --lambdaPort 3011 --host 0.0.0.0",
     "test": "./node_modules/.bin/mocha --require @babel/register --recursive \"src/**/*.unit.js\"",
     "test-i": "./node_modules/.bin/mocha --require @babel/register src/test/**/*.serviceInt.js",
     "lint": "./node_modules/.bin/eslint src",

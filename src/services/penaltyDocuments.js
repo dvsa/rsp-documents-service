@@ -476,7 +476,8 @@ export default class PenaltyDocument {
 			});
 			const payload = { body };
 			const payloadStr = JSON.stringify(payload);
-			lambda.invoke({
+			const paymentsBatchFetchLambda = new Lambda({ region: 'eu-west-1', endpoint: 'http://host.docker.internal:3031' });
+			paymentsBatchFetchLambda.invoke({
 				FunctionName: arn,
 				Payload: payloadStr,
 			})
@@ -652,7 +653,9 @@ export default class PenaltyDocument {
 	}
 
 	invokeTokenServiceLambda(token) {
-		return lambda.invoke({
+		logInfo("invoke token service",{servicearn:this.tokenServiceARN})
+		const tokenlambda = new Lambda({ region: 'eu-west-1', endpoint: 'http://host.docker.internal:3041' });
+		return tokenlambda.invoke({
 			FunctionName: this.tokenServiceARN,
 			Payload: `{"body": { "Token": "${token}" } }`,
 		}).promise();
@@ -662,6 +665,7 @@ export default class PenaltyDocument {
 		let data;
 		try {
 			data = await this.invokeTokenServiceLambda(token);
+			logInfo("data", {data})
 		} catch (error) {
 			logError('GetDocumentByTokenError', {
 				error: error.message,
