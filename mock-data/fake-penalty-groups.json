@@ -1,5 +1,56 @@
 [
   {
+    "ID": "46xu68x7o6b",
+    "PaymentStatus": "UNPAID",
+    "Timestamp": 15329454.234729,
+    "Offset": 15329454.112,
+    "VehicleRegistration": "11 ABC, PL09 XMN",
+    "Location": "Trowell Services",
+    "TotalAmount": 130,
+    "SiteCode": 3,
+    "Origin": "APP",
+    "Enabled": true,
+    "Hash": "abc123",
+    "PenaltyDocumentIds": [
+      "820500000877_FPN",
+      "820500000878_FPN"
+    ]
+  },
+  {
+    "ID": "87xu68s7o6c",
+    "PaymentStatus": "UNPAID",
+    "Timestamp": 15329454.234729,
+    "Offset": 15329454.112,
+    "VehicleRegistration": "12 EFG",
+    "Location": "Trowell Services",
+    "TotalAmount": 130,
+    "SiteCode": 3,
+    "Origin": "APP",
+    "Enabled": false,
+    "Hash": "xyz789",
+    "PenaltyDocumentIds": [
+      "820500000879_FPN",
+      "820500000880_IM"
+    ]
+  },
+  {
+    "ID": "46xu68x7o6c",
+    "PaymentStatus": "PAID",
+    "Timestamp": 15329454.234729,
+    "Offset": 15329454.112,
+    "VehicleRegistration": "11 ABC, PL09 XMN",
+    "Location": "Trowell Services",
+    "TotalAmount": 100,
+    "SiteCode": 3,
+    "Origin": "APP",
+    "Enabled": true,
+    "Hash": "abc123",
+    "PenaltyDocumentIds": [
+      "820500000812_FPN",
+      "820500000822_FPN"
+    ]
+  },
+  {
     "ID": "4k8uen3vsv4",
     "PaymentStatus": "UNPAID",
     "Timestamp": 1668078457,
