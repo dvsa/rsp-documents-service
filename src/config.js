@@ -32,7 +32,9 @@ async function bootstrap() {
 				resolve(configuration);
 			});
 		} else {
-			logInfo('DocServiceEnvVars', 'Using envvars for config');
+			const values = [];
+			Object.keys(configMetadata).forEach((a) => values.push(configMetadata[a]));
+			logInfo('DocServiceEnvVars', { message: 'Using envvars for config, looking for following variables', values });
 			configuration = Object.values(configMetadata)
 				.reduce((config, envkey) => ({ [envkey]: process.env[envkey], ...config }), configuration);
 			resolve(configuration);
