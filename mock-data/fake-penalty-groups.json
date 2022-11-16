@@ -49,5 +49,22 @@
       "820500000812_FPN",
       "820500000822_FPN"
     ]
+  },
+  {
+    "ID": "4k8uen3vsv4",
+    "PaymentStatus": "UNPAID",
+    "Timestamp": 1668078457,
+    "Offset": 1668078458.536,
+    "VehicleRegistration": "IBRAHIM2",
+    "Location": "Aberdeen GVTS",
+    "TotalAmount": 6100,
+    "SiteCode": 96,
+    "Origin": "APP",
+    "Enabled": true,
+    "Hash": "abc123",
+    "PenaltyDocumentIds": [
+      "4312758943427_FPN",
+      "1575850000134_IM"
+    ]
   }
 ]
