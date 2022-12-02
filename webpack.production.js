@@ -2,6 +2,7 @@ const fs = require('fs-extra');
 const { merge } = require('webpack-merge');
 const archiver = require('archiver');
 const common = require('./webpack.common');
+const lambdaNames = require('./lambdas.json');
 
 const OUTPUT_FOLDER = './dist';
 
@@ -53,30 +54,8 @@ class BundlePlugin {
 	}
 }
 
-const lambdaArr = [
-	'create',
-	'delete',
-	'get',
-	'getDocumentByToken',
-	'list',
-	'sites',
-	'streamDocuments',
-	'updateMulti',
-	'updateWithPayment',
-	'getPenaltyGroup',
-	'deleteGroup',
-	'updateUponPaymentDelete',
-	'createPenaltyGroup',
-	'updatePenaltyGroupWithPayment',
-	'listGroups',
-	'searchByVehicleRegistration',
-	'updateMultipleUponPaymentDelete',
-	'updateWithPaymentStartTime',
-	'updatePenaltyGroupWithPaymentStartTime',
-];
-
 function getArchives() {
-	return lambdaArr.map((lambdaName) => ({
+	return lambdaNames.lambdas.map((lambdaName) => ({
 		inputPath: `.aws-sam/build/${lambdaName}`,
 		outputPath: `${OUTPUT_FOLDER}`,
 		outputName: `${lambdaName}`,
