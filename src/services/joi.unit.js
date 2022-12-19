@@ -1,6 +1,6 @@
 // @ts-check
 import expect from 'expect';
-import Validation from 'rsp-validation';
+import Validation from '@dvsa/rsp-validation';
 
 const currentDocumentFormat = {
 	Enabled: true,
@@ -29,7 +29,7 @@ const currentDocumentFormat = {
 	Hash: 'c3c7581adeec5585e953e2a613c26986ce35a733f17947921cb828749c1aaf22',
 };
 
-describe('rsp-validation', () => {
+describe('@dvsa/rsp-validation', () => {
 	it('should validate a model', () => {
 		const res = Validation.penaltyDocumentValidation(currentDocumentFormat);
 		expect(res.valid).toBe(true);

@@ -3,7 +3,7 @@
 import {
 	SNS, S3, Lambda, DynamoDB,
 } from 'aws-sdk';
-import Validation from 'rsp-validation';
+import Validation from '@dvsa/rsp-validation';
 import config from '../config';
 import hashToken from '../utils/hash';
 import getUnixTime from '../utils/time';

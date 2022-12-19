@@ -1,7 +1,7 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import { SNS } from 'aws-sdk';
-import Validation from 'rsp-validation';
+import Validation from '@dvsa/rsp-validation';
 
 import config from '../config';
 import createResponse from '../utils/createResponse';
