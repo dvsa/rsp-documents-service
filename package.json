@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "@babel/runtime-corejs3": "^7.20.1",
-    "@dvsa/rsp-validation": "^1.8.0",
+    "@dvsa/rsp-validation": "^1.9.1",
     "aws-sdk": "^2.1249.0",
     "core-js": "^3.26.0",
     "install": "^0.13.0",
