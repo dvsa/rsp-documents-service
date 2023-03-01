@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.0.2](https://github.com/dvsa/rsp-documents-service/compare/v3.0.1...v3.0.2) (2023-03-01)
+
+
+### Bug Fixes
+
+* bump validation package ([#133](https://github.com/dvsa/rsp-documents-service/issues/133)) ([b788697](https://github.com/dvsa/rsp-documents-service/commit/b788697d47cfc045a08ab3d79d762060292f85e4))
+* updated validation package ([b788697](https://github.com/dvsa/rsp-documents-service/commit/b788697d47cfc045a08ab3d79d762060292f85e4))
+
 ## [3.0.1](https://github.com/dvsa/rsp-documents-service/compare/v3.0.0...v3.0.1) (2023-02-22)
 
 
