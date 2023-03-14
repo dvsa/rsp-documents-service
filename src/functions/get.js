@@ -21,17 +21,21 @@ export const handler = async (event) => {
 		);
 	}
 
-	logInfo('handler', {
-		message: 'initialized app. Getting id from request',
-	});
-
 	const id = event.pathParameters.id ? event.pathParameters.id : event.body.id;
 
 	if (!id) {
 		throw new Error('ID not found');
 	}
 
-	return penaltyDocuments.getDocument(id);
+	logInfo('handler', {
+		message: 'initialized app. Getting id from request',
+		idPath: event.pathParameters ? event.pathParameters.id : 'no path param',
+		idBody: event.body ? event.body.id : 'no body id',
+	});
+
+	const resp = penaltyDocuments.getDocument(id);
+	logInfo('GetResponse', resp);
+	return resp;
 };
 
 export default handler;

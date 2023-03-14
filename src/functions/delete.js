@@ -1,4 +1,5 @@
 import { doc } from 'serverless-dynamodb-client';
+import { logInfo } from '../utils/logger';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
 
@@ -20,7 +21,10 @@ export const handler = async (event) => {
 	}
 
 	const data = JSON.parse(event.body);
-	return penaltyDocuments.deleteDocument(event.pathParameters.id, data);
+	logInfo('CreatePayload', data);
+	const resp = penaltyDocuments.deleteDocument(event.pathParameters.id, data);
+	logInfo('CreateResponse', resp);
+	return resp;
 
 };
 

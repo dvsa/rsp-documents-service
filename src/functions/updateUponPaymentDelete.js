@@ -3,6 +3,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 /**
  * Penalty documents service
@@ -37,7 +38,11 @@ export const handler = async (event) => {
 		paymentStatus: body.paymentStatus,
 	};
 
-	return penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo);
+	logInfo('updateUponPaymentDeleteReq', body);
+
+	const resp = penaltyDocuments.updateDocumentUponPaymentDelete(paymentInfo);
+	logInfo('updateUponPaymentDeleteRes', resp);
+	return resp;
 };
 
 export default handler;

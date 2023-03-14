@@ -2,6 +2,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import config from '../config';
 import PenaltyDocument from '../services/penaltyDocuments';
+import { logInfo } from '../utils/logger';
 
 let penaltyDocuments;
 export const handler = async (event) => {
@@ -29,7 +30,10 @@ export const handler = async (event) => {
 		paymentToken: event.body.paymentToken,
 	};
 
-	return penaltyDocuments.updateDocumentWithPayment(paymentInfo);
+	logInfo('updateWithPaymentReq', event.body);
+	const resp = penaltyDocuments.updateDocumentWithPayment(paymentInfo);
+	logInfo('updateWithPaymentRes', resp);
+	return resp;
 };
 
 export default handler;

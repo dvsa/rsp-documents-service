@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import VehicleRegistrationSearch from '../services/vehicleRegistrationSearch';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 let vehicleRegistrationSearch;
 export const handler = async (event) => {
@@ -12,7 +13,10 @@ export const handler = async (event) => {
 			config.dynamodbPenaltyGroupTable(),
 		);
 	}
-	return vehicleRegistrationSearch.search(decodeURI(event.pathParameters.vehicleReg));
+	logInfo('searchByVehicleRegistrationReq', event.pathParameters.vehicleReg);
+	const resp = vehicleRegistrationSearch.search(decodeURI(event.pathParameters.vehicleReg));
+	logInfo('searchByVehicleRegistrationRes', resp);
+	return resp;
 };
 
 export default handler;

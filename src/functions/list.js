@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 /** @type PenaltyDocument */
 let penaltyDocuments;
@@ -38,7 +39,12 @@ export const handler = async (event) => {
 		};
 	}
 
-	return penaltyDocuments.getDocuments(offset, exclusiveStartKey);
+	logInfo('listRequest', { queryParams: event.queryStringParameters, defaults: { offset, exclusiveStartKey } });
+
+	const resp = penaltyDocuments.getDocuments(offset, exclusiveStartKey);
+	logInfo('listResponse', resp);
+
+	return resp;
 };
 
 export default handler;

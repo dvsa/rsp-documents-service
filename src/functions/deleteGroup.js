@@ -1,4 +1,5 @@
 import { doc } from 'serverless-dynamodb-client';
+import { logInfo } from '../utils/logger';
 
 import config from '../config';
 import PenaltyGroupService from '../services/penaltyGroups';
@@ -14,7 +15,11 @@ export const handler = async (event) => {
 			config.snsTopicArn(),
 		);
 	}
-	return penaltyGroupService.delete(event.pathParameters.id);
+	logInfo('deletePayload', { idPathParameters: event.pathParameters.id });
+	const resp = penaltyGroupService.delete(event.pathParameters.id);
+	logInfo('deleteResponse', resp);
+	return resp;
+
 };
 
 export default handler;

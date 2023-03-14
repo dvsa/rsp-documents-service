@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroup from '../services/penaltyGroups';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 /** @type PenaltyGroup */
 let penaltyGroups;
@@ -15,7 +16,10 @@ export const handler = async (event) => {
 		);
 	}
 	const data = JSON.parse(event.body);
-	return penaltyGroups.createPenaltyGroup(data);
+	logInfo('CreatePayload', data);
+	const resp = penaltyGroups.createPenaltyGroup(data);
+	logInfo('CreateResponse', resp);
+	return resp;
 };
 
 export default handler;

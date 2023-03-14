@@ -3,6 +3,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 /**
  * Penalty documents service
@@ -36,7 +37,13 @@ export const handler = async (event) => {
 		penaltyDocumentIds: body.penaltyDocumentIds,
 	};
 
-	return penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo);
+	logInfo('updateMultiUponPaymentDeleteReq', body);
+
+	const resp = penaltyDocuments.updateMultipleUponPaymentDelete(paymentInfo);
+
+	logInfo('updateMultiUponPaymentDeleteRes', resp);
+
+	return resp;
 };
 
 export default handler;

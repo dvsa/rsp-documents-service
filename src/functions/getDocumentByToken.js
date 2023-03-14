@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 /** @type PenaltyDocument */
 let penaltyDocuments;
@@ -19,7 +20,10 @@ export const handler = async (event) => {
 			config.paymentsBatchFetchArn(),
 		);
 	}
-	return penaltyDocuments.getDocumentByToken(event.pathParameters.token);
+	logInfo('getDocumentByTokenRequest', { pathParams: event.pathParameters, token: event.pathParameters.token });
+	const resp = penaltyDocuments.getDocumentByToken(event.pathParameters.token);
+	logInfo('getDocumentByTokenResponse', resp);
+	return resp;
 };
 
 export default handler;

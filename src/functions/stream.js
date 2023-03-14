@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 let penaltyDocuments;
 
@@ -20,7 +21,12 @@ export const handler = async (event) => {
 		);
 	}
 
-	return penaltyDocuments.streamDocuments(event);
+	logInfo('streamReq', event);
+
+	const resp = penaltyDocuments.streamDocuments(event);
+	logInfo('streamRes', resp);
+
+	return resp;
 };
 
 export default handler;

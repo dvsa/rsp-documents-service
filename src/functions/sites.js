@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyDocument from '../services/penaltyDocuments';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 let penaltyDocuments;
 
@@ -19,7 +20,8 @@ export const handler = async () => {
 			config.paymentsBatchFetchArn(),
 		);
 	}
-	return penaltyDocuments.getSites();
+	const resp = penaltyDocuments.getSites();
+	logInfo('sitesRes', resp);
 };
 
 export default handler;

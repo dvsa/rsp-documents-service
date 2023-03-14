@@ -2,6 +2,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import PenaltyGroupService from '../services/penaltyGroups';
 import config from '../config';
+import { logInfo } from '../utils/logger';
 
 /** @type {PenaltyGroupService} */
 let penaltyGroupService;
@@ -21,7 +22,11 @@ export const handler = async (event) => {
 		paymentInfo = JSON.parse(event.body);
 	}
 	// id body document
-	return penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo);
+	logInfo('updateMultiUponPaymentDeleteReq', paymentInfo);
+	const resp = penaltyGroupService.updatePenaltyGroupWithPayment(paymentInfo);
+	logInfo('updateMultiUponPaymentDeleteRes', resp);
+
+	return resp;
 };
 
 export default handler;
