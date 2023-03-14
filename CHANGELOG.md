@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/dvsa/rsp-documents-service/compare/v3.0.2...v3.1.0) (2023-03-13)
+
+
+### Features
+
+* **deps:** Update dependencies ([#135](https://github.com/dvsa/rsp-documents-service/issues/135)) ([47d2e95](https://github.com/dvsa/rsp-documents-service/commit/47d2e957b95dc4ecf30ec334c1a7fd2b4f89ff0d))
+
 ## [3.0.2](https://github.com/dvsa/rsp-documents-service/compare/v3.0.1...v3.0.2) (2023-03-01)
 
 
