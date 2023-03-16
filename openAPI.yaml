@@ -1,0 +1,408 @@
+openapi: 3.0.0
+info:
+  description: API Gateway for RSP APIS BACKEND NONPROD environment
+  version: 1-oas3
+  title: rsp-nonprod-apis-backend
+paths:
+  /documents:
+    get:
+      summary: "Get list of all documents in table"
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/document'
+      security:
+        - sigv4: []
+    post:
+      summary: "Create a new document in table"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/document'
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/document'
+      security:
+        - sigv4: []
+    put:
+      summary: "Update document in table"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/document'
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/document'
+      security:
+        - sigv4: []
+  /documents/tokens/{token}:
+    get:
+      summary: "Get document by payment token"
+      description: "Returns a document matching token"
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/document'
+        '400':
+          description: "Token is not in correct format"
+      security:
+        - sigv4: []
+  /documents/updateWithPaymentStartTime:
+    put:
+      summary: "Update document with start time of payment"
+      description: "paymentStartTime of the specified ID will be updated to the current UNIX time."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+      responses:
+        '200':
+          description: "Success"
+      security:
+        - sigv4: []
+  /documents/{id}:
+    get:
+      summary: "Get document by penalty ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/document'
+        '404':
+          description: "ITEM NOT FOUND"
+      security:
+        - sigv4: []
+    delete:
+      summary: "Delete document by penalty ID"
+      description: "Note: this is not strictly a DELETE method. This simply changes the Enabled field from true to false"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/document'
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/document'
+      security:
+        - sigv4: []
+  /penaltyGroup:
+    get:
+      summary: "Get list of all penalty groups in table"
+      responses: 
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groupDocumentListResponse'
+        '400':
+          description: "Ensure a numeric offset is provided in query"
+      security:
+        - sigv4: []
+    post:
+      summary: "Creates a new penalty group"
+      responses:
+        '201':
+          description: "Created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groupDocumentPost'
+      security:
+        - sigv4: []
+  /penaltyGroup/updateWithPaymentStartTime:
+    put:
+      summary: "Updates group payment with payment start time"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                penaltyType:
+                  type: string
+      responses:
+        '200':
+          description: "Success"
+      security:
+        - sigv4: []
+  /penaltyGroup/{id}:
+    get:
+      summary: "Get penalty group by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groupDocumentByIdResponse'
+        '404':
+          description: "Penalty Group not found"
+      security:
+        - sigv4: []
+    delete:
+      summary: "Delete penalty group by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: "No content"
+      security:
+        - sigv4: []
+  /sites:
+    get:
+      summary: "Retrieve list of enforcement sites"
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sitesResponse'
+      security:
+        - sigv4: []
+  /vehicle-reg/{vehicleReg}:
+    get:
+      summary: "Get all penalties assigned to specified vehicle reg"
+      parameters:
+        - name: vehicleReg
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Penalties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/document'
+        '404':
+          description: "No penalties found"
+      security:
+        - sigv4: []
+servers:
+  - url: https://nonprod.pay-roadside-fine.service.gov.uk/backend
+components:
+  securitySchemes:
+    sigv4:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: awsSigv4
+  schemas:
+    document:
+      type: object
+      properties:
+        Offset:
+          type: integer
+        Enabled:
+          type: boolean
+        VehicleRegistration:
+          type: string
+        ID:
+          type: string
+        Value:
+          type: object
+          properties:
+            dateTime:
+              type: integer
+            siteCode:
+              type: integer
+            referenceNo:
+              type: string
+            vehicleDetails:
+              type: object
+              properties:
+                regNo:
+                  type: string
+            nonEndorsableOffence:
+              type: array
+              items: {}
+            penaltyType:
+              type: string
+            paymentCodeDateTime:
+              type: integer
+            paymentToken:
+              type: string
+            inPenaltyGroup:
+              type: boolean
+            paymentStartTime:
+              type: integer
+            officerName:
+              type: string
+            placeWhereIssued:
+              type: string
+            penaltyAmount:
+              type: integer
+            officerID:
+              type: string
+            paymentStatus:
+              type: string
+        Hash:
+          type: string
+    groupDocumentByIdResponse:
+      type: object
+      properties:
+        SiteCode:
+          type: integer
+        Enabled:
+          type: boolean
+        Origin:
+          type: string
+        VehicleRegistration:
+          type: string
+        Timestamp:
+          type: integer
+        TotalAmount:
+          type: integer
+        PaymentStatus:
+          type: string
+        Offset:
+          type: number
+        Location:
+          type: string
+        fpnPaymentStartTime:
+          type: number
+        imPaymentStartTime:
+          type: number
+        ID:
+          type: string
+        Hash:
+          type: string
+        Payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/document'
+    groupDocumentListResponse:
+      type: object
+      properties:
+        SiteCode:
+          type: number
+        Enabled:
+          type: boolean
+        Origin:
+          type: string
+        VehicleRegistration:
+          type: string
+        PenaltyDocumentIds:
+          type: array
+          items:
+            type: string
+        Timestamp:
+          type: number
+        TotalAmount:
+          type: number
+        PaymentStatus:
+          type: string
+        Offset:
+          type: number
+        Location:
+          type: string
+        ID:
+          type: string
+        Hash:
+          type: string
+    groupDocumentPost:
+      type: object
+      properties:
+        SiteCode:
+          type: number
+        Timestamp:
+          type: number
+        VehicleRegistration:
+          type: string
+        Location:
+          type: string
+        Offset:
+          type: string
+        Penalties:
+          type: array
+          items:
+              $ref: '#/components/schemas/document'
+    sitesResponse:
+      type: object
+      properties:
+        Items:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              region:
+                type: string
+              siteCode:
+                type: number
+          
