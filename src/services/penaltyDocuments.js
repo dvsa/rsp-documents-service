@@ -609,6 +609,8 @@ export default class PenaltyDocument {
 			params.ExclusiveStartKey = exclusiveStartKey;
 		}
 
+		logInfo('getDocuments', { offset: localOffset, exclusiveStartKey });
+
 		const idList = [];
 		let data;
 
