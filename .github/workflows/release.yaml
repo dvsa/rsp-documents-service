@@ -30,7 +30,7 @@ jobs:
     outputs:
       matrix: ${{ steps.json.outputs.MATRIX }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Read in lambdas names from JSON
         id: json
         run: |
@@ -46,7 +46,7 @@ jobs:
         lambdaName: ${{ fromJSON(needs.lambdas.outputs.matrix).lambdas }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.RSP_AWS_ACCOUNT }}:role/GithubActionsRole
           role-session-name: GithubActionsSession

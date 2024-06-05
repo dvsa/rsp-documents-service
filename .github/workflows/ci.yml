@@ -7,13 +7,17 @@ on:
 
 jobs:
   lint:
-    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v4.0.1
+    with:
+      node-version: 20.x
 
   test:
-    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v4.0.1
+    with:
+      node-version: 20.x
 
   security:
-    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v4.0.1
     with:
       args: --all-projects
     secrets:
@@ -25,7 +29,7 @@ jobs:
       short_sha: ${{ steps.sha.outputs.SHORT_SHA }}
       pretty_branch_name: ${{ steps.branch.outputs.NAME }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set short sha output
         id: sha
         run: echo "SHORT_SHA=$(git rev-parse --short=11 HEAD)" >> $GITHUB_OUTPUT
@@ -36,16 +40,17 @@ jobs:
           echo "NAME=${PRETTY_BRANCH_NAME}" >> $GITHUB_OUTPUT
 
   build:
-    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v4.0.1
     with:
       upload-artifact: true
+      node-version: 20.x
 
   lambdas:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.json.outputs.MATRIX }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Read in lambdas names from JSON
         id: json
         run: |
@@ -57,7 +62,7 @@ jobs:
     strategy:
       matrix:
         lambdaName: ${{ fromJSON(needs.lambdas.outputs.matrix).lambdas }}
-    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v4.0.1
     with:
       environment: nonprod
       short-commit: ${{ needs.build-names.outputs.short_sha }}
@@ -74,7 +79,7 @@ jobs:
 
   update-lambda-code:
     if: ${{ github.ref_name == github.event.repository.default_branch }}
-    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v4.0.1
     needs: [ build-names, build, upload-s3, lambdas ]
     strategy:
       matrix:
