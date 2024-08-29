@@ -1,6 +1,6 @@
 # aws-serverless-starter-template
 
-### Node JS 16
+### Node JS 20
 
 Use [Node Version Manager](https://npm.github.io/installation-setup-docs/installing/using-a-node-version-manager.html) (nvm) to use right Node Version. Specified in `.nvmrc`.
 - `nvm use`
