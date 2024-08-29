@@ -1,9 +1,8 @@
 {
   "name": "rsp-documents-service",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "description": "",
-  "repository": "<replace>",
-  "author": "",
+  "author": "DVSA",
   "license": "MIT",
   "engines": {
     "node": "20.x"
@@ -59,13 +58,13 @@
     "fs-extra": "^11.1.0",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
-    "nodemon": "^2.0.21",
+    "nodemon": "^3.1.4",
     "npm-run-all": "^4.1.5",
     "replace": "^1.2.2",
     "rimraf": "^4.4.0",
     "serverless": "^3.28.1",
     "serverless-dotenv-plugin": "^4.0.2",
-    "serverless-dynamodb-local": "^0.2.40",
+    "serverless-dynamodb-local": "^0.1.1",
     "serverless-offline": "^12.0.4",
     "serverless-openapi-documentation": "^0.4.0",
     "sinon": "^15.0.1",
@@ -77,7 +76,7 @@
   },
   "dependencies": {
     "@babel/runtime-corejs3": "^7.21.0",
-    "@dvsa/rsp-validation": "^1.9.2",
+    "@dvsa/rsp-validation": "^4.0.0",
     "aws-sdk": "^2.1332.0",
     "core-js": "^3.29.0",
     "install": "^0.13.0",
