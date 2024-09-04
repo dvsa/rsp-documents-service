@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/dvsa/rsp-documents-service/compare/v4.0.1...v4.0.2) (2024-09-04)
+
+
+### Miscellaneous Chores
+
+* release 4.0.2 ([b416e1e](https://github.com/dvsa/rsp-documents-service/commit/b416e1e020aca85ef08466414fb19bd6cfb5cfef))
+
 ## [4.0.1](https://github.com/dvsa/rsp-documents-service/compare/v4.0.0...v4.0.1) (2024-08-29)
 
 
