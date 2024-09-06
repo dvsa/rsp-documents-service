@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.3](https://github.com/dvsa/rsp-documents-service/compare/v4.0.2...v4.0.3) (2024-09-06)
+
+
+### Bug Fixes
+
+* update dependancy for validation ([#156](https://github.com/dvsa/rsp-documents-service/issues/156)) ([34c48cd](https://github.com/dvsa/rsp-documents-service/commit/34c48cd7abdcfb786275c3a4755b26fd442af9bd))
+
 ## [4.0.2](https://github.com/dvsa/rsp-documents-service/compare/v4.0.1...v4.0.2) (2024-09-04)
 
 
