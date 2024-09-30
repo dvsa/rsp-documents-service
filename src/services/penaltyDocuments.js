@@ -338,7 +338,7 @@ export default class PenaltyDocument {
 				dateTime: timeNow,
 				siteCode: 5,
 				vehicleDetails: {
-					regNo: 'UNKNOWN',
+					regNo: 'UNKNOWNLONGER',
 				},
 				referenceNo,
 				penaltyType: paymentInfo.penaltyType,

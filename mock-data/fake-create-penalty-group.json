@@ -11,7 +11,7 @@
         "paymentCodeDateTime":1553167828,
         "placeWhereIssued":"Location",
         "vehicleDetails":{
-          "regNo":"REGNO"
+          "regNo":"REGNOLONGERTHAN10"
         },
         "officerName":"test@example.com",
         "paymentToken":"3bcbe511264aff0c",
@@ -29,5 +29,5 @@
   "Timestamp": 1553167828,
   "Location": "Location",
   "SiteCode": 10,
-  "VehicleRegistration": "REGNO"
+  "VehicleRegistration": "REGNOLONGERTHAN10"
 }

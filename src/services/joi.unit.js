@@ -11,7 +11,7 @@ const currentDocumentFormat = {
 		paymentCodeDateTime: 1519257660,
 		siteCode: 5,
 		vehicleDetails: {
-			regNo: '12212121X',
+			regNo: '12212121X34567890642',
 		},
 		referenceNo: '2514563246555',
 		nonEndorsableOffence: [],

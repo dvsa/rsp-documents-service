@@ -64,7 +64,7 @@ function getArchives() {
 
 module.exports = () => {
 	return merge(common, {
-		mode: 'production',
+		mode: 'development',
 		plugins: [
 			// @ts-ignore
 			new BundlePlugin({
