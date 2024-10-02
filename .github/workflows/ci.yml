@@ -44,6 +44,7 @@ jobs:
     with:
       upload-artifact: true
       node-version: 20.x
+      build-command: npm run package
 
   lambdas:
     runs-on: ubuntu-latest
