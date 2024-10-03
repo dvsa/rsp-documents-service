@@ -58,7 +58,7 @@ jobs:
           echo "MATRIX=$(jq -c . < ./lambdas.json)" >> $GITHUB_OUTPUT
 
   upload-s3:
-    if: startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/master')
+    if: startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/main')
     needs: [ lint, test, build, build-names, lambdas ]
     strategy:
       matrix:

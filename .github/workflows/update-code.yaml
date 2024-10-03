@@ -10,7 +10,7 @@ on:
       zip_archive:
         description: 'Enter the name of the zip object from S3 to deploy. Example: master.zip'
         required: true
-        default: master.zip
+        default: main.zip
         type: string
 
 jobs:
