@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.8](https://github.com/dvsa/rsp-documents-service/compare/v4.0.7...v4.0.8) (2024-10-03)
+
+
+### Bug Fixes
+
+* updated workflows ([#165](https://github.com/dvsa/rsp-documents-service/issues/165)) ([a6397a7](https://github.com/dvsa/rsp-documents-service/commit/a6397a756ff36b094f600415e4c8e1f8dc2c46d0))
+
 ## [4.0.7](https://github.com/dvsa/rsp-documents-service/compare/v4.0.6...v4.0.7) (2024-10-02)
 
 
