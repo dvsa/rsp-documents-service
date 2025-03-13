@@ -76,7 +76,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.21.0",
+    "@babel/runtime-corejs3": "^7.26.10",
     "@dvsa/rsp-validation": "^1.9.2",
     "aws-sdk": "^2.1332.0",
     "core-js": "^3.29.0",
