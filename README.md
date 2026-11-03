@@ -12,6 +12,17 @@ Use [Node Version Manager](https://npm.github.io/installation-setup-docs/install
 - `npm start` to spin up AWS Lambda and API Gateway
 
 #### Troubleshooting
+On recent Node.js 20 releases, run
+`NODE_OPTIONS=--no-experimental-require-module npm start` to avoid Serverless 3's
+CommonJS/ES module loading error. The local plugins are `serverless-dynamodb`
+and Serverless Offline 13, which support Serverless 3 and the Node.js 20 runtime.
+Use Java 21 for the current DynamoDB Local distribution.
+
+The local API listens on `http://localhost:3000`, with DynamoDB on port 8000.
+Set the `.env` table names to `penaltyDocuments` and `penaltyGroups`.
+The local startup command disables API authorization; calls to Lambda, S3 and
+SNS still require valid AWS credentials and use the configured AWS resources.
+
 If getting errors downloading DynamoDB, download directly from:
 
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html

@@ -55,7 +55,7 @@ custom:
             sources: [./mock-data/fake-penalty-groups.json]
 plugins:
   - serverless-dotenv-plugin
-  - serverless-dynamodb-local
+  - serverless-dynamodb
   - serverless-offline
   - serverless-openapi-documentation
 provider:
