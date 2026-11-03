@@ -72,7 +72,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/updateWithPaymentStartTime
           method: put
           authorizer:
@@ -87,7 +87,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/updateUponPaymentDelete
           method: put
           authorizer:
@@ -102,7 +102,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/updateMultipleUponPaymentDelete
           method: put
           authorizer:
@@ -114,7 +114,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: sites
           method: get
           authorizer:
@@ -148,7 +148,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents
           method: get
           authorizer:
@@ -177,7 +177,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup
           method: get
           authorizer:
@@ -192,7 +192,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/{id}
           method: get
           authorizer:
@@ -233,7 +233,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/tokens/{token}
           method: get
           authorizer:
@@ -245,10 +245,10 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents
           method: post
-          authorizer: 
+          authorizer:
             type: aws_iam
           cors: true
           documentation:
@@ -274,7 +274,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup
           method: post
           authorizer:
@@ -286,7 +286,7 @@ functions:
     handler: handler.getPenaltyGroup
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup/{id}
           method: get
           authorizer:
@@ -299,7 +299,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/{id}
           method: delete
           authorizer:
@@ -334,7 +334,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup/{id}
           method: delete
           authorizer:
@@ -345,7 +345,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup/updateWithPaymentStartTime
           method: put
           authorizer:
@@ -357,7 +357,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents
           method: put
           authorizer:
@@ -387,7 +387,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: vehicle-reg/{vehicleReg}
           method: GET
           authorizer:
