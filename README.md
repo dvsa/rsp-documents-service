@@ -6,17 +6,27 @@ Use [Node Version Manager](https://npm.github.io/installation-setup-docs/install
 - `nvm use`
 
 #### Run AWS Lambda node functions locally with a mock API Gateway and DynamoDB to test against
-- `npm install serverless -g`
 - `npm install`
 - `./dbsetup.sh`
+- Set `AWS_PROFILE` in `.env` to your development profile (for example `rsp-dev`).
+- Authenticate that profile using your usual AWS login process.
 - `npm start` to spin up AWS Lambda and API Gateway
 
+`npm start` loads `.env`, resolves the selected profile through AWS CLI v2,
+and passes credentials to the local processes in memory only. An exported
+shell `AWS_PROFILE` takes precedence over `.env`; if neither is set, the
+`default` profile is used. Credentials are not written to files or printed.
+Restart `npm start` after temporary credentials expire.
+
 #### Troubleshooting
-On recent Node.js 20 releases, run
-`NODE_OPTIONS=--no-experimental-require-module npm start` to avoid Serverless 3's
-CommonJS/ES module loading error. The local plugins are `serverless-dynamodb`
+The launcher adds `--no-experimental-require-module` automatically to avoid
+Serverless 3's CommonJS/ES module loading error on recent Node.js 20 releases.
+The local plugins are `serverless-dynamodb`
 and Serverless Offline 13, which support Serverless 3 and the Node.js 20 runtime.
-Use Java 21 for the current DynamoDB Local distribution.
+Use Java 21 for the current DynamoDB Local distribution. On macOS, the launcher
+selects an installed Java 21 JDK automatically; elsewhere, configure `JAVA_HOME`
+or put Java 21 on `PATH`. Startup fails clearly if Java or AWS credentials
+cannot be resolved.
 
 The local API listens on `http://localhost:3000`, with DynamoDB on port 8000.
 Set the `.env` table names to `penaltyDocuments` and `penaltyGroups`.
@@ -28,7 +38,11 @@ If getting errors downloading DynamoDB, download directly from:
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html
 
 #### Pre-requisites
-Although Serverless Framework is being used solely for local development purposes, you still need a `[default]` AWS profile in `~/.aws/credentials` in order for for you to run the app locally.
+Use Node.js 20 (as specified in `.nvmrc`), AWS CLI v2 with
+`aws configure export-credentials` support, an authenticated development AWS
+profile, and Java 21. Serverless is installed locally through `npm install`;
+a global installation and a `[default]` profile are not required when
+`AWS_PROFILE` selects a named profile.
 
 ### Environmental variables
 
