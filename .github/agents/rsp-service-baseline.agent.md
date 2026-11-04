@@ -166,11 +166,19 @@ contracts remain unchanged, and explicitly review intentional contract changes.
 - Run Snyk before every authorised commit/push. A transport/authentication failure
   is not a successful scan; report it and retry or obtain direction.
 - Record scan scope. A production-only scan does not cover development dependencies.
-- Prefer compatible remediation, but do not change dependencies or code outside
-  the agreed scope just to clear findings.
-- Never add blanket ignores automatically. Obtain approval for each proposed set
-  of exceptions, include the advisory IDs, reason and expiry, then rerun Snyk.
-  Exceptions defer risk; they do not fix vulnerabilities.
+- During stage 1 (the initial local baseline), do not attempt to resolve Snyk
+  findings by upgrading dependencies or changing application code. Preserve the
+  existing baseline and defer vulnerability remediation to stage 2.
+- For this local-only stage, add findings from a fresh scan to `.snyk` as explicit
+  advisory-specific exceptions, not blanket ignores. This workflow authorises
+  deferral for the initial baseline only. Include each advisory ID, a reason
+  stating that remediation is deferred to stage 2, and an expiry no later than
+  the agreed stage-2 remediation deadline. If no deadline has been agreed, ask
+  for one before adding exceptions. Rerun Snyk with the policy applied and report
+  the deferred findings separately; exceptions do not fix vulnerabilities.
+- Do not deploy the baseline with deferred findings. Outside stage 1, prefer
+  compatible remediation within the agreed scope and obtain explicit approval
+  for any further exceptions.
 - In this Documents baseline, eight explicitly approved findings are ignored
   until 1 July 2027 because the baseline is for local testing and must not be
   deployed before remediation during stage 2. Do not copy these exceptions into
