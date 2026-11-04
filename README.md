@@ -333,4 +333,6 @@ To build for deployment to AWS.
 
 - `npm run package`
 
-This uses aws-sam-plugin and webpack to build each Lambda into it's own archive zip ready to upload to s3 or Lambda.
+This uses Webpack entries from `lambdas.json` to bundle each Lambda into
+`.webpack/<name>/app.js` and create its deployment ZIP in `dist/`. AWS SAM is not
+required.
