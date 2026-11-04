@@ -1,0 +1,35 @@
+version: v1.25.0
+ignore:
+  SNYK-JS-BABELRUNTIMECOREJS3-9397696:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-UUID-16133035:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-JOI-17317897:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-JOI-19498543:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-JOI-19498547:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-JOI-19778379:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-JOI-19883907:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-JOI-22114209:
+    - '*':
+        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+        expires: '2027-07-01T00:00:00.000Z'
+patch: {}

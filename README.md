@@ -44,6 +44,70 @@ profile, and Java 21. Serverless is installed locally through `npm install`;
 a global installation and a `[default]` profile are not required when
 `AWS_PROFILE` selects a named profile.
 
+### Unit tests and coverage
+
+Run on Node.js 20 after `npm ci`:
+
+- `npm test` — isolated unit/behaviour tests (no local services or AWS login needed).
+- `npm run test:coverage` — the same tests with **95.01% minimum statements,
+  branches, functions and lines for each production file**, including files never
+  imported by tests. A failing test or threshold fails the command.
+- `npm run lint` and `npm run check-js-types` — existing validation commands.
+
+Reports are generated in ignored `coverage/` (`index.html`,
+`coverage-final.json`, `coverage-summary.json`); raw data is in ignored
+`.nyc_output/`. Generated report JavaScript is excluded from type checking.
+Only unit/integration tests, fixtures/helpers under `src/test/`, and the
+test-only `src/services/penaltyDocumentsTests/` directory (including its empty
+`getDocumentByToken.js`) are excluded from coverage. No production files or
+branches are ignored.
+
+Coverage uses NYC with Babel's Istanbul plugin **before** Babel transforms the
+source. NYC's second instrumentation/remapping pass is disabled so generated
+regenerator/interop helpers do not appear as untested application code.
+`BABEL_ENV=coverage` limits instrumentation to the coverage command; normal
+builds are unchanged. The test runner disables Node 20's automatic ESM
+detection/require so every `.js` test, including ones importing only packages,
+uses the Babel require hook consistently. `src/handler.js` only re-exports
+handlers: Istanbul reports zero executable statements/functions/branches there
+(0/0, displayed as 0%), while its 19 exports are tested.
+
+The shared unit setup installs synthetic SDK credentials and intercepts AWS
+requests before module-scoped clients are created. Unstubbed requests fail;
+legacy fire-and-forget SNS notifications receive an in-memory response.
+Individual behavioural tests explicitly configure and assert DynamoDB, Lambda,
+S3, SNS and Secrets Manager requests/results. HTTP/HTTPS are also blocked as a
+backstop; no profiles, real credentials, databases, buckets or notifications
+are used. Integration tests (`npm run test-i`) are separate and **not** covered
+by this isolation setup.
+
+#### Behavioural findings
+
+Two tightly scoped fixes accompany regression tests: unmatched payment IDs are
+ignored rather than indexing `-1` and throwing; vehicle searches no longer
+include top-level grouped penalties among standalone penalties.
+
+Existing issues are explicitly identified rather than counted as successful
+behaviour or bypassed with fake validation:
+
+- Missing/empty/`<NewHash>` hashes are rejected by the real validation package,
+  so the intended missing-hash fallback in `updateItem` cannot reach DynamoDB.
+  The supported alphanumeric `New` sentinel and conditional expression are tested.
+- Dummy document creation still returns HTTP 200 after validation/write failure;
+  its success log checks for 201 although `createDocument` returns 200. Tests
+  assert error logging and failed persistence, not a successful write.
+- Group creation's pre-validation read failures escape its response boundary;
+  unknown payment-start penalty types reject before its `try` block.
+- Group creation validation rejects spaces and a top-level `Origin`, even though
+  the internal enrichment helper can normalize/preserve them.
+- Repeated environment bootstraps retain existing configuration values because
+  the existing reducer gives the previous configuration precedence.
+
+`check-js-types` already fails on this branch: six diagnostics in the local
+startup launcher, two Lambda `_Blob`/`JSON.parse` diagnostics in
+`penaltyDocuments.js`, and the `js-sha256` default-import diagnostic. These
+pre-existing errors are not suppressed or changed by the coverage work.
+
 ### Environmental variables
 
 The ENV environmental variable should be one of DEV or PROD.

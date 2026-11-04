@@ -1,6 +1,7 @@
 import expect from 'expect';
 import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
+import { DynamoDB } from 'aws-sdk';
 import mockPenaltyDocumentsService from './service.unit';
 
 describe('streamDocuments', () => {
@@ -21,38 +22,27 @@ describe('streamDocuments', () => {
 	});
 
 	context('when called with multiple records', () => {
-		it('sends a message with the latest offset', async () => {
+		it('sends a message with the earliest offset so clients fetch every change', async () => {
 			const response = await penaltyDocumentsService.streamDocuments({
 				Records: [{
 					dynamodb: {
-						NewImage: JSON.stringify({
-							item: {
-								Offset: 100,
-							},
-						}),
+						NewImage: DynamoDB.Converter.marshall({ Offset: 100 }),
 					},
 				}, {
 					dynamodb: {
-						NewImage: JSON.stringify({
-							item: {
-								Offset: 300,
-							},
-						}),
+						NewImage: DynamoDB.Converter.marshall({ Offset: 300 }),
 					},
 				}, {
 					dynamodb: {
-						NewImage: JSON.stringify({
-							item: {
-								Offset: 200,
-							},
-						}),
+						NewImage: DynamoDB.Converter.marshall({ Offset: 200 }),
 					},
 				}],
 			});
 			expect(response).toBe('Successfully processed 3 records.');
-			expect(sendSnsMessageSpy.calledWith({
-				Offset: 300,
-			}));
+			expect(sendSnsMessageSpy.calledOnce).toBe(true);
+			const message = JSON.parse(sendSnsMessageSpy.firstCall.args[0].Message);
+			expect(JSON.parse(message.APNS).offset).toBe(100);
+			expect(JSON.parse(message.APNS_SANDBOX).offset).toBe(100);
 		});
 	});
 });

@@ -19,3 +19,5 @@ npm-debug.log
 .env
 dist
 .aws-sam
+/coverage/
+/.nyc_output/

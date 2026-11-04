@@ -12,6 +12,8 @@
     "node_modules",
     "src/test",
     "**/*.unit.js",
+    "coverage",
+    ".nyc_output",
     "build",
     "mock-data"
   ]
