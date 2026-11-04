@@ -1,0 +1,17 @@
+{
+  "all": true,
+  "include": ["src/**/*.js"],
+  "exclude": ["src/**/*.unit.js", "src/test/**", "src/services/penaltyDocumentsTests/**"],
+  "require": ["@babel/register"],
+  "instrument": false,
+  "sourceMap": false,
+  "report-dir": "coverage",
+  "temp-dir": ".nyc_output",
+  "reporter": ["text", "html", "json", "json-summary"],
+  "check-coverage": true,
+  "per-file": true,
+  "statements": 95.01,
+  "branches": 95.01,
+  "functions": 95.01,
+  "lines": 95.01
+}

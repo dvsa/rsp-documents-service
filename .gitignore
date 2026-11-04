@@ -19,3 +19,11 @@ npm-debug.log
 .env
 dist
 .aws-sam
+.webpack
+/coverage/
+/.nyc_output/
+/integration-reports/
+/.integration-local.lock
+/integration-baselines/*
+!/integration-baselines/sites.json
+/integration/private-token.json

@@ -16,10 +16,10 @@ class BundlePlugin {
 	}
 
 	apply(compiler) {
-		compiler.hooks.afterEmit.tap('zip-pack-plugin', async () => {
-			this.archives.forEach(async (archive) => {
-				await BundlePlugin.createArchive(archive.inputPath, archive.outputPath, archive.outputName, archive.ignore);
-			});
+		compiler.hooks.afterEmit.tapPromise('zip-pack-plugin', async () => {
+			await Promise.all(this.archives.map((archive) => BundlePlugin.createArchive(
+				archive.inputPath, archive.outputPath, archive.outputName, archive.ignore,
+			)));
 
 			this.assets.forEach((asset) => {
 				fs.copySync(asset.inputPath, asset.outputPath);
@@ -47,7 +47,7 @@ class BundlePlugin {
 			'**/*',
 			{
 				cwd: inputPath,
-				skip: ignore,
+				ignore,
 			},
 		);
 		return archive.finalize();
@@ -56,7 +56,7 @@ class BundlePlugin {
 
 function getArchives() {
 	return lambdaNames.lambdas.map((lambdaName) => ({
-		inputPath: `.aws-sam/build/${lambdaName}`,
+		inputPath: `.webpack/${lambdaName}`,
 		outputPath: `${OUTPUT_FOLDER}`,
 		outputName: `${lambdaName}`,
 	}));

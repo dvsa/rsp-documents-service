@@ -1,18 +1,18 @@
 const path = require('path');
-const AwsSamPlugin = require('aws-sam-webpack-plugin');
+const lambdaNames = require('./lambdas.json');
 
-const awsSamPlugin = new AwsSamPlugin({ vscodeDebug: false });
+/** @type {import('webpack').Configuration} */
+const configuration = {
+	entry: Object.fromEntries(lambdaNames.lambdas.map((name) => [
+		name, `./src/functions/${name === 'streamDocuments' ? 'stream' : name}.js`,
+	])),
 
-module.exports = {
-	// Loads the entry object from the AWS::Serverless::Function resources in your
-	// SAM config. Setting this to a function will
-	entry: () => awsSamPlugin.entry(),
-
-	// Write the output to the .aws-sam/build folder
 	output: {
-		filename: (/** @type {any} */ chunkData) => awsSamPlugin.filename(chunkData),
+		filename: '[name]/app.js',
 		libraryTarget: 'commonjs2',
-		path: path.resolve('.'),
+		path: path.resolve('.webpack'),
+		// Keep SDK v3 dynamic imports inside each independently deployed Lambda.
+		asyncChunks: false,
 	},
 
 	// Resolve .ts and .js extensions
@@ -23,10 +23,6 @@ module.exports = {
 	// Target node
 	target: 'node',
 
-	// AWS recommends always including the aws-sdk in your Lambda package but excluding can significantly reduce
-	// the size of your deployment package. If you want to always include it then comment out this line. It has
-	// been included conditionally because the node10.x docker image used by SAM local doesn't include it.
-	// externals: process.env.NODE_ENV === 'development' ? [] : ['aws-sdk'],
 	externals: {
 		fsevents: 'require(\'fsevents\')',
 	},
@@ -48,8 +44,6 @@ module.exports = {
 		],
 	},
 
-	// Add the AWS SAM Webpack plugin
-	plugins: [
-		awsSamPlugin,
-	],
 };
+
+module.exports = configuration;

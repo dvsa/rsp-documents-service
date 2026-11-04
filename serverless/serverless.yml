@@ -1,6 +1,8 @@
 service: RSP-BackendApi
 
 custom:
+  serverless-offline:
+    host: ${env:LOCAL_API_HOST, 'localhost'}
   documentation:
     models:
       - name: ErrorResponse
@@ -50,17 +52,18 @@ custom:
       test:
         sources:
           - table: penaltyDocuments
-            sources: [./mock-data/fake-penalty-notice.json]
+            sources: [./mock-data/fake-penalty-notice.json, ./mock-data/integration-documents.json]
           - table: penaltyGroups
-            sources: [./mock-data/fake-penalty-groups.json]
+            sources: [./mock-data/fake-penalty-groups.json, ./mock-data/integration-groups.json]
 plugins:
   - serverless-dotenv-plugin
-  - serverless-dynamodb-local
+  - serverless-dynamodb
   - serverless-offline
-  - serverless-openapi-documentation
+  - serverless-openapi-documenter
 provider:
   name: aws
-  runtime: nodejs20.x
+  stage: ${env:LOCAL_STAGE, 'dev'}
+  runtime: nodejs24.x
   region: eu-west-1
 
 functions:
@@ -70,14 +73,14 @@ functions:
   updateWithPaymentStartTime:
     handler: handler.updateWithPaymentStartTime
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: documents/updateWithPaymentStartTime
           method: put
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
   updatePenaltyGroupWithPayment:
     handler: handler.updatePenaltyGroupWithPayment
@@ -85,14 +88,14 @@ functions:
   updateUponPaymentDelete:
     handler: handler.updateUponPaymentDelete
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: documents/updateUponPaymentDelete
           method: put
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
   streamDocuments:
     handler: handler.streamDocuments
@@ -100,21 +103,21 @@ functions:
   updateMultipleUponPaymentDelete:
     handler: handler.updateMultipleUponPaymentDelete
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: documents/updateMultipleUponPaymentDelete
           method: put
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
   sites:
     handler: handler.sites
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: sites
           method: get
           authorizer:
@@ -123,10 +126,6 @@ functions:
           documentation:
             summary: "Get list of sites"
             description: "Fetches the details of enforcement sites"
-            requestBody:
-              description: "Nothing"
-            requestModels:
-              application/json: "Nothing"
             methodResponses:
               - statusCode: 200
                 responseBody:
@@ -146,22 +145,18 @@ functions:
   list:
     handler: handler.list
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: documents
           method: get
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
           documentation:
             summary: "List of penalty documents"
             description: "Lists of penalty documents"
-            requestBody:
-              description: "None"
-            requestModels:
-              application/json: "GetRequest"
             methodResponses:
               - statusCode: 200
                 responseBody:
@@ -172,32 +167,43 @@ functions:
                 responseBody:
                   description: "An error message when listing penalty documents"
                 responseModels:
+                  application/json: "ErrorResponse"
+              - statusCode: 400
+                responseBody:
+                  description: "Unable to list penalty documents"
   listGroups:
     handler: handler.listGroups
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup
           method: get
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
           documentation:
             summary: "List of penalty groups"
             description: "List of penalty groups"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "A list of penalty groups"
+              - statusCode: 400
+                responseBody:
+                  description: "Unable to list penalty groups"
   get:
     handler: handler.get
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: documents/{id}
           method: get
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
           documentation:
             summary: "Get penalty document"
@@ -208,10 +214,6 @@ functions:
                 schema:
                   type: "number"
                   pattern: "^[0-9]+$"
-            requestBody:
-              description: "Nothing"
-            requestModels:
-              application/json: "GetRequest"
             methodResponses:
               - statusCode: 200
                 responseBody:
@@ -231,24 +233,24 @@ functions:
   getDocumentByToken:
     handler: handler.getDocumentByToken
     memorySize: 128
+    timeout: 18
     events:
       -
-        httpApi:
+        http:
           path: documents/tokens/{token}
           method: get
           authorizer:
             type: aws_iam
-          timeout: 18
           cors: true
   create:
     handler: handler.create
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents
           method: post
-          authorizer: 
+          authorizer:
             type: aws_iam
           cors: true
           documentation:
@@ -264,6 +266,9 @@ functions:
                   description: "Details of the penalty document created"
                 responseModels:
                   application/json: "DocumentResponse"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid penalty document"
               - statusCode: 500
                 responseBody:
                   description: "500 server error"
@@ -274,7 +279,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup
           method: post
           authorizer:
@@ -282,11 +287,18 @@ functions:
           cors: true
           documentation:
             summary: "Create a group containing multiple penalties"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Created penalty group"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid penalty group"
   getPenaltyGroup:
     handler: handler.getPenaltyGroup
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup/{id}
           method: get
           authorizer:
@@ -294,12 +306,24 @@ functions:
           cors: true
           documentation:
             summary: Retrieve a penalty group by ID
+            pathParams:
+              - name: id
+                required: true
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Penalty group"
+              - statusCode: 404
+                responseBody:
+                  description: "Penalty group not found"
   delete:
-    handler: handler.delete
+    handler: handler.remove
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: documents/{id}
           method: delete
           authorizer:
@@ -324,6 +348,9 @@ functions:
                   description: "Details of the penalty document deleted"
                 responseModels:
                   application/json: "DocumentResponse"
+              - statusCode: 400
+                responseBody:
+                  description: "Unable to delete penalty document"
               - statusCode: 500
                 responseBody:
                   description: "500 server error"
@@ -334,7 +361,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup/{id}
           method: delete
           authorizer:
@@ -343,26 +370,26 @@ functions:
   updatePenaltyGroupWithPaymentStartTime:
     handler: handler.updatePenaltyGroupWithPaymentStartTime
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: penaltyGroup/updateWithPaymentStartTime
           method: put
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
   updateMulti:
     handler: handler.updateMulti
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: documents
           method: put
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
           documentation:
             summary: "Update multiple penalty documents"
@@ -377,6 +404,9 @@ functions:
                   description: "Details of the penalty documents updated, along with success and failure"
                 responseModels:
                   application/json: "PutMultiResponse"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid document update"
               - statusCode: 500
                 responseBody:
                   description: "500 server error"
@@ -385,18 +415,30 @@ functions:
   searchByVehicleRegistration:
     handler: handler.searchByVehicleRegistration
     memorySize: 128
+    timeout: 12
     events:
       -
-        httpApi:
+        http:
           path: vehicle-reg/{vehicleReg}
           method: GET
           authorizer:
             type: aws_iam
-          timeout: 12
           cors: true
           documentation:
             summary: "Search for penalties by vehicle registrations"
             description: "Search for penalties by vehicle registrations"
+            pathParams:
+              - name: vehicleReg
+                required: true
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Matching penalties"
+              - statusCode: 400
+                responseBody:
+                  description: "Unable to search penalty documents"
 resources:
   Resources:
     penaltyDocuments:
