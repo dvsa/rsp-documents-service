@@ -23,5 +23,6 @@ dist
 /.nyc_output/
 /integration-reports/
 /.integration-local.lock
-/integration-baselines/
+/integration-baselines/*
+!/integration-baselines/sites.json
 /integration/private-token.json

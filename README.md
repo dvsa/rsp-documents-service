@@ -109,9 +109,10 @@ notification tests and the self-contained HTML coverage report.
 
 Keep the approved `integration-baselines/sites.json` and ignored
 `integration/private-token.json` when comparing runs across runtime upgrades.
-On a fresh checkout, follow the linked guide to capture/approve the Sites
-baseline and supply a valid non-production token with independently known expected
-values. Missing prerequisites are reported as skipped, not covered.
+The approved Sites baseline is committed, so fresh checkouts compare against the
+same dataset without local capture or approval. Supply a valid non-production
+token with independently known expected values as described in the linked guide.
+Missing prerequisites are reported as skipped, not covered.
 
 This suite is manual-only, excluded from `npm test`/source coverage/CI.
 

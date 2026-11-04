@@ -129,8 +129,11 @@ ordinary contract mismatches remain failures, not dependency excuses.
 
 ### Static Sites baseline: capture is not approval
 
-No verified complete Sites dataset is checked into this repository. On the first
-authorised run:
+The approved complete Sites dataset is committed in
+`integration-baselines/sites.json`. Fresh checkouts use this shared baseline
+automatically; no initial capture or approval is required.
+
+Only when deliberately updating the expected Sites data, run:
 
 ```sh
 INTEGRATION_CONFIRM_LOCAL=yes INTEGRATION_ALLOW_LAMBDA=yes \
@@ -152,7 +155,9 @@ Every site name, region and integer siteCode is compared, sorted by unique
 siteCode; extra response metadata is not made part of the documented Sites
 domain. A later change fails verification. Only explicitly repeating review and
 approval replaces the baseline; test execution never silently refreshes it.
-Keep the approved local baseline when comparing Node 20/24/Starter.
+Keep the approved baseline unchanged when comparing Node 20/24/Starter. Commit
+any intentionally approved update to `integration-baselines/sites.json` so all
+developers use the same expected dataset; candidate files remain ignored.
 
 The first authorised run on 4 November 2026 verified the real response has an
 `Items` envelope containing 111 sites. The existing JSON model's top-level array
