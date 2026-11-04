@@ -19,13 +19,11 @@ describe('token lookups and missing paid documents', () => {
 
 	function invocations(paymentList = []) {
 		const invoke = aws('invoke', {});
-		invoke.callsFake((op, params) => ({
-			promise: async () => ({
-				Payload: JSON.stringify({
-					statusCode: 200,
-					body: JSON.stringify(params.FunctionName === 'token-arn' ? token : { payments: paymentList }),
-				}),
-			}),
+		invoke.callsFake(async (op, params) => ({
+			Payload: Buffer.from(JSON.stringify({
+				statusCode: 200,
+				body: JSON.stringify(params.FunctionName === 'token-arn' ? token : { payments: paymentList }),
+			})),
 		}));
 		return invoke;
 	}
@@ -75,7 +73,7 @@ describe('token lookups and missing paid documents', () => {
 	});
 	it('reports failure fetching payment information for a missing token document', async () => {
 		const invoke = invocations();
-		invoke.onSecondCall().returns({ promise: async () => { throw new Error('payments unavailable'); } });
+		invoke.onSecondCall().rejects(new Error('payments unavailable'));
 		resolves(db.get, {});
 		const response = await service.getDocumentByToken('token');
 		expect(response.statusCode).toBe(400);

@@ -1,6 +1,6 @@
 import sinon from 'sinon';
 import expect from 'expect';
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../../utils/dynamodb';
 import mockPenaltyDocumentsService from './service.unit';
 import getMockPenalties from '../../../mock-data/mock-penalty-notice';
 

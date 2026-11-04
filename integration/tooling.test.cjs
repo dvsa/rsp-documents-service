@@ -21,20 +21,28 @@ const privateConfig = require('./private-config.cjs');
 function memoryDb(initial = []) {
 	const items = new Map(initial.map((e) => [`${e.table}/${e.item.ID}`, clone(e.item)]));
 	const requests = [];
-	const operation = (kind) => (params) => ({
-		promise: async () => {
-			requests.push({ kind, params });
-			const key = `${params.TableName}/${params.Key?.ID || params.Item.ID}`;
-			if (kind === 'get') return { Item: items.has(key) ? clone(items.get(key)) : undefined };
-			if (kind === 'put') items.set(key, clone(params.Item));
-			if (kind === 'delete') items.delete(key);
-			return {};
-		},
-	});
+	const operation = (kind) => async (params) => {
+		requests.push({ kind, params });
+		const key = `${params.TableName}/${params.Key?.ID || params.Item.ID}`;
+		if (kind === 'get') return { Item: items.has(key) ? clone(items.get(key)) : undefined };
+		if (kind === 'put') items.set(key, clone(params.Item));
+		if (kind === 'delete') items.delete(key);
+		return {};
+	};
 	return {
 		get: operation('get'), put: operation('put'), delete: operation('delete'), items, requests,
 	};
 }
+
+test('startup uses SDK v3 profile resolution without the credential-export launcher', () => {
+	const root = path.resolve(__dirname, '..');
+	const { scripts } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+	assert.equal(fs.existsSync(path.join(root, 'scripts/start-local.cjs')), false);
+	assert.equal(scripts.start, 'npm run copy-localfiles && npm run compile && npm run parallel');
+	assert.equal(scripts['start:local'], 'npm start');
+	assert.match(scripts.offline, /node --env-file=\.env .*serverless\.js offline start --noAuth$/);
+	assert.doesNotMatch(JSON.stringify(scripts), /export-credentials|start-local\.cjs/);
+});
 
 test('real validators accept all synthetic write payloads and mixed-type group payload', () => {
 	const data = fixtures(1793780000);

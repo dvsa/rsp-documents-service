@@ -28,15 +28,15 @@ function configuration(env = process.env) {
 
 function client(endpoint) {
 	// Explicit fake credentials and endpoint: never resolve a profile or the AWS credential chain.
-	const AWS = require('aws-sdk');
-	return new AWS.DynamoDB.DocumentClient({
+	const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+	const { DynamoDBDocument } = require('@aws-sdk/lib-dynamodb');
+	return DynamoDBDocument.from(new DynamoDBClient({
 		endpoint,
 		region: 'eu-west-1',
-		accessKeyId: 'localIntegration',
-		secretAccessKey: 'localIntegration',
-		maxRetries: 0,
-		httpOptions: { connectTimeout: 2000, timeout: 5000 },
-	});
+		credentials: { accessKeyId: 'localIntegration', secretAccessKey: 'localIntegration' },
+		maxAttempts: 1,
+		requestHandler: { connectionTimeout: 2000, requestTimeout: 5000 },
+	}), { marshallOptions: { removeUndefinedValues: true } });
 }
 
 function entries(data, includeCreated = false) {
@@ -63,7 +63,7 @@ function owned(item) {
 async function snapshot(db, data) {
 	const originals = [];
 	for (const entry of entries(data, true)) {
-		const { Item } = await db.get({ TableName: entry.table, Key: { ID: entry.item.ID }, ConsistentRead: true }).promise();
+		const { Item } = await db.get({ TableName: entry.table, Key: { ID: entry.item.ID }, ConsistentRead: true });
 		// Created records must be absent; never replace an existing user's record.
 		const seeded = entries(data).some((candidate) => candidate.item.ID === entry.item.ID);
 		if (Item && (!seeded || !owned(Item))) throw new Error('Fixture ID collision; no records were seeded');
@@ -79,21 +79,21 @@ async function seed(db, data) {
 			Item: entry.item,
 			ConditionExpression: 'attribute_not_exists(ID) OR IntegrationFixture = :owner',
 			ExpressionAttributeValues: { ':owner': OWNER },
-		}).promise();
+		});
 	}
 }
 
 async function restore(db, originals, createdIds = new Set()) {
 	for (const entry of originals) {
 		const key = `${entry.table}/${entry.item.ID}`;
-		const { Item } = await db.get({ TableName: entry.table, Key: { ID: entry.item.ID }, ConsistentRead: true }).promise();
+		const { Item } = await db.get({ TableName: entry.table, Key: { ID: entry.item.ID }, ConsistentRead: true });
 		if (!Item) {
 			if (entry.original) {
 				await db.put({
 					TableName: entry.table,
 					Item: entry.original,
 					ConditionExpression: 'attribute_not_exists(ID)',
-				}).promise();
+				});
 			}
 			continue;
 		}
@@ -115,8 +115,8 @@ async function restore(db, originals, createdIds = new Set()) {
 				ExpressionAttributeValues: entry.table === 'penaltyDocuments' ? { ':owner': OWNER } : { ':ids': Item.PenaltyDocumentIds },
 				...(entry.table === 'penaltyDocuments' ? { ExpressionAttributeNames: { '#v': 'Value' } } : {}),
 			};
-		if (entry.original) await db.put({ TableName: entry.table, Item: entry.original, ...condition }).promise();
-		else await db.delete({ TableName: entry.table, Key: { ID: entry.item.ID }, ...condition }).promise();
+		if (entry.original) await db.put({ TableName: entry.table, Item: entry.original, ...condition });
+		else await db.delete({ TableName: entry.table, Key: { ID: entry.item.ID }, ...condition });
 	}
 }
 

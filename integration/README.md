@@ -46,13 +46,17 @@ notifications are fire-and-forget; a returned 200 does not prove SNS success.
 
 ## Before the first real run
 
-1. Use Node 20 and existing installed dependencies (later rerun unchanged on Node
-   24 and the rewrite). Authenticate your normal development AWS profile.
+1. Use Node 24 (`nvm use`) and install the locked dependencies (`npm ci`).
+   The contracts and approved Sites dataset are unchanged from the Node 20
+   baseline and remain reusable for the rewrite. Authenticate your normal
+   development AWS profile.
 2. Verify `.env` uses `penaltyDocuments` / `penaltyGroups`, the local database on
    port 8000, the intended non-production Payments/Token/S3 resources, and normal
    retention/batch settings (`DAYS_TO_HOLD=3`, batch size at most 75).
-3. Start the existing service with `npm start` in another terminal. Its existing
-   launcher resolves credentials in memory. Restart it after credentials expire.
+3. Select Java 21 on `PATH`, then start the service with `npm start` in another
+   terminal. Offline loads `.env` and SDK v3 resolves the AWS profile directly;
+   no credential-export launcher is used. Reauthenticate and restart after
+   credential errors.
    This task **does not start the service or authenticate on your behalf**.
 4. Confirm the printed URLs: HTTP normally has `/dev`; Lambda invokes listen on
    port 3002. The local YAML has no stream subscription; do not wire seed-table

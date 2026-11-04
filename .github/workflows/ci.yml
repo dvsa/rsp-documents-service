@@ -9,14 +9,14 @@ jobs:
   lint:
     uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v4.0.1
     with:
-      node-version: 20.x
-      npm-version: '10'
+      node-version: 24.x
+      npm-version: '11'
 
   test:
     uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v4.0.1
     with:
-      node-version: 20.x
-      npm-version: '10'
+      node-version: 24.x
+      npm-version: '11'
 
   security:
     uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v4.0.1
@@ -45,8 +45,8 @@ jobs:
     uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v4.0.1
     with:
       upload-artifact: true
-      node-version: 20.x
-      npm-version: '10'
+      node-version: 24.x
+      npm-version: '11'
       build-command: npm run package
 
   lambdas:

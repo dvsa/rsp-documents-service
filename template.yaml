@@ -3,83 +3,83 @@ Transform: 'AWS::Serverless-2016-10-31'
 
 Globals:
   Function:
-    Runtime: nodejs20.x
-    CodeUri: src/functions
+    Runtime: nodejs24.x
+    Handler: app.handler
 
 Resources:
     create:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: create.handler
+        CodeUri: .webpack/create/
     delete:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: delete.handler
+        CodeUri: .webpack/delete/
     get:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: get.handler
+        CodeUri: .webpack/get/
     getDocumentByToken:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: getDocumentByToken.handler
+        CodeUri: .webpack/getDocumentByToken/
     list:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: list.handler
+        CodeUri: .webpack/list/
     sites:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: sites.handler
+        CodeUri: .webpack/sites/
     streamDocuments:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: stream.handler
+        CodeUri: .webpack/streamDocuments/
     updateMulti:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updateMulti.handler
+        CodeUri: .webpack/updateMulti/
     updateWithPayment:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updateWithPayment.handler
+        CodeUri: .webpack/updateWithPayment/
     getPenaltyGroup:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: getPenaltyGroup.handler
+        CodeUri: .webpack/getPenaltyGroup/
     deleteGroup:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: deleteGroup.handler
+        CodeUri: .webpack/deleteGroup/
     updateUponPaymentDelete:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updateUponPaymentDelete.handler
+        CodeUri: .webpack/updateUponPaymentDelete/
     createPenaltyGroup:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: createPenaltyGroup.handler
+        CodeUri: .webpack/createPenaltyGroup/
     updatePenaltyGroupWithPayment:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updatePenaltyGroupWithPayment.handler
+        CodeUri: .webpack/updatePenaltyGroupWithPayment/
     listGroups:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: listGroups.handler
+        CodeUri: .webpack/listGroups/
     searchByVehicleRegistration:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: searchByVehicleRegistration.handler
+        CodeUri: .webpack/searchByVehicleRegistration/
     updateMultipleUponPaymentDelete:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updateMultipleUponPaymentDelete.Handler
+        CodeUri: .webpack/updateMultipleUponPaymentDelete/
     updateWithPaymentStartTime:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updateWithPaymentStartTime.handler
+        CodeUri: .webpack/updateWithPaymentStartTime/
     updatePenaltyGroupWithPaymentStartTime:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: updatePenaltyGroupWithPaymentStartTime.handler
+        CodeUri: .webpack/updatePenaltyGroupWithPaymentStartTime/

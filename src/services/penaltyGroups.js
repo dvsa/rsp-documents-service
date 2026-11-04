@@ -1,6 +1,6 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import { SNS } from 'aws-sdk';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import Validation from '@dvsa/rsp-validation';
 
 import config from '../config';
@@ -13,7 +13,7 @@ import createErrorCodedResponse from '../utils/createErrorCodedResponse';
 import HttpStatus from '../utils/httpStatusCode';
 import { logError, logInfo } from '../utils/logger';
 
-const sns = new SNS();
+const sns = new SNSClient({ region: 'eu-west-1' });
 const appOrigin = 'APP';
 
 /** @typedef {{ ID: String, Enabled: boolean }} PenaltyDocument */
@@ -392,7 +392,7 @@ export default class PenaltyGroup {
 	async sendPaymentNotification(paymentInfo, documentInfo) {
 		const params = this._paymentMessageParams(paymentInfo, documentInfo);
 		try {
-			const snsResponse = await sns.publish(params).promise();
+			const snsResponse = await sns.send(new PublishCommand(params));
 			logInfo('PaymentNotificationSent', { snsResponse, snsMessage: params });
 		} catch (err) {
 			logError('PaymentNotificationError', {

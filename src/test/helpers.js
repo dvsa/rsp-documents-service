@@ -34,9 +34,15 @@ export function rejects(stub, message = 'database unavailable') {
 
 export function aws(operation, value, error) {
 	const stub = request.withArgs(operation);
-	stub.callsFake((op, params, callback) => {
-		if (callback) callback(error, value);
-		return { promise: async () => { if (error) throw error; return value; } };
+	stub.callsFake(async () => {
+		if (error) throw error;
+		if (operation === 'invoke' && value && value.Payload !== undefined) {
+			return { ...value, Payload: Buffer.from(value.Payload) };
+		}
+		if (operation === 'getObject' && value && value.Body) {
+			return { ...value, Body: { transformToString: async () => value.Body.toString('utf8') } };
+		}
+		return value;
 	});
 	return stub;
 }

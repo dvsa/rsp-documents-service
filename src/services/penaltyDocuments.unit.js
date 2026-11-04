@@ -1,6 +1,6 @@
 import expect from 'expect';
 import sinon from 'sinon';
-import { DynamoDB } from 'aws-sdk';
+import { marshall } from '@aws-sdk/util-dynamodb';
 import Service from './penaltyDocuments';
 import config from '../config';
 import hash from '../utils/hash';
@@ -438,7 +438,7 @@ describe('penalty document behaviour with isolated AWS', () => {
 			const publish = aws('publish', { MessageId: 'stream-message' });
 			const Records = [300, 100, 200].map((Offset) => ({
 				dynamodb: {
-					NewImage: DynamoDB.Converter.marshall({
+					NewImage: marshall({
 						ID: 'id', Offset, Enabled: true, Value: { penaltyType: 'FPN' },
 					}),
 				},

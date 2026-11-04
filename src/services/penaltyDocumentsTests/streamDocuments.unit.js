@@ -1,7 +1,7 @@
 import expect from 'expect';
-import { doc } from 'serverless-dynamodb-client';
 import sinon from 'sinon';
-import { DynamoDB } from 'aws-sdk';
+import { marshall } from '@aws-sdk/util-dynamodb';
+import { doc } from '../../utils/dynamodb';
 import mockPenaltyDocumentsService from './service.unit';
 
 describe('streamDocuments', () => {
@@ -26,15 +26,15 @@ describe('streamDocuments', () => {
 			const response = await penaltyDocumentsService.streamDocuments({
 				Records: [{
 					dynamodb: {
-						NewImage: DynamoDB.Converter.marshall({ Offset: 100 }),
+						NewImage: marshall({ Offset: 100 }),
 					},
 				}, {
 					dynamodb: {
-						NewImage: DynamoDB.Converter.marshall({ Offset: 300 }),
+						NewImage: marshall({ Offset: 300 }),
 					},
 				}, {
 					dynamodb: {
-						NewImage: DynamoDB.Converter.marshall({ Offset: 200 }),
+						NewImage: marshall({ Offset: 200 }),
 					},
 				}],
 			});

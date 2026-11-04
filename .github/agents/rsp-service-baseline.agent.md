@@ -59,16 +59,14 @@ does not authorise starting stage 2 or deploying the service.
 
 - The Node 20 baseline uses Serverless 3, Offline 13 and `serverless-dynamodb`.
 - Current DynamoDB Local requires Java 21. Use the official HTTPS distribution.
-- `scripts/start-local.cjs` is local-only. `npm start` loads `.env`, resolves the
-  selected profile through AWS CLI v2 `configure export-credentials`, and passes
-  credentials to child processes in memory. It also selects Java 21 on macOS and
-  applies the recent Node 20 Serverless module-loading workaround.
-- `npm run start:local` is the internal command and bypasses that launcher.
-- The launcher must fail clearly on credential/Java errors, never print secrets,
-  and propagate process termination. Temporary credentials require a restart
-  after expiry.
-- SDK v2 could not resolve the development profile directly. Do not assume that
-  setting `AWS_PROFILE` or `AWS_SDK_LOAD_CONFIG` alone solves this in other repos.
+- The Node 20 baseline used `scripts/start-local.cjs` to export credentials and
+  select Java 21. The Node 24/SDK v3 upgrade removes that workaround.
+  `npm start` compiles and runs Offline, which loads `.env` with Node's
+  `--env-file`; SDK v3 resolves the selected profile directly. Java 21 must be
+  selected on `PATH` as a prerequisite. `npm run start:local` aliases `npm start`.
+- SDK v2 could not resolve the development profile directly. SDK v3 direct
+  profile resolution is verified in Documents, but do not assume that alone
+  proves startup/authentication works in other repositories.
 - DynamoDB is local on port 8000; the API listens on port 3000. Use the routes
   printed at startup: API stage prefixes depend on the event type.
 - Sites reads real S3. Other operations can invoke real Payments/Token Lambdas or

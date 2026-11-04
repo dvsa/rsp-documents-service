@@ -3,7 +3,7 @@
 import expect from 'expect';
 import sinon from 'sinon';
 import _ from 'lodash';
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 
 import PenaltyGroupService from './penaltyGroups';
 import mockPenaltyGroupsData from '../../mock-data/fake-penalty-groups.json';

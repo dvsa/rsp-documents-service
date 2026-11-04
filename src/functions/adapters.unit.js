@@ -1,7 +1,7 @@
 /* eslint-disable global-require, import/no-dynamic-require */
 import expect from 'expect';
 import sinon from 'sinon';
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 import config from '../config';
 import Documents from '../services/penaltyDocuments';
 import Groups from '../services/penaltyGroups';

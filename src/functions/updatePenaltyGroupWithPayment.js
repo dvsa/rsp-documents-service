@@ -1,5 +1,5 @@
 /* eslint-env es6 */
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 import PenaltyGroupService from '../services/penaltyGroups';
 import config from '../config';
 

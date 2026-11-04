@@ -2,7 +2,8 @@
 
 import supertest from 'supertest';
 import expect from 'expect';
-import AWS from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import _ from 'lodash';
 import testPenaltyGroupCreationPayload from './data/testPenaltyGroupCreationPayload';
 
@@ -15,11 +16,14 @@ let docClient;
 describe('penaltyGroups', () => {
 
 	before(() => {
-		AWS.config.update({
+		const client = DynamoDBDocument.from(new DynamoDBClient({
 			region: 'eu-west-1',
 			endpoint: 'http://localhost:8000',
-		});
-		docClient = new AWS.DynamoDB.DocumentClient();
+			credentials: { accessKeyId: 'legacyLocal', secretAccessKey: 'legacyLocal' },
+		}), { marshallOptions: { removeUndefinedValues: true } });
+		docClient = Object.fromEntries(['get', 'put', 'delete', 'batchWrite'].map((method) => [
+			method, (input) => ({ promise: () => client[method](input) }),
+		]));
 		extendJestWithUnixSeconds();
 	});
 

@@ -1,8 +1,9 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import {
-	SNS, S3, Lambda, DynamoDB,
-} from 'aws-sdk';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import Validation from '@dvsa/rsp-validation';
 import config from '../config';
 import hashToken from '../utils/hash';
@@ -17,10 +18,10 @@ import subtractDays from '../utils/subtractDays';
 import HttpStatus from '../utils/httpStatusCode';
 import { logError, logInfo } from '../utils/logger';
 
-const sns = new SNS();
-const parse = DynamoDB.Converter.unmarshall;
-const s3 = new S3({ apiVersion: '2006-03-01' });
-const lambda = new Lambda({ region: 'eu-west-1' });
+const sns = new SNSClient({ region: 'eu-west-1' });
+const parse = unmarshall;
+const s3 = new S3Client({ region: 'eu-west-1' });
+const lambda = new LambdaClient({ region: 'eu-west-1' });
 const docTypeMapping = ['FPN', 'IM', 'CDN'];
 const portalOrigin = 'PORTAL';
 const appOrigin = 'APP';
@@ -30,7 +31,7 @@ export default class PenaltyDocument {
 
 	/**
 	 * Instantiate the penalty document service.
-	 * @param {AWS.DynamoDB.DocumentClient} db Dynamodb interface for penalty documents.
+	 * @param {typeof import('../utils/dynamodb').doc} db Dynamodb interface for penalty documents.
 	 * @param {string} penaltyDocTableName Table name of penalty documents.
 	 * @param {string} bucketName S3 bucket name where RSP DVSA sites are stored.
 	 * @param {string} snsTopicARN ARN for payment notification SNS service.
@@ -195,7 +196,7 @@ export default class PenaltyDocument {
 	/**
 	 * Update each penaltyDocument to be unpaid if it's not already.
 	 * Also update offset and hash.
-	 * @param {AWS.DynamoDB.DocumentClient.AttributeMap} penaltyDocument The penalty document
+	 * @param {Object} penaltyDocument The penalty document
 	 * to be updated.
 	 */
 	_tryUpdatePenaltyDocToUnpaidStatus(penaltyDocument) {
@@ -381,18 +382,16 @@ export default class PenaltyDocument {
 
 	sendPaymentNotification(paymentInfo, documentInfo) {
 		const params = this.paymentMessageParams(paymentInfo, documentInfo);
-		sns.publish(params, (err, data) => {
-			if (err) {
-				logError('SendPaymentNotificationError', {
-					message: 'Unable to send message.',
-					error: err.message,
-				});
-			} else {
-				logInfo('SendPaymentNotificationSuccess', {
-					snsResponse: data,
-					messageContents: params,
-				});
-			}
+		sns.send(new PublishCommand(params)).then((data) => {
+			logInfo('SendPaymentNotificationSuccess', {
+				snsResponse: data,
+				messageContents: params,
+			});
+		}).catch((err) => {
+			logError('SendPaymentNotificationError', {
+				message: 'Unable to send message.',
+				error: err.message,
+			});
 		});
 	}
 
@@ -476,12 +475,11 @@ export default class PenaltyDocument {
 			});
 			const payload = { body };
 			const payloadStr = JSON.stringify(payload);
-			lambda.invoke({
+			lambda.send(new InvokeCommand({
 				FunctionName: arn,
 				Payload: payloadStr,
-			})
-				.promise()
-				.then((data) => resolve(JSON.parse(JSON.parse(data.Payload).body)))
+			}))
+				.then((data) => resolve(JSON.parse(JSON.parse(Buffer.from(data.Payload).toString('utf8')).body)))
 				.catch((err) => {
 					logError('GetPaymentInfoViaInvocationError', {
 						idList,
@@ -652,10 +650,10 @@ export default class PenaltyDocument {
 	}
 
 	invokeTokenServiceLambda(token) {
-		return lambda.invoke({
+		return lambda.send(new InvokeCommand({
 			FunctionName: this.tokenServiceARN,
 			Payload: `{"body": { "Token": "${token}" } }`,
-		}).promise();
+		})).then((data) => ({ ...data, Payload: Buffer.from(data.Payload).toString('utf8') }));
 	}
 
 	async getDocumentByToken(token) {
@@ -991,8 +989,8 @@ export default class PenaltyDocument {
 	async getSites() {
 		const params = { Bucket: this.bucketName, Key: this.siteResource };
 		try {
-			const data = await s3.getObject(params).promise();
-			return createStringResponse({ statusCode: HttpStatus.OK, body: data.Body.toString('utf-8') });
+			const data = await s3.send(new GetObjectCommand(params));
+			return createStringResponse({ statusCode: HttpStatus.OK, body: await data.Body.transformToString('utf-8') });
 		} catch (err) {
 			return createResponse({ statusCode: HttpStatus.BAD_REQUEST, body: err });
 		}
@@ -1026,6 +1024,6 @@ export default class PenaltyDocument {
 	}
 
 	sendSnsMessage(params) {
-		return sns.publish(params).promise();
+		return sns.send(new PublishCommand(params));
 	}
 }
