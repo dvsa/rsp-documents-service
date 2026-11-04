@@ -1,0 +1,15 @@
+{
+  "env": { "node": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": 2022 },
+  "rules": {
+    "import/extensions": "off",
+    "import/no-unresolved": ["error", { "ignore": ["^node:"] }],
+    "no-await-in-loop": "off",
+    "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
+    "no-continue": "off",
+    "max-classes-per-file": ["error", 2]
+  },
+  "overrides": [
+    { "files": ["local-store.cjs"], "rules": { "global-require": "off" } }
+  ]
+}

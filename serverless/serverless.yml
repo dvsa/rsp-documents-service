@@ -50,9 +50,9 @@ custom:
       test:
         sources:
           - table: penaltyDocuments
-            sources: [./mock-data/fake-penalty-notice.json]
+            sources: [./mock-data/fake-penalty-notice.json, ./mock-data/integration-documents.json]
           - table: penaltyGroups
-            sources: [./mock-data/fake-penalty-groups.json]
+            sources: [./mock-data/fake-penalty-groups.json, ./mock-data/integration-groups.json]
 plugins:
   - serverless-dotenv-plugin
   - serverless-dynamodb
@@ -295,7 +295,7 @@ functions:
           documentation:
             summary: Retrieve a penalty group by ID
   delete:
-    handler: handler.delete
+    handler: handler.remove
     memorySize: 128
     events:
       -

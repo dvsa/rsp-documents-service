@@ -44,6 +44,77 @@ profile, and Java 21. Serverless is installed locally through `npm install`;
 a global installation and a `[default]` profile are not required when
 `AWS_PROFILE` selects a named profile.
 
+### Manual integration tests and HTML results
+
+See [the local black-box integration guide](integration/README.md) for all **19
+handlers (16 HTTP routes + three local Lambda-only invocations)**, detailed
+write/read-back checks, static Sites baseline approval, seed safety, optional
+notification tests and the self-contained HTML coverage report.
+
+#### Running the full suite from scratch
+
+1. In the service repository, select Node 20 and install dependencies:
+
+   ```sh
+   nvm use
+   npm ci
+   ```
+
+2. Authenticate your development AWS profile using your usual login process.
+   Java 21 must be installed. Configure your ignored `.env`:
+
+   ```dotenv
+   AWS_PROFILE=rsp-dev
+   INTEGRATION_CONFIRM_LOCAL=yes
+   INTEGRATION_ALLOW_LAMBDA=yes
+   INTEGRATION_ALLOW_NOTIFICATIONS=yes
+   ```
+
+   The notification flag permits real SNS publishing. Enable it only for an
+   authorised non-production topic. Check the configured AWS resources and use
+   local table names `penaltyDocuments` and `penaltyGroups`.
+
+3. Start the service in the first terminal and wait for the API-ready message:
+
+   ```sh
+   npm start
+   ```
+
+   Startup generates the additional synthetic seed data. Keep this terminal
+   running; use `npm start`, not the internal `start:local` command.
+
+4. In a second terminal in the same repository, run:
+
+   ```sh
+   nvm use
+   npm run test:integration:local
+   ```
+
+   The command loads `.env` automatically and prints setup, scenario results,
+   cleanup and final totals. It restores its owned fixtures after the run;
+   no separate seed/reset command is normally necessary.
+
+5. Open the HTML results:
+
+   ```sh
+   npm run test:integration:report:open
+   ```
+
+   Results are saved in `integration-reports/latest.html`, including failures
+   and skipped scenarios. This is endpoint/scenario coverage, not source coverage.
+
+6. Stop the service with Ctrl+C in the first terminal. If AWS credentials expire,
+   authenticate again and restart `npm start` before rerunning tests; the running
+   service holds a snapshot of the credentials.
+
+Keep the approved `integration-baselines/sites.json` and ignored
+`integration/private-token.json` when comparing runs across runtime upgrades.
+On a fresh checkout, follow the linked guide to capture/approve the Sites
+baseline and supply a valid non-production token with independently known expected
+values. Missing prerequisites are reported as skipped, not covered.
+
+This suite is manual-only, excluded from `npm test`/source coverage/CI.
+
 ### Unit tests and coverage
 
 Run on Node.js 20 after `npm ci`:

@@ -1,3 +1,8 @@
+---
+name: RSP service baseline builder
+description: Establish local RSP service execution, isolated unit tests and enforced coverage before runtime upgrades and Serverless Starter rewrites.
+---
+
 # RSP service modernisation baseline
 
 Use this guide to establish a repeatable, tested baseline for an existing RSP

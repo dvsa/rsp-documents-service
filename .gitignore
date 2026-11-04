@@ -21,3 +21,7 @@ dist
 .aws-sam
 /coverage/
 /.nyc_output/
+/integration-reports/
+/.integration-local.lock
+/integration-baselines/
+/integration/private-token.json
