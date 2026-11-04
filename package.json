@@ -73,9 +73,7 @@
     "mocha": "^12.0.3",
     "nodemon": "^3.1.4",
     "npm-run-all": "^4.1.5",
-    "nyc": "^17.1.0",
-    "replace": "^1.2.2",
-    "rimraf": "^4.4.0",
+    "nyc": "^18.0.0",
     "osls": "^4.4.0",
     "serverless": "npm:osls@^4.4.0",
     "serverless-dotenv-plugin": "^6.0.0",
@@ -90,8 +88,6 @@
     "webpack-merge": "^6.0.1"
   },
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.21.0",
-    "@dvsa/rsp-validation": "^4.0.1",
     "@aws-sdk/client-dynamodb": "^3.1156.0",
     "@aws-sdk/client-lambda": "^3.1156.0",
     "@aws-sdk/client-s3": "^3.1156.0",
@@ -99,6 +95,8 @@
     "@aws-sdk/client-sns": "^3.1156.0",
     "@aws-sdk/lib-dynamodb": "^3.1156.0",
     "@aws-sdk/util-dynamodb": "^3.996.9",
+    "@babel/runtime-corejs3": "^7.21.0",
+    "@dvsa/rsp-validation": "^4.0.1",
     "core-js": "^3.29.0",
     "install": "^0.13.0",
     "js-sha256": "^0.9.0",

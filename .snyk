@@ -1,35 +1,125 @@
 version: v1.25.0
 ignore:
-  SNYK-JS-BABELRUNTIMECOREJS3-9397696:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+  SNYK-JS-APIDEVTOOLSJSONSCHEMAREFPARSER-17937352:
+    - 'rsp-documents-service@4.0.9 > serverless-openapi-documenter@0.1.7 > @apidevtools/json-schema-ref-parser@9.1.2':
+        reason: 'Snyk lists a fix only in major version 15. The current OpenAPI documenter depends on version 9 and has no newer published release; defer until a compatible documenter/parser migration.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-BRACES-19963945:
+    - 'rsp-documents-service@4.0.9 > @babel/cli@7.29.7 > chokidar@3.6.0 > braces@3.0.3':
+        reason: 'No fixed release is listed. This is transitive in development tooling; defer pending upstream remediation.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > expect@29.7.0 > jest-message-util@29.7.0 > micromatch@4.0.8 > braces@3.0.3':
+        reason: 'No fixed release is listed. This is transitive in development tooling; defer pending upstream remediation.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > nodemon@3.1.14 > chokidar@3.6.0 > braces@3.0.3':
+        reason: 'No fixed release is listed. This is transitive in development tooling; defer pending upstream remediation.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > osls@4.5.0 > fast-glob@3.3.3 > micromatch@4.0.8 > braces@3.0.3':
+        reason: 'No fixed release is listed. This is transitive in development tooling; defer pending upstream remediation.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-ESLINT-15102420:
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1':
+        reason: 'Snyk lists fixes only in ESLint 9.26 or later. The current ESLint 8 setup uses the legacy Airbnb config; defer until that major-version migration is validated.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-FAKERJSFAKER-18674671:
+    - 'rsp-documents-service@4.0.9 > serverless-openapi-documenter@0.1.7 > openapi-to-postmanv2@6.4.2 > postman-collection@5.3.1 > @faker-js/faker@5.5.3':
+        reason: 'The remaining vulnerable Faker copy is transitive through the unreleased serverless OpenAPI documenter/Postman chain; the available fix is a major version change not validated for this consumer.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-FLAT-22148819:
+    - 'rsp-documents-service@4.0.9 > webpack-cli@5.1.4 > webpack-merge@5.10.0 > flat@5.0.2':
+        reason: 'No fixed release is listed. This is confined to the webpack CLI/merge build-tool chain; defer pending an upstream fix or a compatible toolchain update.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > webpack-merge@6.0.1 > flat@5.0.2':
+        reason: 'No fixed release is listed. This is confined to the webpack CLI/merge build-tool chain; defer pending an upstream fix or a compatible toolchain update.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-INFLIGHT-6095116:
+    - 'rsp-documents-service@4.0.9 > @babel/cli@7.29.7 > glob@7.2.3 > inflight@1.0.6':
+        reason: 'No fixed release is listed. This deprecated package is transitive in development/build tooling; defer until upstream parents replace their glob 7 dependency.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > archiver@5.3.2 > archiver-utils@2.1.0 > glob@7.2.3 > inflight@1.0.6':
+        reason: 'No fixed release is listed. This deprecated package is transitive in development/build tooling; defer until upstream parents replace their glob 7 dependency.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > babel-plugin-istanbul@7.0.1 > test-exclude@6.0.0 > glob@7.2.3 > inflight@1.0.6':
+        reason: 'No fixed release is listed. This deprecated package is transitive in development/build tooling; defer until upstream parents replace their glob 7 dependency.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > copyfiles@2.4.1 > glob@7.2.3 > inflight@1.0.6':
+        reason: 'No fixed release is listed. This deprecated package is transitive in development/build tooling; defer until upstream parents replace their glob 7 dependency.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > inflight@1.0.6':
+        reason: 'No fixed release is listed. This deprecated package is transitive in development/build tooling; defer until upstream parents replace their glob 7 dependency.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-MINIMATCH-22111072:
+    - 'rsp-documents-service@4.0.9 > @babel/cli@7.29.7 > glob@7.2.3 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > archiver@5.3.2 > archiver-utils@2.1.0 > glob@7.2.3 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > archiver@5.3.2 > readdir-glob@1.1.3 > minimatch@5.1.9':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > babel-plugin-istanbul@7.0.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > babel-plugin-istanbul@7.0.1 > test-exclude@6.0.0 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > copyfiles@2.4.1 > glob@7.2.3 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > copyfiles@2.4.1 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > eslint-plugin-import@2.32.0 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > @humanwhocodes/config-array@0.13.0 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > mocha@12.0.3 > glob@13.0.6 > minimatch@10.2.6':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > mocha@12.0.3 > minimatch@10.2.6':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > nodemon@3.1.14 > minimatch@10.2.6':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > npm-run-all@4.1.5 > minimatch@3.1.5':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > nyc@18.0.0 > glob@13.0.6 > minimatch@10.2.6':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > nyc@18.0.0 > test-exclude@8.0.0 > minimatch@10.2.6':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+    - 'rsp-documents-service@4.0.9 > serverless-openapi-documenter@0.1.7 > @redocly/openapi-core@1.34.23 > minimatch@5.1.9':
+        reason: 'The affected versions span several development-tool chains whose declared ranges do not accept the fixed minimatch 11 release. A broad major override is not safe; defer until compatible upstream releases are available.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-URIJS-19963961:
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > @eslint/eslintrc@2.1.4 > ajv@6.15.0 > uri-js@4.4.1':
+        reason: 'No fixed release is listed. The affected uri-js is pulled by the legacy ESLint 8/Ajv 6 configuration chain; defer until the compatible lint-toolchain migration.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-URIJS-19963963:
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > @eslint/eslintrc@2.1.4 > ajv@6.15.0 > uri-js@4.4.1':
+        reason: 'No fixed release is listed. The affected uri-js is pulled by the legacy ESLint 8/Ajv 6 configuration chain; defer until the compatible lint-toolchain migration.'
+        expires: '2027-07-01T00:00:00.000Z'
+  SNYK-JS-URIJS-20341609:
+    - 'rsp-documents-service@4.0.9 > eslint@8.57.1 > @eslint/eslintrc@2.1.4 > ajv@6.15.0 > uri-js@4.4.1':
+        reason: 'No fixed release is listed. The affected uri-js is pulled by the legacy ESLint 8/Ajv 6 configuration chain; defer until the compatible lint-toolchain migration.'
         expires: '2027-07-01T00:00:00.000Z'
   SNYK-JS-UUID-16133035:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
-        expires: '2027-07-01T00:00:00.000Z'
-  SNYK-JS-JOI-17317897:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
-        expires: '2027-07-01T00:00:00.000Z'
-  SNYK-JS-JOI-19498543:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
-        expires: '2027-07-01T00:00:00.000Z'
-  SNYK-JS-JOI-19498547:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
-        expires: '2027-07-01T00:00:00.000Z'
-  SNYK-JS-JOI-19778379:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
-        expires: '2027-07-01T00:00:00.000Z'
-  SNYK-JS-JOI-19883907:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
-        expires: '2027-07-01T00:00:00.000Z'
-  SNYK-JS-JOI-22114209:
-    - '*':
-        reason: 'Temporary exception for the Node 20 local-testing baseline, which will not be deployed. Remediate during the Node 24 and SDK v3 upgrade before deployment.'
+    - 'rsp-documents-service@4.0.9 > serverless-openapi-documenter@0.1.7 > openapi-to-postmanv2@6.4.2 > postman-collection@5.3.1 > uuid@8.3.2':
+        reason: 'The remaining vulnerable uuid 8 copy is transitive through the unreleased serverless OpenAPI documenter/Postman chain; replacing its declared major version is not verified safe. The nyc copy was upgraded away.'
         expires: '2027-07-01T00:00:00.000Z'
 patch: {}
