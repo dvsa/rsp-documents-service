@@ -1,4 +1,4 @@
-import { SecretsManager } from 'aws-sdk';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { logInfo, logError } from './utils/logger';
 
 const configMetadata = {
@@ -21,15 +21,13 @@ async function bootstrap() {
 		if (process.env.USE_SECRETS_MANAGER === 'true') {
 			const SecretId = process.env.SECRETS_MANAGER_SECRET_NAME;
 			logInfo('DocServiceSecretsManagerSecretId', { secretId: SecretId });
-			const secretsManagerClient = new SecretsManager({ region: process.env.REGION });
-			secretsManagerClient.getSecretValue({ SecretId }, (err, secretsManagerResponse) => {
-				if (err) {
-					logError('DocServiceSecretsManagerError', err.message);
-					reject(err);
-					return;
-				}
+			const secretsManagerClient = new SecretsManagerClient({ region: process.env.REGION });
+			secretsManagerClient.send(new GetSecretValueCommand({ SecretId })).then((secretsManagerResponse) => {
 				configuration = JSON.parse(secretsManagerResponse.SecretString);
 				resolve(configuration);
+			}).catch((err) => {
+				logError('DocServiceSecretsManagerError', err.message);
+				reject(err);
 			});
 		} else {
 			const values = [];

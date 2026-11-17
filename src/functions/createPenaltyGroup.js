@@ -1,4 +1,4 @@
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 import PenaltyGroup from '../services/penaltyGroups';
 import config from '../config';
 

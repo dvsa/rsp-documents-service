@@ -1,0 +1,557 @@
+[
+  {
+    "name": "Area 10 - South West",
+    "region": "Mobile",
+    "siteCode": -10
+  },
+  {
+    "name": "Area 9 - South East",
+    "region": "Mobile",
+    "siteCode": -9
+  },
+  {
+    "name": "Area 8 - London",
+    "region": "Mobile",
+    "siteCode": -8
+  },
+  {
+    "name": "Area 7 - Eastern England",
+    "region": "Mobile",
+    "siteCode": -7
+  },
+  {
+    "name": "Area 6 - East Midlands",
+    "region": "Mobile",
+    "siteCode": -6
+  },
+  {
+    "name": "Area 5 - Wales",
+    "region": "Mobile",
+    "siteCode": -5
+  },
+  {
+    "name": "Area 4 - West Midlands",
+    "region": "Mobile",
+    "siteCode": -4
+  },
+  {
+    "name": "Area 3 - North West",
+    "region": "Mobile",
+    "siteCode": -3
+  },
+  {
+    "name": "Area 2 - North and North East England",
+    "region": "Mobile",
+    "siteCode": -2
+  },
+  {
+    "name": "Area 1 - Scotland",
+    "region": "Mobile",
+    "siteCode": -1
+  },
+  {
+    "name": "Abingdon (A34/A415 interchange - South of Oxford)",
+    "region": "South East",
+    "siteCode": 1
+  },
+  {
+    "name": "Ainley Top (M62 J24 - NW of Huddersfield)",
+    "region": "Northern",
+    "siteCode": 2
+  },
+  {
+    "name": "Ashford HRTI",
+    "region": "South East",
+    "siteCode": 3
+  },
+  {
+    "name": "Ashley Heath(A31 - Ringwood, Dorset)",
+    "region": "Western",
+    "siteCode": 4
+  },
+  {
+    "name": "Badbury (M4 J15 - Swindon)",
+    "region": "Western",
+    "siteCode": 5
+  },
+  {
+    "name": "Blackwall Tunnel (London)",
+    "region": "South East",
+    "siteCode": 6
+  },
+  {
+    "name": "Beattock Summit (A74 between Carlisle and Glasgow)",
+    "region": "Northern",
+    "siteCode": 7
+  },
+  {
+    "name": "Beddingham (A27 - East of Lewes - E. Sussex)",
+    "region": "South East",
+    "siteCode": 8
+  },
+  {
+    "name": "Boston Spa (A1 / A659 NW of Leeds)",
+    "region": "Northern",
+    "siteCode": 9
+  },
+  {
+    "name": "Boughton (A2 - Faversham - Kent)",
+    "region": "South East",
+    "siteCode": 10
+  },
+  {
+    "name": "Chilcomb(M3 / A31 near Winchester)",
+    "region": "South East",
+    "siteCode": 12
+  },
+  {
+    "name": "Coldra(M4 J24 - N. of Newport)",
+    "region": "Western",
+    "siteCode": 13
+  },
+  {
+    "name": "Craigforth (M9 - NW of Stirling)",
+    "region": "Northern",
+    "siteCode": 14
+  },
+  {
+    "name": "Cramond (A90 NW of Edinburgh)",
+    "region": "Northern",
+    "siteCode": 15
+  },
+  {
+    "name": "Crick (M1 J18 near Rugby)",
+    "region": "Eastern",
+    "siteCode": 16
+  },
+  {
+    "name": "Cuerden(M65 J1a - SE of Preston)",
+    "region": "Northern",
+    "siteCode": 17
+  },
+  {
+    "name": "Dalar Hir (A55 near Holyhead)",
+    "region": "Western",
+    "siteCode": 19
+  },
+  {
+    "name": "Dartford (London S. orbital road)",
+    "region": "South East",
+    "siteCode": 20
+  },
+  {
+    "name": "Denham (M40 J1 NW of London)",
+    "region": "South East",
+    "siteCode": 21
+  },
+  {
+    "name": "Dover Western Docks",
+    "region": "South East",
+    "siteCode": 22
+  },
+  {
+    "name": "Doxey(M6 J14 not too far from Stoke)",
+    "region": "Western",
+    "siteCode": 23
+  },
+  {
+    "name": "Dunkirk (A56 J15 - NW of Chester)",
+    "region": "Western",
+    "siteCode": 24
+  },
+  {
+    "name": "Elmswell(A14 - W. of Ipswich)",
+    "region": "Eastern",
+    "siteCode": 25
+  },
+  {
+    "name": "Ewloe (A55 / A494 near Wrexham)",
+    "region": "Western",
+    "siteCode": 26
+  },
+  {
+    "name": "Felixstowe Docks",
+    "region": "Eastern",
+    "siteCode": 27
+  },
+  {
+    "name": "Glenluce (A75 - E. of Stranraer)",
+    "region": "Northern",
+    "siteCode": 29
+  },
+  {
+    "name": "Handcross(A23 S. of Crawley)",
+    "region": "South East",
+    "siteCode": 30
+  },
+  {
+    "name": "Harlow (M11 J.17)",
+    "region": "Eastern",
+    "siteCode": 31
+  },
+  {
+    "name": "Harwich",
+    "region": "Eastern",
+    "siteCode": 32
+  },
+  {
+    "name": "Holdingham (A15 / A17 near Sleaford, Lincs)",
+    "region": "Eastern",
+    "siteCode": 34
+  },
+  {
+    "name": "Humber Bridge",
+    "region": "Northern",
+    "siteCode": 35
+  },
+  {
+    "name": "Immingham",
+    "region": "Northern",
+    "siteCode": 36
+  },
+  {
+    "name": "John's Cross (A21 / A2100 near Robertsbridge, E. Sussex)",
+    "region": "South East",
+    "siteCode": 37
+  },
+  {
+    "name": "King George Dock (Hull)",
+    "region": "Northern",
+    "siteCode": 38
+  },
+  {
+    "name": "Leatherhead (M25 J9)",
+    "region": "South East",
+    "siteCode": 39
+  },
+  {
+    "name": "Newhaven ",
+    "region": "South East",
+    "siteCode": 41
+  },
+  {
+    "name": "Newport Pagnell (M1 / J14)(Sometimes also called Milton Keynes)",
+    "region": "Eastern",
+    "siteCode": 42
+  },
+  {
+    "name": "Poole Docks",
+    "region": "Western",
+    "siteCode": 44
+  },
+  {
+    "name": "Portsmouth Docks",
+    "region": "South East",
+    "siteCode": 45
+  },
+  {
+    "name": "Puddletown (A35 / A354 near Dorchester)",
+    "region": "Western",
+    "siteCode": 46
+  },
+  {
+    "name": "Quinton (M5 J3 E. of Halesowen)",
+    "region": "Eastern",
+    "siteCode": 47
+  },
+  {
+    "name": "Risby (A45E / A142 - Bury St Edmunds)",
+    "region": "Eastern",
+    "siteCode": 49
+  },
+  {
+    "name": "Ross-on-Wye (M50 J4 / A40)",
+    "region": "Eastern",
+    "siteCode": 50
+  },
+  {
+    "name": "Sampford Peverell (M5 J27 / A373 near Tiverton)",
+    "region": "Western",
+    "siteCode": 53
+  },
+  {
+    "name": "Sandbach (Sandbach Services M6 just South of J17)",
+    "region": "Western",
+    "siteCode": 54
+  },
+  {
+    "name": "Sandy (A1 (N) near Bedford)",
+    "region": "Eastern",
+    "siteCode": 55
+  },
+  {
+    "name": "Sawtry (A1 (S) S. of Peterborough)",
+    "region": "Eastern",
+    "siteCode": 56
+  },
+  {
+    "name": "Saxondale(A46 / A52, E. of Nottingham)",
+    "region": "Eastern",
+    "siteCode": 57
+  },
+  {
+    "name": "Scotch Corner(A1 / A66, S.W. of Darlington)",
+    "region": "Northern",
+    "siteCode": 58
+  },
+  {
+    "name": "Switch Island (M57 / M58 & A59 Junction - near Liverpool)",
+    "region": "Western",
+    "siteCode": 61
+  },
+  {
+    "name": "Tankersley (M1 / A61, N. of Sheffield)",
+    "region": "Eastern",
+    "siteCode": 62
+  },
+  {
+    "name": "Thornham M62 (J20) / A622, Nr Rochdale (N.)",
+    "region": "Eastern",
+    "siteCode": 63
+  },
+  {
+    "name": "Todhills (M6 (J44), Northbound - near Carlisle)",
+    "region": "Northern",
+    "siteCode": 64
+  },
+  {
+    "name": "Tormarton (M4 J18 - Bath turn off)",
+    "region": "Western",
+    "siteCode": 65
+  },
+  {
+    "name": "Towcester (A43 / A5 near Towcester)",
+    "region": "Eastern",
+    "siteCode": 66
+  },
+  {
+    "name": "Wall (A5 / A5127, Nr Lichfield - N. of Birmingham)",
+    "region": "Western",
+    "siteCode": 67
+  },
+  {
+    "name": "Wellfield (A19 near Stockton on Tees)",
+    "region": "Northern",
+    "siteCode": 68
+  },
+  {
+    "name": "Withy Patch (A27 near Lancing)",
+    "region": "South East",
+    "siteCode": 69
+  },
+  {
+    "name": "Belvedere Sector Office (Woolwich Rd, Belvedere, Dartford)",
+    "region": "South East",
+    "siteCode": 71
+  },
+  {
+    "name": "Birdwell Sector Office (Birdwell Motorway Maintenance Compound, Birwell, Nr Barnsley)",
+    "region": "Eastern",
+    "siteCode": 72
+  },
+  {
+    "name": "Bury St Edmunds Sector Office(Bury St Edmunds - E. Anglia)",
+    "region": "Eastern",
+    "siteCode": 73
+  },
+  {
+    "name": "Dover Sector Office (& Dover East Docks)",
+    "region": "Eastern",
+    "siteCode": 74
+  },
+  {
+    "name": "Pytchley Sector Office (On the A14 near Kettering)",
+    "region": "South East",
+    "siteCode": 76
+  },
+  {
+    "name": "South Mimms Sector Office(St Albans Rd, S. Mimms, Enfield)",
+    "region": "Eastern",
+    "siteCode": 77
+  },
+  {
+    "name": "Sprotborough Sector Office(Millar House, Motorway Unit, Sprotborough, Nr Doncaster)",
+    "region": "Eastern",
+    "siteCode": 78
+  },
+  {
+    "name": "Nesscliffe (A5 Nesscliffe by-pass at the junction with the B4396) West Midlands",
+    "region": "Western",
+    "siteCode": 79
+  },
+  {
+    "name": "Redruth GVTS",
+    "region": "Western",
+    "siteCode": 80
+  },
+  {
+    "name": "Plymouth GVTS",
+    "region": "Western",
+    "siteCode": 81
+  },
+  {
+    "name": "Kidderminster GVTS",
+    "region": "Western",
+    "siteCode": 82
+  },
+  {
+    "name": "Thurrock Weighbridge",
+    "region": "South East",
+    "siteCode": 83
+  },
+  {
+    "name": "Thurrock Services",
+    "region": "South East",
+    "siteCode": 84
+  },
+  {
+    "name": "Shooters Hill Road (London)",
+    "region": "South East",
+    "siteCode": 85
+  },
+  {
+    "name": "Thames Road (London)",
+    "region": "South East",
+    "siteCode": 86
+  },
+  {
+    "name": "Llantrisant GVTS",
+    "region": "Western",
+    "siteCode": 87
+  },
+  {
+    "name": "NR Evans, Crosshands ATF Facility (Llanelli)",
+    "region": "Western",
+    "siteCode": 88
+  },
+  {
+    "name": "Ebbw Vale (A465 High Point)",
+    "region": "Western",
+    "siteCode": 89
+  },
+  {
+    "name": "Port Talbot J38 M4 (A48 Margam Layby)",
+    "region": "Western",
+    "siteCode": 90
+  },
+  {
+    "name": "Perth GVTS",
+    "region": "Northern",
+    "siteCode": 91
+  },
+  {
+    "name": "Dundee (A90 Invergowrie Site)",
+    "region": "Northern",
+    "siteCode": 92
+  },
+  {
+    "name": "Forfar (A90 Parkford pad site)",
+    "region": "Northern",
+    "siteCode": 93
+  },
+  {
+    "name": "Dundee (A92 Monymusk Layby)",
+    "region": "Northern",
+    "siteCode": 94
+  },
+  {
+    "name": "Perth Racecourse",
+    "region": "Northern",
+    "siteCode": 95
+  },
+  {
+    "name": "Aberdeen GVTS",
+    "region": "Northern",
+    "siteCode": 96
+  },
+  {
+    "name": "Blackburn Layby (A96 Aberdeen)",
+    "region": "Northern",
+    "siteCode": 97
+  },
+  {
+    "name": "Oatyhill (A90 Aberdeenshire)",
+    "region": "Northern",
+    "siteCode": 98
+  },
+  {
+    "name": "Hatton Layby (A90 Aberdeenshire)",
+    "region": "Northern",
+    "siteCode": 99
+  },
+  {
+    "name": "Peterhead (A90 Stirlinghill)",
+    "region": "Northern",
+    "siteCode": 100
+  },
+  {
+    "name": "Inverness GVTS",
+    "region": "Northern",
+    "siteCode": 101
+  },
+  {
+    "name": "Auchenkilns Junction Westbound (Lanarkshire)",
+    "region": "Northern",
+    "siteCode": 102
+  },
+  {
+    "name": "Haven Layby (Ayrshire)",
+    "region": "Northern",
+    "siteCode": 103
+  },
+  {
+    "name": "Harthill Services (M8)",
+    "region": "Northern",
+    "siteCode": 104
+  },
+  {
+    "name": "HRTI Dumfries Bypass (A75)",
+    "region": "Northern",
+    "siteCode": 105
+  },
+  {
+    "name": "Midross Layby (A82 Balloch, Dunbartonshire)",
+    "region": "Northern",
+    "siteCode": 106
+  },
+  {
+    "name": "James Watt Dock (A8 Greenock, Inverclyde)",
+    "region": "Northern",
+    "siteCode": 107
+  },
+  {
+    "name": "Loudoun Layby (A71 Loudoun, Ayrshire)",
+    "region": "Northern",
+    "siteCode": 108
+  },
+  {
+    "name": "Masonhill (A77, Ayrshire)",
+    "region": "Northern",
+    "siteCode": 109
+  },
+  {
+    "name": "DVSA CSC (Swansea)",
+    "region": "Western",
+    "siteCode": 110
+  },
+  {
+    "name": "Chadderton GVTS",
+    "region": "Northern",
+    "siteCode": 111
+  },
+  {
+    "name": "Yeading GVTS",
+    "region": "South East",
+    "siteCode": 112
+  },
+  {
+    "name": "Bowdon (A56/M56 near Altrincham)",
+    "region": "Northern",
+    "siteCode": 113
+  },
+  {
+    "name": "UAT TEST ONLY",
+    "region": "Northern",
+    "siteCode": 114
+  }
+]

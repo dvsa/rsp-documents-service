@@ -5,7 +5,7 @@ export default ({ items = [], payments = [] }) => {
 		const foundIndex = newArray.findIndex((item) => {
 			return item.ID === payment.ID;
 		});
-		if (foundIndex || foundIndex === 0) {
+		if (foundIndex !== -1) {
 			newArray[foundIndex].Value.paymentStatus = payment.PenaltyStatus;
 			newArray[foundIndex].Value.paymentAuthCode = payment.PaymentDetail.AuthCode;
 			newArray[foundIndex].Value.paymentDate = payment.PaymentDetail.PaymentDate;

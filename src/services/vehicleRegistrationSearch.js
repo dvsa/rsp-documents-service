@@ -16,7 +16,7 @@ export default class VehicleRegistrationSearch {
 			const { Items } = await this._searchSinglePenalties(vehicleReg);
 			if (Items.length > 0) {
 				const Penalties = Items.filter((item) => {
-					return typeof !item.inPenaltyGroup && !item.Value.inPenaltyGroup;
+					return !item.inPenaltyGroup && !item.Value.inPenaltyGroup;
 				});
 				const penaltiesInGroups = Items.filter((item) => {
 					return item.inPenaltyGroup || item.Value.inPenaltyGroup;

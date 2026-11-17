@@ -1,9 +1,7 @@
-const replace = require('replace');
+const fs = require('node:fs');
 
-replace({
-	regex: '"requestBody": {},',
-	replacement: '',
-	paths: ['./openapi.json'],
-	recursive: true,
-	silent: true,
-});
+const openapiPath = './openapi.json';
+if (fs.existsSync(openapiPath)) {
+	const openapi = fs.readFileSync(openapiPath, 'utf8');
+	fs.writeFileSync(openapiPath, openapi.split('\"requestBody\": {},').join(''));
+}

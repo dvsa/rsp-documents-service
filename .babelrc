@@ -3,5 +3,10 @@
     [
       "@babel/env"
     ]
-  ]
+  ],
+  "env": {
+    "coverage": {
+      "plugins": ["istanbul"]
+    }
+  }
 }
