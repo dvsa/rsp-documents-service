@@ -38,7 +38,7 @@ test('startup uses SDK v3 profile resolution without the credential-export launc
 	const root = path.resolve(__dirname, '..');
 	const { scripts } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 	assert.equal(fs.existsSync(path.join(root, 'scripts/start-local.cjs')), false);
-	assert.equal(scripts.start, 'npm run copy-localfiles && npm run compile && npm run parallel');
+	assert.equal(scripts.start, './dbsetup.sh && npm run compile && npm run parallel');
 	assert.equal(scripts['start:local'], 'npm start');
 	assert.match(scripts.offline, /node --env-file=\.env .*serverless\.js offline start --noAuth$/);
 	assert.doesNotMatch(JSON.stringify(scripts), /export-credentials|start-local\.cjs/);

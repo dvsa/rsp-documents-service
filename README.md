@@ -7,13 +7,18 @@ Use [Node Version Manager](https://npm.github.io/installation-setup-docs/install
 
 #### Run AWS Lambda node functions locally with a mock API Gateway and DynamoDB to test against
 - `npm install`
-- `./dbsetup.sh`
 - Set `AWS_PROFILE` in `.env` to your development profile (for example `rsp-dev`).
 - Authenticate that profile using your usual AWS login process.
 - `npm start` to spin up AWS Lambda and API Gateway
 
-`npm start` copies local configuration, compiles the service and runs the watcher
-and Offline. Offline loads `.env` using Node's `--env-file`; SDK v3 resolves
+`npm start` first runs `dbsetup.sh`, which copies local configuration and installs
+DynamoDB Local into `build/.dynamodb` if its JAR is missing. The first run requires
+internet access to download the runtime; subsequent runs reuse the installation.
+If `build/` is deleted, the next start reinstalls DynamoDB Local.
+Java 21 must already be installed and selected on `PATH`.
+
+Startup then compiles the service and runs the watcher and Offline.
+Offline loads `.env` using Node's `--env-file`; SDK v3 resolves
 `AWS_PROFILE` directly using its standard credential provider chain. Exported
 shell values take precedence over `.env`. No launcher exports AWS credentials.
 
